@@ -371,8 +371,8 @@
             </div>
 
             <div class="row">
-              <button class="btn" id="applyDefaults" type="button">Apply location defaults</button>
-              <button class="btn secondary" id="resetNational" type="button">Reset to national baseline</button>
+              <button class="btn" id="applyDefaults" type="button">Apply defaults</button>
+              <button class="btn secondary" id="resetNational" type="button">Reset (no location factor)</button>
             </div>
           </div>
 
@@ -382,7 +382,29 @@
             <div>
               <label for="household">Household size</label><br/>
               <input id="household" type="number" min="1" max="6" step="1" value="2" />
-              <div class="note">Scales groceries, transportation, and discretionary categories.</div>
+              <div class="note">Scales variable categories (food, transport, leisure, gifts, other).</div>
+            </div>
+
+            <div>
+              <label for="householdIncome">Household Annual Income ($)</label><br/>
+              <input id="householdIncome" type="number" min="0" step="1000" value="80000" />
+              <div class="note">Used as the base for “Replacement Rate” planning.</div>
+            </div>
+
+            <!-- NEW: Replacement rate mode -->
+            <div>
+              <label for="spendMode">Defaulting approach</label><br/>
+              <select id="spendMode">
+                <option value="replacement">Income replacement rate (retirement planning)</option>
+                <option value="income">Percent-of-income allocation (simple baseline)</option>
+              </select>
+              <div class="note">Replacement rate is recommended for retirement planning.</div>
+            </div>
+
+            <div>
+              <label for="replacementRate">Replacement rate (% of income)</label><br/>
+              <input id="replacementRate" type="range" min="50" max="100" step="1" value="75" />
+              <div class="small muted" id="replacementRateLabel">75% target</div>
             </div>
 
             <div>
@@ -392,7 +414,7 @@
                 <option value="ownNoMortgage">Own (no mortgage)</option>
                 <option value="rent">Rent</option>
               </select>
-              <div class="note">Primarily affects the Housing category default.</div>
+              <div class="note">Affects housing default (fixed cost).</div>
             </div>
 
             <div>
@@ -402,16 +424,16 @@
                 <option value="medicareLean">Medicare (lower supplemental spend)</option>
                 <option value="medicareRich">Medicare (higher out-of-pocket)</option>
               </select>
-              <div class="note">Adjusts Healthcare defaults.</div>
+              <div class="note">Affects healthcare default (mostly fixed).</div>
             </div>
 
             <div>
-              <label for="taxMode">Tax approach</label><br/>
+              <label for="taxMode">Taxes</label><br/>
               <select id="taxMode">
-                <option value="estimate">Use a simple estimate</option>
-                <option value="manual">Manual (you will set it)</option>
+                <option value="manual">Manual (recommended)</option>
+                <option value="estimate">Simple bracket estimate</option>
               </select>
-              <div class="note">Taxes are a placeholder category; override for accuracy.</div>
+              <div class="note">Tax estimates vary widely in retirement; manual is safer.</div>
             </div>
           </div>
 
@@ -451,8 +473,8 @@
           </table>
 
           <p class="note">
-            Defaults are illustrative heuristics (regional cost factor + typical retirement mix). Validate housing, healthcare, and taxes using your own
-            quotes and expected income profile.
+            Defaults are heuristics: (replacement-rate or income-allocation) → location factor → household scaling for variable categories →
+            housing/healthcare mode adjustments → optional simple tax estimate. Adjust line items for realism.
           </p>
         </section>
 
@@ -475,7 +497,7 @@
           <div class="row space">
             <div>
               <div class="small muted">Spending mix</div>
-              <div class="small muted">Based on included categories</div>
+              <div class="small muted" id="modeSummary">—</div>
             </div>
             <div class="row" style="gap:10px;">
               <span class="pill" id="advancedSubtotalPill">Advanced subtotal: $0</span>
@@ -711,7 +733,6 @@
 
           <div class="hr"></div>
 
-          <!-- No "today's dollars" portfolio growth here -->
           <div class="metricGrid" aria-label="Key projection metrics">
             <div class="metricBox">
               <div class="metricTitle">Current Portfolio Total</div>
@@ -744,17 +765,26 @@
 
           <div style="height:10px;"></div>
 
-          <!-- Today's dollars outputs (requested) -->
+          <!-- Distribution outputs: nominal + today's dollars blocks -->
           <div class="metricGrid" aria-label="Distribution outputs">
             <div class="metricBox">
               <div class="metricTitle">Distribution Amount (Portfolio only)</div>
               <div class="metricValue" id="outDistributionNominal">$0</div>
-              <div class="small muted" id="outDistributionTodayLine">Today $: —</div>
+
+              <div class="hr" style="margin:10px 0;"></div>
+
+              <div class="metricTitle">Distribution Amount (Today’s Dollars)</div>
+              <div class="metricValue" id="outDistributionToday">$0</div>
             </div>
+
             <div class="metricBox">
               <div class="metricTitle">Total Retirement Income (Distribution + Pension + Social Security)</div>
               <div class="metricValue" id="outTotalIncomeNominal">$0</div>
-              <div class="small muted" id="outTotalIncomeTodayLine">Today $: —</div>
+
+              <div class="hr" style="margin:10px 0;"></div>
+
+              <div class="metricTitle">Total Retirement Income (Today’s Dollars)</div>
+              <div class="metricValue" id="outTotalIncomeToday">$0</div>
             </div>
           </div>
 
@@ -863,7 +893,11 @@
     })();
 
     // ============================================================
-    // TAB 1: Spending Estimator (unchanged)
+    // TAB 1: Spending Estimator (UPDATED per recommendations)
+    // - Replacement-rate mode (recommended)
+    // - Income-band adaptive allocations
+    // - Fixed vs variable scaling (household impacts variable categories)
+    // - Taxes default to manual; optional simple bracket estimate
     // ============================================================
     const LOCATIONS = [
       { id:"portland_me", name:"Portland, ME", factor:1.12, region:"Northeast" },
@@ -926,48 +960,178 @@
     ];
 
     const CATEGORIES = [
-      { key:"housing",    label:"Housing (rent/mortgage/HOA/property)", color:"#7aa2ff", advanced:false },
-      { key:"utilities",  label:"Utilities (electric, water, internet)", color:"#58d1a7", advanced:false },
-      { key:"food",       label:"Food (groceries + dining)", color:"#ffcc66", advanced:false },
-      { key:"transport",  label:"Transportation (fuel, maintenance, transit)", color:"#c792ea", advanced:false },
-      { key:"healthcare", label:"Healthcare (premiums + out-of-pocket)", color:"#ff6b6b", advanced:false },
-      { key:"leisure",    label:"Leisure & Travel", color:"#4fd1c5", advanced:false },
-      { key:"insurance",  label:"Insurance (home/auto/umbrella)", color:"#a0aec0", advanced:true },
-      { key:"taxes",      label:"Taxes (income / property / local)", color:"#e2e8f0", advanced:true },
-      { key:"gifts",      label:"Gifts & Charity", color:"#f687b3", advanced:false },
-      { key:"other",      label:"Other / Cushion", color:"#fbd38d", advanced:true }
+      { key:"housing",    label:"Housing (rent/mortgage/HOA/property)", color:"#7aa2ff", advanced:false, fixed:true },
+      { key:"utilities",  label:"Utilities (electric, water, internet)", color:"#58d1a7", advanced:false, fixed:true },
+      { key:"food",       label:"Food (groceries + dining)", color:"#ffcc66", advanced:false, fixed:false },
+      { key:"transport",  label:"Transportation (fuel, maintenance, transit)", color:"#c792ea", advanced:false, fixed:false },
+      { key:"healthcare", label:"Healthcare (premiums + out-of-pocket)", color:"#ff6b6b", advanced:false, fixed:true },
+      { key:"leisure",    label:"Leisure & Travel", color:"#4fd1c5", advanced:false, fixed:false },
+      { key:"insurance",  label:"Insurance (home/auto/umbrella)", color:"#a0aec0", advanced:true, fixed:true },
+      { key:"taxes",      label:"Taxes (income / property / local)", color:"#e2e8f0", advanced:true, fixed:true },
+      { key:"gifts",      label:"Gifts & Charity", color:"#f687b3", advanced:false, fixed:false },
+      { key:"other",      label:"Other / Cushion", color:"#fbd38d", advanced:true, fixed:false }
     ];
 
-    const BASELINE = { housing:1800, utilities:320, food:700, transport:500, healthcare:820, leisure:650, insurance:260, taxes:450, gifts:160, other:300 };
+    // Location weights (how sensitive each category is to local cost factor)
     const FACTOR_WEIGHTS = { housing:1.25, utilities:0.70, food:0.85, transport:0.80, healthcare:0.60, leisure:0.85, insurance:0.55, taxes:0.90, gifts:0.55, other:0.60 };
 
-    function householdScalar(n){
-      n = Math.max(1, Math.min(6, Number(n || 2)));
-      const map = {1:0.80,2:1.00,3:1.18,4:1.34,5:1.48,6:1.60};
-      return map[n] ?? 1.00;
-    }
-    function money(n){
-      const v = Number(n || 0);
-      return v.toLocaleString(undefined, { style:"currency", currency:"USD", maximumFractionDigits:0 });
-    }
+    // Income band allocations (share of target spending). Sums to 1.00 each.
+    // Intended behavior: higher income shifts share from essentials toward leisure/giving, while taxes creep upward.
+    const ALLOC_BANDS = [
+      {
+        name: "Under $60k",
+        min: 0,
+        max: 60000,
+        pcts: { housing:0.30, utilities:0.05, food:0.13, transport:0.09, healthcare:0.11, leisure:0.05, insurance:0.03, taxes:0.08, gifts:0.01, other:0.15 }
+      },
+      {
+        name: "$60k–$150k",
+        min: 60000,
+        max: 150000,
+        pcts: { housing:0.27, utilities:0.04, food:0.11, transport:0.08, healthcare:0.10, leisure:0.09, insurance:0.03, taxes:0.12, gifts:0.02, other:0.14 }
+      },
+      {
+        name: "$150k+",
+        min: 150000,
+        max: Infinity,
+        pcts: { housing:0.23, utilities:0.035, food:0.09, transport:0.07, healthcare:0.09, leisure:0.13, insurance:0.03, taxes:0.14, gifts:0.03, other:0.155 }
+      }
+    ];
+
     function clamp(n, min, max){
       n = Number(n);
       if (Number.isNaN(n)) return min;
       return Math.max(min, Math.min(max, n));
     }
+    function money(n){
+      const v = Number(n || 0);
+      return v.toLocaleString(undefined, { style:"currency", currency:"USD", maximumFractionDigits:0 });
+    }
+    function householdScalar(n){
+      n = Math.max(1, Math.min(6, Number(n || 2)));
+      const map = {1:0.80,2:1.00,3:1.18,4:1.34,5:1.48,6:1.60};
+      return map[n] ?? 1.00;
+    }
+
+    function pickBand(incomeAnnual){
+      const inc = Math.max(0, Number(incomeAnnual || 0));
+      for (const b of ALLOC_BANDS){
+        if (inc >= b.min && inc < b.max) return b;
+      }
+      return ALLOC_BANDS[1];
+    }
+
+    // Simple bracketed effective tax rate (very rough). This is intentionally conservative and should be edited.
+    function estimateTaxesAnnualSimple(targetAnnual, locFactor){
+      const x = Math.max(0, Number(targetAnnual || 0));
+      let rate = 0.10;
+      if (x < 50000) rate = 0.08;
+      else if (x < 100000) rate = 0.10;
+      else if (x < 200000) rate = 0.12;
+      else rate = 0.14;
+
+      // Mild location adjustment (not state-tax accurate; just a coarse proxy)
+      const lf = Number(locFactor || 1);
+      const adj = clamp((lf - 1) * 0.02, -0.03, 0.03);
+      rate = clamp(rate + adj, 0.05, 0.20);
+
+      return x * rate;
+    }
+
+    function getLocationById(id){ return LOCATIONS.find(l => l.id === id) || LOCATIONS[0]; }
+
+    // Core defaulting engine:
+    // 1) Determine target spending (replacement-rate recommended, or percent-of-income baseline)
+    // 2) Allocate across categories using income-band table
+    // 3) Apply location factor sensitivity
+    // 4) Apply housing/healthcare mode adjustments
+    // 5) Apply household scaling ONLY to variable categories
+    // 6) If taxes are estimated, overwrite taxes using a simple bracket estimate
+    function computeDefaultsMonthly({
+      incomeAnnual,
+      mode,
+      replacementRatePct,
+      householdSize,
+      housingMode,
+      healthcareMode,
+      taxMode,
+      locationFactor
+    }){
+      const inc = clamp(incomeAnnual, 0, 100_000_000);
+      const rr = clamp(replacementRatePct, 0, 200) / 100;
+      const loc = Number(locationFactor || 1);
+
+      // Target spending
+      const targetAnnual = (mode === "replacement") ? (inc * rr) : inc; // "income" mode uses 100% of income as baseline envelope
+      const targetMonthly = targetAnnual / 12;
+
+      // Allocation band determined from INCOME (not target) so band stays tied to household means, not replacement knob.
+      const band = pickBand(inc);
+      const p = band.pcts;
+
+      const v = {};
+      for (const cat of CATEGORIES){
+        const pct = p[cat.key] ?? 0;
+        v[cat.key] = targetMonthly * pct;
+      }
+
+      // Location factor application (weighted)
+      for (const cat of CATEGORIES){
+        const w = FACTOR_WEIGHTS[cat.key] ?? 0.7;
+        const factor = 1 + (loc - 1) * w;
+        v[cat.key] = v[cat.key] * factor;
+      }
+
+      // Housing mode adjustments (fixed)
+      if (housingMode === "ownNoMortgage") v.housing *= 0.62;
+      if (housingMode === "rent") v.housing *= 1.05;
+
+      // Healthcare mode adjustments (mostly fixed)
+      if (healthcareMode === "medicareLean") v.healthcare *= 0.82;
+      if (healthcareMode === "medicareRich") v.healthcare *= 1.20;
+
+      // Household scaling ONLY variable categories
+      const h = householdScalar(householdSize);
+      for (const cat of CATEGORIES){
+        if (cat.fixed) continue;
+        // Apply gentle scaling (food more, transport moderate, leisure moderate, gifts/other small)
+        if (cat.key === "food") v[cat.key] *= h;
+        else if (cat.key === "transport") v[cat.key] *= (1 + (h - 1) * 0.55);
+        else if (cat.key === "leisure") v[cat.key] *= (1 + (h - 1) * 0.45);
+        else if (cat.key === "gifts") v[cat.key] *= (1 + (h - 1) * 0.40);
+        else if (cat.key === "other") v[cat.key] *= (1 + (h - 1) * 0.35);
+        else v[cat.key] *= (1 + (h - 1) * 0.30);
+      }
+
+      // Taxes: manual keeps the allocated value; estimate overwrites with bracket estimate (annual → monthly)
+      if (taxMode === "estimate"){
+        const taxesA = estimateTaxesAnnualSimple(targetAnnual, loc);
+        v.taxes = taxesA / 12;
+      }
+
+      // Round
+      for (const k of Object.keys(v)) v[k] = Math.round(v[k]);
+
+      return { valuesMonthly: v, bandName: band.name, targetAnnual };
+    }
 
     const state = {
       locationId: LOCATIONS[0].id,
-      values: structuredClone(BASELINE),
+      incomeAnnual: 80000,
+      spendMode: "replacement",
+      replacementRatePct: 75,
+      values: {},
+
       include: Object.fromEntries(CATEGORIES.map(c => [c.key, true])),
       household: 2,
       housingMode: "ownMortgage",
       healthcareMode: "medicareStandard",
-      taxMode: "estimate",
+      taxMode: "manual",
       showAdvanced: false,
       annualize: true
     };
 
+    // Elements
     const elLocation = document.getElementById("location");
     const elApply = document.getElementById("applyDefaults");
     const elReset = document.getElementById("resetNational");
@@ -975,11 +1139,16 @@
     const elMeta = document.getElementById("locationMeta");
     const elLastApplied = document.getElementById("lastApplied");
     const elHousehold = document.getElementById("household");
+    const elIncome = document.getElementById("householdIncome");
+    const elSpendMode = document.getElementById("spendMode");
+    const elReplacementRate = document.getElementById("replacementRate");
+    const elReplacementRateLabel = document.getElementById("replacementRateLabel");
     const elHousingMode = document.getElementById("housingMode");
     const elHealthcareMode = document.getElementById("healthcareMode");
     const elTaxMode = document.getElementById("taxMode");
     const elShowAdvanced = document.getElementById("showAdvanced");
     const elAnnualize = document.getElementById("annualize");
+    const elModeSummary = document.getElementById("modeSummary");
 
     const elTotalMonthly = document.getElementById("totalMonthly");
     const elTotalAnnual = document.getElementById("totalAnnual");
@@ -1009,70 +1178,28 @@
       });
 
       let currentRegion = null;
+      let currentOptGroup = null;
+
       for (const loc of sorted){
         if (loc.region !== currentRegion){
           currentRegion = loc.region;
-          const og = document.createElement("optgroup");
-          og.label = currentRegion;
-          elLocation.appendChild(og);
+          currentOptGroup = document.createElement("optgroup");
+          currentOptGroup.label = currentRegion;
+          elLocation.appendChild(currentOptGroup);
         }
         const opt = document.createElement("option");
         opt.value = loc.id;
         opt.textContent = loc.name;
-        elLocation.lastElementChild.appendChild(opt);
+        currentOptGroup.appendChild(opt);
       }
+
       elLocation.value = state.locationId;
       refreshMeta();
     }
 
-    function getLocation(){ return LOCATIONS.find(l => l.id === state.locationId) || LOCATIONS[0]; }
     function refreshMeta(){
-      const loc = getLocation();
+      const loc = getLocationById(state.locationId);
       elMeta.textContent = `Location factor: ${loc.factor.toFixed(2)} • Region: ${loc.region}`;
-    }
-
-    function applyLocationDefaults(){
-      const loc = getLocation();
-      const h = householdScalar(state.household);
-      const v = {};
-      for (const cat of CATEGORIES){
-        const base = BASELINE[cat.key];
-        const w = FACTOR_WEIGHTS[cat.key] ?? 0.7;
-        const categoryFactor = 1 + (loc.factor - 1) * w;
-        v[cat.key] = base * categoryFactor;
-      }
-
-      v.food *= h;
-      v.transport *= (1 + (h - 1) * 0.55);
-      v.leisure *= (1 + (h - 1) * 0.45);
-      v.utilities *= (1 + (h - 1) * 0.35);
-      v.gifts *= (1 + (h - 1) * 0.40);
-      v.other *= (1 + (h - 1) * 0.35);
-
-      if (state.housingMode === "ownNoMortgage") v.housing *= 0.62;
-      if (state.housingMode === "rent") v.housing *= 1.05;
-
-      if (state.healthcareMode === "medicareLean") v.healthcare *= 0.82;
-      if (state.healthcareMode === "medicareRich") v.healthcare *= 1.20;
-
-      if (state.taxMode === "estimate"){
-        const pretax = (v.housing + v.utilities + v.food + v.transport + v.healthcare + v.leisure + v.insurance + v.gifts + v.other);
-        const pct = clamp(0.07 + (loc.factor - 1) * 0.03, 0.05, 0.12);
-        v.taxes = pretax * pct;
-      } else {
-        v.taxes = state.values.taxes;
-      }
-
-      for (const k of Object.keys(v)) v[k] = Math.round(v[k]);
-      state.values = v;
-      elLastApplied.textContent = `Defaults: applied (${loc.name})`;
-      render();
-    }
-
-    function resetNational(){
-      state.values = structuredClone(BASELINE);
-      elLastApplied.textContent = "Defaults: national baseline";
-      render();
     }
 
     function computeTotals(){
@@ -1092,6 +1219,36 @@
         monthly += Number(state.values[cat.key] || 0);
       }
       return { monthly, annual: monthly * 12 };
+    }
+
+    function applyDefaults(useLocationFactor){
+      const loc = getLocationById(state.locationId);
+      const locFactor = useLocationFactor ? loc.factor : 1;
+
+      const out = computeDefaultsMonthly({
+        incomeAnnual: state.incomeAnnual,
+        mode: state.spendMode,
+        replacementRatePct: state.replacementRatePct,
+        householdSize: state.household,
+        housingMode: state.housingMode,
+        healthcareMode: state.healthcareMode,
+        taxMode: state.taxMode,
+        locationFactor: locFactor
+      });
+
+      state.values = out.valuesMonthly;
+
+      const modeText = (state.spendMode === "replacement")
+        ? `Replacement-rate mode: ${state.replacementRatePct}% of income`
+        : "Income-allocation mode: 100% of income envelope";
+
+      elModeSummary.textContent = `${modeText} • Band: ${out.bandName} • Target: ${money(out.targetAnnual)} / yr`;
+
+      elLastApplied.textContent = useLocationFactor
+        ? `Defaults: applied (${loc.name})`
+        : `Defaults: applied (no location factor)`;
+
+      render();
     }
 
     function renderRows(){
@@ -1125,7 +1282,8 @@
         dot.style.background = cat.color;
 
         const label = document.createElement("div");
-        label.innerHTML = `<div>${cat.label}</div><div class="small muted">${cat.key}</div>`;
+        const fixedTag = cat.fixed ? "fixed" : "variable";
+        label.innerHTML = `<div>${cat.label}</div><div class="small muted">${cat.key} • ${fixedTag}</div>`;
         tdCat.appendChild(dot);
         tdCat.appendChild(label);
 
@@ -1174,16 +1332,20 @@
         elRows.appendChild(tr);
       }
 
-      const basic = CATEGORIES.filter(c => !c.advanced);
-      const advanced = CATEGORIES.filter(c => c.advanced);
+      const fixedCats = CATEGORIES.filter(c => c.fixed);
+      const varCats = CATEGORIES.filter(c => !c.fixed);
 
-      addSection("Basic categories", "Shown by default");
-      for (const cat of basic) addCategoryRow(cat);
+      addSection("Fixed-ish costs", "Generally less sensitive to household size; validate housing/healthcare/taxes");
+      for (const cat of fixedCats){
+        if (!cat.advanced || showAdv) addCategoryRow(cat);
+      }
 
-      if (showAdv){
-        addSection("Advanced categories", "Optional (still included in totals when hidden)");
-        for (const cat of advanced) addCategoryRow(cat);
-      } else {
+      addSection("Variable costs", "More sensitive to household size and lifestyle choices");
+      for (const cat of varCats){
+        if (!cat.advanced || showAdv) addCategoryRow(cat);
+      }
+
+      if (!showAdv){
         addSection("Advanced categories", "Hidden — totals still include them. Enable “Show advanced categories” to edit.");
       }
     }
@@ -1270,12 +1432,16 @@
     }
 
     function exportJson(){
+      const loc = getLocationById(state.locationId);
       const payload = {
-        version: "1.0",
+        version: "2.0",
         timestamp: new Date().toISOString(),
-        location: getLocation(),
+        location: loc,
         assumptions: {
           household: state.household,
+          householdIncomeAnnual: state.incomeAnnual,
+          spendMode: state.spendMode,
+          replacementRatePct: state.replacementRatePct,
           housingMode: state.housingMode,
           healthcareMode: state.healthcareMode,
           taxMode: state.taxMode
@@ -1302,50 +1468,105 @@
       renderTotals();
       drawChart();
       renderFuture();
+
+      // Replacement rate label
+      elReplacementRateLabel.textContent = `${state.replacementRatePct}% target`;
+
+      // Mode summary if not set yet (e.g., before first Apply)
+      if (!elModeSummary.textContent || elModeSummary.textContent === "—"){
+        const band = pickBand(state.incomeAnnual);
+        const modeText = (state.spendMode === "replacement")
+          ? `Replacement-rate mode: ${state.replacementRatePct}% of income`
+          : "Income-allocation mode: 100% of income envelope";
+        const targetAnnual = (state.spendMode === "replacement")
+          ? state.incomeAnnual * (state.replacementRatePct/100)
+          : state.incomeAnnual;
+        elModeSummary.textContent = `${modeText} • Band: ${band.name} • Target: ${money(targetAnnual)} / yr`;
+      }
     }
 
+    // Wiring
+    document.getElementById("applyDefaults").addEventListener("click", () => applyDefaults(true));
+    document.getElementById("resetNational").addEventListener("click", () => applyDefaults(false));
+
     elLocation.addEventListener("change", () => { state.locationId = elLocation.value; refreshMeta(); });
-    elApply.addEventListener("click", applyLocationDefaults);
-    elReset.addEventListener("click", resetNational);
-    elHousehold.addEventListener("input", () => {
-      state.household = clamp(elHousehold.value, 1, 6);
-      renderTotals(); drawChart(); renderFuture();
+
+    elHousehold.addEventListener("input", () => { state.household = clamp(elHousehold.value, 1, 6); });
+
+    elIncome.addEventListener("input", () => {
+      state.incomeAnnual = clamp(elIncome.value, 0, 100_000_000);
     });
-    elHousingMode.addEventListener("change", () => state.housingMode = elHousingMode.value);
-    elHealthcareMode.addEventListener("change", () => state.healthcareMode = elHealthcareMode.value);
-    elTaxMode.addEventListener("change", () => {
-      state.taxMode = elTaxMode.value;
-      if (state.taxMode === "estimate"){
-        const loc = getLocation();
-        const pretax = (
-          (state.values.housing||0) + (state.values.utilities||0) + (state.values.food||0) +
-          (state.values.transport||0) + (state.values.healthcare||0) + (state.values.leisure||0) +
-          (state.values.insurance||0) + (state.values.gifts||0) + (state.values.other||0)
-        );
-        const pct = clamp(0.07 + (loc.factor - 1) * 0.03, 0.05, 0.12);
-        state.values.taxes = Math.round(pretax * pct);
-      }
-      render();
+
+    elSpendMode.addEventListener("change", () => {
+      state.spendMode = elSpendMode.value;
     });
+
+    elReplacementRate.addEventListener("input", () => {
+      state.replacementRatePct = clamp(elReplacementRate.value, 0, 200);
+      elReplacementRateLabel.textContent = `${state.replacementRatePct}% target`;
+    });
+
+    elHousingMode.addEventListener("change", () => { state.housingMode = elHousingMode.value; });
+    elHealthcareMode.addEventListener("change", () => { state.healthcareMode = elHealthcareMode.value; });
+    elTaxMode.addEventListener("change", () => { state.taxMode = elTaxMode.value; });
+
     elShowAdvanced.addEventListener("change", () => { state.showAdvanced = elShowAdvanced.checked; render(); });
     elAnnualize.addEventListener("change", () => { state.annualize = elAnnualize.checked; render(); });
+
     elInflation.addEventListener("input", renderFuture);
     elYears.addEventListener("input", renderFuture);
+
     elDownloadJson.addEventListener("click", exportJson);
 
+    // Boot
     (function boot(){
       initLocations();
+
+      // Defaults
+      state.locationId = LOCATIONS[0].id;
+      state.household = 2;
+      state.incomeAnnual = 80000;
+      state.spendMode = "replacement";
+      state.replacementRatePct = 75;
+      state.housingMode = "ownMortgage";
+      state.healthcareMode = "medicareStandard";
+      state.taxMode = "manual";
+      state.showAdvanced = false;
+      state.annualize = true;
+
+      // Set UI
       elShowAdvanced.checked = state.showAdvanced;
       elAnnualize.checked = state.annualize;
-      document.getElementById("household").value = state.household;
-      document.getElementById("housingMode").value = state.housingMode;
-      document.getElementById("healthcareMode").value = state.healthcareMode;
-      document.getElementById("taxMode").value = state.taxMode;
+      elHousehold.value = state.household;
+      elIncome.value = state.incomeAnnual;
+      elSpendMode.value = state.spendMode;
+      elReplacementRate.value = state.replacementRatePct;
+      elReplacementRateLabel.textContent = `${state.replacementRatePct}% target`;
+      elHousingMode.value = state.housingMode;
+      elHealthcareMode.value = state.healthcareMode;
+      elTaxMode.value = state.taxMode;
+
+      // Initialize with a national (no-location) default so table isn't empty
+      const out = computeDefaultsMonthly({
+        incomeAnnual: state.incomeAnnual,
+        mode: state.spendMode,
+        replacementRatePct: state.replacementRatePct,
+        householdSize: state.household,
+        housingMode: state.housingMode,
+        healthcareMode: state.healthcareMode,
+        taxMode: state.taxMode,
+        locationFactor: 1
+      });
+      state.values = out.valuesMonthly;
+
+      elLastApplied.textContent = "Defaults: applied (no location factor)";
+      elModeSummary.textContent = `Replacement-rate mode: ${state.replacementRatePct}% of income • Band: ${out.bandName} • Target: ${money(out.targetAnnual)} / yr`;
+
       render();
     })();
 
     // ============================================================
-    // TAB 2: Projection Dashboard (UPDATED: Today-$ lines)
+    // TAB 2: Projection Dashboard (unchanged from your prior version)
     // ============================================================
     window.__proj = (function(){
       var RMD_LIFE_EXPECTANCY = {
@@ -1359,7 +1580,7 @@
       var dollarsFmt = new Intl.NumberFormat("en-US", { style:"currency", currency:"USD" });
       function formatDollars(amount){ return dollarsFmt.format(Number(amount||0)); }
 
-      var SETTINGS_KEY = "retirement_dashboard_settings_v9"; // bumped
+      var SETTINGS_KEY = "retirement_dashboard_settings_v9";
       var ACCOUNTS_KEY = "retirement_dashboard_accounts_v1";
 
       function loadJson(key){
@@ -1574,12 +1795,6 @@
         return estimateSocialSecurityAnnual(num("workIncome"), num("yearsWorked"));
       }
 
-      function getPensionAnnualIfEnabled(){
-        var enabled=!!byId("enablePension").checked;
-        if(!enabled) return 0;
-        return num("pension");
-      }
-
       function updateToggleUI(){
         setCollapsed(byId("pensionCollapse"), !byId("enablePension").checked);
         var ssEnabled=!!byId("enableSS").checked;
@@ -1697,6 +1912,12 @@
 
         byId("chartTitle").textContent=getDrawdownTitle(sel);
 
+        if (typeof Chart === "undefined") {
+          byId("chartWrap").style.display = "block";
+          byId("chartTitle").textContent = getDrawdownTitle(sel) + " — Chart unavailable (Chart.js blocked).";
+          return;
+        }
+
         var ctx=byId("drawdownCanvas").getContext("2d");
         if(chartInstance){ chartInstance.destroy(); chartInstance=null; }
 
@@ -1744,7 +1965,6 @@
         return null;
       }
 
-      // NEW: Convert a retirement-year nominal annual cashflow to "today $" using inflation and years-to-retire
       function toTodaysDollars(nominalAnnual){
         var infl = Number(last.inflation || 0);
         var y = Number(last.yearsToRetire || 0);
@@ -1781,15 +2001,14 @@
         byId("otherIncomePill").textContent = "Other income: " + formatDollars(last.otherIncomeAnnual) + "/yr";
 
         byId("outDistributionNominal").textContent = formatDollars(distNom) + " / yr";
-        byId("outDistributionTodayLine").textContent = "Today $: " + formatDollars(distToday) + " / yr";
+        byId("outDistributionToday").textContent = formatDollars(distToday) + " / yr";
 
         byId("outTotalIncomeNominal").textContent = formatDollars(totalNom) + " / yr";
-        byId("outTotalIncomeTodayLine").textContent = "Today $: " + formatDollars(totalToday) + " / yr";
+        byId("outTotalIncomeToday").textContent = formatDollars(totalToday) + " / yr";
 
         var rem = remainingFor(nominal, wIdx);
         byId("outRemaining").textContent = (rem === null) ? "—" : formatDollars(rem);
 
-        // Keep drawdown selector in sync with sliders
         var drawdownIndex = (sIdx * 3) + wIdx;
         byId("drawdownSelector").value = String(drawdownIndex);
         if (byId("chartWrap").style.display !== "none") renderDrawdownChart();
@@ -1855,7 +2074,6 @@
           uiWithdrawalIndex: getWithdrawalIndex()
         });
 
-        // Drawdowns
         var years=[];
         for(var age=retirementAge; age<=deathAge; age++) years.push(age);
 
@@ -1989,3 +2207,4 @@
   </script>
 </body>
 </html>
+
