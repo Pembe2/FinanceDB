@@ -1,0 +1,1991 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Retirement Toolkit</title>
+
+  <!-- Chart.js (Projection tab drawdown chart) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#0b1220;
+      --muted:#8aa0c6;
+      --text:#eaf0ff;
+      --line:rgba(255,255,255,.10);
+
+      --accent: rgba(122,162,255,.22);
+      --accentBorder: rgba(122,162,255,.45);
+      --dangerBg: rgba(255,107,107,.12);
+      --dangerBorder: rgba(255,107,107,.35);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background: radial-gradient(1200px 700px at 20% -10%, rgba(122,162,255,.22), transparent 55%),
+                  radial-gradient(1000px 650px at 95% 10%, rgba(88,209,167,.16), transparent 50%),
+                  var(--bg);
+      color:var(--text);
+      line-height:1.35;
+    }
+
+    header{
+      padding:22px 18px 10px;
+      max-width:1160px;
+      margin:0 auto;
+    }
+    h1{margin:0 0 6px;font-size:22px;letter-spacing:.2px;}
+    header p{margin:0;color:var(--muted);max-width:72ch}
+
+    /* Tabs */
+    .tabsBar{
+      max-width:1160px;
+      margin:10px auto 0;
+      padding:0 18px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .tabBtn{
+      color:var(--text);
+      background: rgba(255,255,255,.05);
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px 12px;
+      cursor:pointer;
+      transition: transform .04s ease, background .12s ease, border-color .12s ease;
+      user-select:none;
+      font-weight:700;
+    }
+    .tabBtn:hover{background: rgba(122,162,255,.18); border-color: rgba(122,162,255,.45)}
+    .tabBtn:active{transform: translateY(1px)}
+    .tabBtn[aria-selected="true"]{
+      background: rgba(122,162,255,.22);
+      border-color: rgba(122,162,255,.55);
+      box-shadow: 0 0 0 3px rgba(122,162,255,.14);
+    }
+
+    .wrap{
+      max-width:1160px;
+      margin:0 auto;
+      padding:14px 18px 26px;
+    }
+
+    .spendingMain{
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap:14px;
+    }
+    @media (max-width: 980px){ .spendingMain{grid-template-columns:1fr} }
+
+    .projMain{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:14px;
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .row.space{justify-content:space-between}
+
+    label{font-size:12px;color:var(--muted)}
+    select,input,button{font:inherit}
+
+    input[type="number"], input[type="text"]{
+      color:var(--text);
+      background: rgba(255,255,255,.04);
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:10px 10px;
+      outline:none;
+      min-width:140px;
+    }
+
+    input[type="range"]{
+      width: 100%;
+      max-width: 520px;
+      accent-color: rgba(122,162,255,.85);
+    }
+
+    select{
+      color:#eaf0ff;
+      background: rgba(255,255,255,.08);
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:10px 10px;
+      outline:none;
+      min-width: 280px;
+    }
+    select option{
+      color:#0b1220;
+      background:#ffffff;
+    }
+
+    input:focus,select:focus{
+      border-color: rgba(122,162,255,.65);
+      box-shadow: 0 0 0 3px rgba(122,162,255,.18);
+    }
+
+    .btn{
+      color:var(--text);
+      background: rgba(122,162,255,.16);
+      border:1px solid rgba(122,162,255,.35);
+      border-radius:12px;
+      padding:10px 12px;
+      cursor:pointer;
+      transition: transform .04s ease, background .12s ease, border-color .12s ease;
+      user-select:none;
+      font-weight:700;
+    }
+    .btn:hover{background: rgba(122,162,255,.22); border-color: rgba(122,162,255,.55)}
+    .btn:active{transform: translateY(1px)}
+    .btn.secondary{ background: rgba(255,255,255,.05); border-color: var(--line); }
+    .btn.danger{
+      background: var(--dangerBg);
+      border-color: var(--dangerBorder);
+    }
+    .btn.danger:hover{
+      background: rgba(255,107,107,.16);
+      border-color: rgba(255,107,107,.50);
+    }
+
+    .pill{
+      font-size:12px;
+      color: var(--muted);
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:6px 10px;
+      background: rgba(255,255,255,.03);
+      white-space:nowrap;
+    }
+
+    .grid2{display:grid;grid-template-columns: 1fr 1fr;gap:10px;}
+    @media (max-width: 520px){
+      .grid2{grid-template-columns:1fr}
+      select,input[type="number"], input[type="text"]{min-width: 100%}
+    }
+
+    .hr{height:1px;background:var(--line);margin:12px 0}
+
+    table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      overflow:hidden;
+      border:1px solid var(--line);
+      border-radius:12px;
+    }
+    thead th{
+      text-align:left;
+      font-size:12px;
+      color:var(--muted);
+      background: rgba(255,255,255,.03);
+      padding:10px 10px;
+      border-bottom:1px solid var(--line);
+    }
+    tbody td{
+      padding:10px 10px;
+      border-bottom:1px solid var(--line);
+      vertical-align:middle;
+    }
+    tbody tr:last-child td{border-bottom:none}
+    tbody tr.selected{ background: rgba(255,255,255,.05); }
+
+    .muted{color:var(--muted)}
+    .right{text-align:right}
+    .toggle{display:flex; gap:8px; align-items:center; font-size:12px; color:var(--muted);}
+    .toggle input{width:16px;height:16px}
+
+    .kpi{display:grid;grid-template-columns: 1fr 1fr;gap:10px;}
+    .kpi .box{
+      background: rgba(255,255,255,.03);
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:12px;
+    }
+    .kpi .value{font-size:20px;margin-top:6px;letter-spacing:.2px;}
+    .small{font-size:12px}
+    .canvasWrap{
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px;
+      background: rgba(255,255,255,.02);
+    }
+    .note{margin:10px 0 0;color:var(--muted);font-size:12px;}
+    .badge{
+      display:inline-block;
+      padding:5px 8px;
+      border-radius:999px;
+      font-size:12px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      color: var(--muted);
+    }
+
+    .sectionRow td{
+      background: rgba(255,255,255,.03);
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: .2px;
+      font-weight: 700;
+      padding: 10px 10px;
+    }
+    .sectionRow .hint{
+      font-weight: 500;
+      opacity: .9;
+    }
+
+    .hintBox{
+      margin-top: 8px;
+      padding: 10px;
+      border: 1px dashed rgba(255,255,255,0.18);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+    .collapse{
+      overflow: hidden;
+      transition: max-height 180ms ease, opacity 180ms ease, margin-top 180ms ease;
+      max-height: 1200px;
+      opacity: 1;
+      margin-top: 8px;
+    }
+    .collapse.is-collapsed{
+      max-height: 0;
+      opacity: 0;
+      margin-top: 0;
+    }
+    .chartWrap{
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px;
+      background: rgba(255,255,255,.02);
+    }
+
+    .modalOverlay{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 1000;
+    }
+    .modalOverlay.show{ display:flex; }
+    .modal{
+      width: min(720px, 100%);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    .modalHeader{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:10px;
+    }
+    .modalTitle{ font-weight:800; font-size:16px; }
+    .modalGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    @media (max-width: 640px){ .modalGrid{grid-template-columns:1fr} }
+    .modalFooter{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      margin-top:12px;
+    }
+
+    .tabPanel{ display:none; }
+    .tabPanel.active{ display:block; }
+
+    .metricGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    @media (max-width: 980px){ .metricGrid{ grid-template-columns: 1fr; } }
+    .metricBox{
+      background: rgba(255,255,255,.03);
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:12px;
+    }
+    .metricTitle{ font-size:12px; color:var(--muted); }
+    .metricValue{ font-size:20px; margin-top:6px; letter-spacing:.2px; }
+    .sliderRow{
+      display:grid;
+      grid-template-columns: 220px 1fr 220px;
+      gap:10px;
+      align-items:center;
+    }
+    @media (max-width: 980px){
+      .sliderRow{ grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Retirement Toolkit</h1>
+    <p>
+      Two tools in one page: a retirement spending estimator and a retirement projection dashboard. Your settings persist locally in your browser.
+    </p>
+  </header>
+
+  <nav class="tabsBar" role="tablist" aria-label="Retirement toolkit tabs">
+    <button class="tabBtn" id="tabSpending" role="tab" aria-selected="true" aria-controls="panelSpending" type="button">
+      Spending Estimator
+    </button>
+    <button class="tabBtn" id="tabProjection" role="tab" aria-selected="false" aria-controls="panelProjection" type="button">
+      Projection Dashboard
+    </button>
+  </nav>
+
+  <div class="wrap">
+    <!-- TAB 1: Spending Estimator -->
+    <section id="panelSpending" class="tabPanel active" role="tabpanel" aria-labelledby="tabSpending">
+      <div class="spendingMain">
+        <section class="card" aria-label="Inputs">
+          <div class="row space">
+            <div>
+              <label for="location">Retirement location</label><br/>
+              <select id="location" aria-label="Retirement location"></select>
+            </div>
+
+            <div class="row">
+              <button class="btn" id="applyDefaults" type="button">Apply location defaults</button>
+              <button class="btn secondary" id="resetNational" type="button">Reset to national baseline</button>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="grid2" role="group" aria-label="Household assumptions">
+            <div>
+              <label for="household">Household size</label><br/>
+              <input id="household" type="number" min="1" max="6" step="1" value="2" />
+              <div class="note">Scales groceries, transportation, and discretionary categories.</div>
+            </div>
+
+            <div>
+              <label for="housingMode">Housing situation</label><br/>
+              <select id="housingMode">
+                <option value="ownMortgage">Own (with mortgage/loan)</option>
+                <option value="ownNoMortgage">Own (no mortgage)</option>
+                <option value="rent">Rent</option>
+              </select>
+              <div class="note">Primarily affects the Housing category default.</div>
+            </div>
+
+            <div>
+              <label for="healthcareMode">Healthcare coverage</label><br/>
+              <select id="healthcareMode">
+                <option value="medicareStandard">Medicare + typical supplemental</option>
+                <option value="medicareLean">Medicare (lower supplemental spend)</option>
+                <option value="medicareRich">Medicare (higher out-of-pocket)</option>
+              </select>
+              <div class="note">Adjusts Healthcare defaults.</div>
+            </div>
+
+            <div>
+              <label for="taxMode">Tax approach</label><br/>
+              <select id="taxMode">
+                <option value="estimate">Use a simple estimate</option>
+                <option value="manual">Manual (you will set it)</option>
+              </select>
+              <div class="note">Taxes are a placeholder category; override for accuracy.</div>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="row space">
+            <div class="pill" id="locationMeta">Location factor: —</div>
+            <div class="row">
+              <span class="badge" id="lastApplied">Defaults: not applied</span>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="row space" style="margin-bottom:8px">
+            <div class="toggle">
+              <input id="showAdvanced" type="checkbox" />
+              <label for="showAdvanced">Show advanced categories (Insurance / Taxes / Other)</label>
+            </div>
+
+            <div class="toggle">
+              <input id="annualize" type="checkbox" checked />
+              <label for="annualize">Show annual totals</label>
+            </div>
+          </div>
+
+          <table aria-label="Spending categories table">
+            <thead>
+              <tr>
+                <th style="width:40%">Category</th>
+                <th style="width:20%">Include</th>
+                <th class="right" style="width:20%">Monthly</th>
+                <th class="right" style="width:20%">Annual</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+
+          <p class="note">
+            Defaults are illustrative heuristics (regional cost factor + typical retirement mix). Validate housing, healthcare, and taxes using your own
+            quotes and expected income profile.
+          </p>
+        </section>
+
+        <aside class="card" aria-label="Summary">
+          <div class="kpi" aria-label="Key totals">
+            <div class="box">
+              <div class="small muted">Estimated monthly total</div>
+              <div class="value" id="totalMonthly">$0</div>
+              <div class="small muted" id="perPerson">—</div>
+            </div>
+            <div class="box">
+              <div class="small muted">Estimated annual total</div>
+              <div class="value" id="totalAnnual">$0</div>
+              <div class="small muted" id="avgDaily">—</div>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="row space">
+            <div>
+              <div class="small muted">Spending mix</div>
+              <div class="small muted">Based on included categories</div>
+            </div>
+            <div class="row" style="gap:10px;">
+              <span class="pill" id="advancedSubtotalPill">Advanced subtotal: $0</span>
+              <button class="btn secondary" id="downloadJson" type="button" title="Export your settings as JSON">Export JSON</button>
+            </div>
+          </div>
+
+          <div style="height:10px"></div>
+
+          <div class="canvasWrap">
+            <canvas id="chart" width="520" height="320" aria-label="Spending pie chart" role="img"></canvas>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="grid2">
+            <div>
+              <label for="inflation">Optional: inflation (simple “future $” preview)</label><br/>
+              <input id="inflation" type="number" min="0" max="12" step="0.1" value="2.5" />
+              <div class="note">Used only for the “future $” preview below.</div>
+            </div>
+            <div>
+              <label for="years">Years until retirement</label><br/>
+              <input id="years" type="number" min="0" max="50" step="1" value="0" />
+              <div class="note">Set to 0 if already retired.</div>
+            </div>
+          </div>
+
+          <div style="height:10px"></div>
+
+          <div class="box" style="border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.03);padding:12px">
+            <div class="small muted">Future-dollar preview (same lifestyle, inflated)</div>
+            <div class="value" id="futureMonthly">$0</div>
+            <div class="small muted" id="futureAnnual">—</div>
+          </div>
+
+          <p class="note">Export JSON stores your selection, assumptions, and category values.</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- TAB 2: Projection Dashboard -->
+    <section id="panelProjection" class="tabPanel" role="tabpanel" aria-labelledby="tabProjection">
+      <div class="projMain">
+        <!-- Accounts -->
+        <section class="card">
+          <div class="row space">
+            <div>
+              <div style="font-weight:800; font-size:16px;">Retirement Projection Dashboard</div>
+              <div class="small muted">Accounts + settings persist locally in your browser (localStorage).</div>
+            </div>
+            <button class="btn danger" id="resetBtn" type="button">Reset Saved Data</button>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="row space" style="align-items:flex-end;">
+            <div style="flex:1; min-width:220px;">
+              <label>Account Name</label>
+              <input id="acctName" type="text" placeholder="e.g., 401(k) - Fidelity" style="width:100%;" />
+            </div>
+            <div style="flex:1; min-width:220px;">
+              <label>Balance ($)</label>
+              <input id="acctAmount" type="number" min="0" step="1" placeholder="e.g., 125000" style="width:100%;" />
+            </div>
+            <div style="min-width: 160px;">
+              <button class="btn" id="addAcctBtn" type="button" style="width:100%;">Add</button>
+            </div>
+          </div>
+
+          <div style="height:10px;"></div>
+
+          <div class="row space">
+            <div class="pill">Total retirement balance</div>
+            <div class="pill" id="accountsTotalPill">$0</div>
+          </div>
+
+          <div style="height:10px;"></div>
+
+          <table aria-label="Retirement accounts table">
+            <thead>
+              <tr>
+                <th style="width:44px;"></th>
+                <th>Account</th>
+                <th style="width:190px;">Balance</th>
+                <th style="width:220px; text-align:right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="accountsTbody"></tbody>
+          </table>
+
+          <div class="row" style="justify-content:flex-end; margin-top:10px;">
+            <button class="btn secondary" id="deleteSelectedBtn" type="button">Delete Selected</button>
+          </div>
+        </section>
+
+        <!-- Settings -->
+        <section class="card" aria-label="Projection settings">
+          <div style="font-weight:800; font-size:16px;">Projection Settings</div>
+          <div class="hr"></div>
+
+          <div class="grid2">
+            <div>
+              <label>Current Age</label><br/>
+              <input id="currentAge" type="number" min="18" max="100" step="1" />
+
+              <div style="height:10px;"></div>
+
+              <label>Retirement Age</label><br/>
+              <input id="retirementAge" type="number" min="20" max="100" step="1" />
+
+              <div style="height:10px;"></div>
+
+              <label>Death Age</label><br/>
+              <input id="deathAge" type="number" min="62" max="120" step="1" />
+
+              <div style="height:12px;"></div>
+
+              <div class="toggle">
+                <input id="enablePension" type="checkbox" />
+                <label for="enablePension">Enable Pension</label>
+              </div>
+
+              <div class="collapse" id="pensionCollapse">
+                <label>Pension (Annual, $)</label><br/>
+                <input id="pension" type="number" min="0" max="500000" step="1" />
+              </div>
+            </div>
+
+            <div>
+              <label>Assumed Growth Rate (% pre-retirement)</label><br/>
+              <input id="growthRate" type="number" min="0" max="20" step="0.1" />
+
+              <div style="height:10px;"></div>
+
+              <label>Annual Contribution ($)</label><br/>
+              <input id="annualContribution" type="number" min="0" max="1000000" step="1" />
+
+              <div style="height:10px;"></div>
+
+              <label>Retirement Growth Rate (% during retirement)</label><br/>
+              <input id="retirementGrowth" type="number" min="0" max="20" step="0.1" />
+
+              <div style="height:10px;"></div>
+
+              <label>Inflation (% for “Today $”)</label><br/>
+              <input id="inflationProj" type="number" min="0" max="10" step="0.1" />
+
+              <div class="note">
+                Projections use three growth cases: base − 3%, base, base + 3%.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Social Security -->
+        <section class="card" aria-label="Social Security">
+          <div style="font-weight:800; font-size:16px;">Social Security (Simple Estimate)</div>
+          <div class="hr"></div>
+
+          <div class="toggle">
+            <input id="enableSS" type="checkbox" />
+            <label for="enableSS">Enable Social Security</label>
+          </div>
+
+          <div class="collapse" id="ssCollapse">
+            <div class="grid2" style="margin-top:8px;">
+              <div>
+                <label>Current Annual Income While Working ($)</label><br/>
+                <input id="workIncome" type="number" min="0" step="1" placeholder="e.g., 120000" />
+
+                <div style="height:10px;"></div>
+
+                <label>Years Worked (used for scaling up to 35 years)</label><br/>
+                <input id="yearsWorked" type="number" min="0" max="45" step="1" />
+
+                <div style="height:12px;"></div>
+
+                <div class="toggle">
+                  <input id="useSSOverride" type="checkbox" />
+                  <label for="useSSOverride">Override estimated benefit</label>
+                </div>
+
+                <div style="height:8px;"></div>
+
+                <label>Override Annual Social Security Benefit ($)</label><br/>
+                <input id="ssOverride" type="number" min="0" step="1" placeholder="e.g., 30000" />
+
+                <div class="hintBox">
+                  Annual SS ≈ 40% × Working Income × min(1, YearsWorked / 35), capped at $50,000.
+                  This is intentionally simplified for planning purposes.
+                </div>
+              </div>
+
+              <div>
+                <div class="pill" id="ssEstimatedPill">$0 / year (est.)</div>
+                <div class="note" style="margin-top:8px;">
+                  When enabled, Social Security is added to “other income” alongside pension and reduces portfolio withdrawals in drawdown projections.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pill" id="ssDisabledPill" style="display:none;">$0 / year (disabled)</div>
+        </section>
+
+        <!-- Projection Output -->
+        <section class="card" aria-label="Projection output">
+          <div class="row space">
+            <div>
+              <div style="font-weight:800; font-size:16px;">Projection Output</div>
+              <div class="small muted">Use the sliders to select scenario and distribution method.</div>
+            </div>
+            <div class="pill" id="scenarioPill">Scenario: —</div>
+          </div>
+
+          <div class="hr"></div>
+
+          <!-- Scenario slider -->
+          <div class="sliderRow">
+            <div>
+              <label for="scenarioSlider">Projection scenario</label><br/>
+              <div class="small muted" id="scenarioLabel">—</div>
+            </div>
+            <div>
+              <input id="scenarioSlider" type="range" min="0" max="2" step="1" value="1" aria-label="Projection scenario slider" />
+              <div class="row space small muted">
+                <span>Minimum</span><span>Medium</span><span>Maximum</span>
+              </div>
+            </div>
+            <div class="pill" id="scenarioRatesPill">Growth: —</div>
+          </div>
+
+          <div class="hr"></div>
+
+          <!-- No "today's dollars" portfolio growth here -->
+          <div class="metricGrid" aria-label="Key projection metrics">
+            <div class="metricBox">
+              <div class="metricTitle">Current Portfolio Total</div>
+              <div class="metricValue" id="outCurrentPortfolio">$0</div>
+              <div class="small muted">Sum of account balances</div>
+            </div>
+            <div class="metricBox">
+              <div class="metricTitle">Portfolio Growth at Retirement</div>
+              <div class="metricValue" id="outFVNominal">$0</div>
+              <div class="small muted">Nominal future value at retirement</div>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+
+          <!-- Distribution method slider -->
+          <div class="sliderRow">
+            <div>
+              <label for="withdrawalSlider">Distribution method</label><br/>
+              <div class="small muted" id="withdrawalLabel">—</div>
+            </div>
+            <div>
+              <input id="withdrawalSlider" type="range" min="0" max="2" step="1" value="0" aria-label="Distribution method slider" />
+              <div class="row space small muted">
+                <span>RMD</span><span>4%</span><span>Max</span>
+              </div>
+            </div>
+            <div class="pill" id="otherIncomePill">Other income: $0/yr</div>
+          </div>
+
+          <div style="height:10px;"></div>
+
+          <!-- Today's dollars outputs (requested) -->
+          <div class="metricGrid" aria-label="Distribution outputs">
+            <div class="metricBox">
+              <div class="metricTitle">Distribution Amount (Portfolio only)</div>
+              <div class="metricValue" id="outDistributionNominal">$0</div>
+              <div class="small muted" id="outDistributionTodayLine">Today $: —</div>
+            </div>
+            <div class="metricBox">
+              <div class="metricTitle">Total Retirement Income (Distribution + Pension + Social Security)</div>
+              <div class="metricValue" id="outTotalIncomeNominal">$0</div>
+              <div class="small muted" id="outTotalIncomeTodayLine">Today $: —</div>
+            </div>
+          </div>
+
+          <div style="height:10px;"></div>
+
+          <div class="metricBox">
+            <div class="metricTitle">Remaining Portfolio at Death (if applicable)</div>
+            <div class="metricValue" id="outRemaining">$—</div>
+            <div class="small muted">Shown for RMD and 4% methods (simplified)</div>
+          </div>
+        </section>
+
+        <!-- Drawdown Chart -->
+        <section class="card">
+          <div class="row space" style="align-items:center;">
+            <div>
+              <div style="font-weight:800; font-size:16px;">Drawdown Chart</div>
+              <div class="small muted">Portfolio balance path; pension/SS reduce withdrawals when enabled.</div>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="row" style="justify-content:center;">
+            <select id="drawdownSelector" style="width: 740px; max-width: 100%;">
+              <option value="0">Minimum Projection - Required Minimum Distribution (RMD)</option>
+              <option value="1">Minimum Projection - 4% Withdrawal Rule</option>
+              <option value="2">Minimum Projection - Maximum Distribution</option>
+              <option value="3">Medium Projection - Required Minimum Distribution (RMD)</option>
+              <option value="4">Medium Projection - 4% Withdrawal Rule</option>
+              <option value="5">Medium Projection - Maximum Distribution</option>
+              <option value="6">Maximum Projection - Required Minimum Distribution (RMD)</option>
+              <option value="7">Maximum Projection - 4% Withdrawal Rule</option>
+              <option value="8">Maximum Projection - Maximum Distribution</option>
+            </select>
+            <button class="btn" id="viewDrawdownBtn" type="button">View Drawdown Chart</button>
+          </div>
+
+          <div style="height:10px;"></div>
+
+          <div class="chartWrap" id="chartWrap" style="display:none;">
+            <div class="small muted" id="chartTitle" style="margin-bottom:8px;"></div>
+            <canvas id="drawdownCanvas" height="140"></canvas>
+          </div>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <!-- Edit Modal (Projection) -->
+  <div class="modalOverlay" id="editModalOverlay">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+      <div class="modalHeader">
+        <div class="modalTitle" id="editModalTitle">Edit Account</div>
+        <button class="btn secondary" id="editModalCloseBtn" type="button">Close</button>
+      </div>
+
+      <div class="modalGrid">
+        <div>
+          <label>Account Name</label><br/>
+          <input id="editAcctName" type="text" />
+        </div>
+        <div>
+          <label>Balance ($)</label><br/>
+          <input id="editAcctAmount" type="number" min="0" step="1" />
+        </div>
+      </div>
+
+      <div class="modalFooter">
+        <button class="btn secondary" id="editCancelBtn" type="button">Cancel</button>
+        <button class="btn" id="editSaveBtn" type="button">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    // Tabs
+    // ============================================================
+    (function(){
+      const tabSpending = document.getElementById("tabSpending");
+      const tabProjection = document.getElementById("tabProjection");
+      const panelSpending = document.getElementById("panelSpending");
+      const panelProjection = document.getElementById("panelProjection");
+
+      function setTab(which){
+        const spendingOn = which === "spending";
+        tabSpending.setAttribute("aria-selected", spendingOn ? "true" : "false");
+        tabProjection.setAttribute("aria-selected", spendingOn ? "false" : "true");
+        panelSpending.classList.toggle("active", spendingOn);
+        panelProjection.classList.toggle("active", !spendingOn);
+        if (!spendingOn && window.__proj && window.__proj.chartInstance) {
+          try { window.__proj.chartInstance.resize(); } catch(e) {}
+        }
+      }
+
+      tabSpending.addEventListener("click", () => setTab("spending"));
+      tabProjection.addEventListener("click", () => setTab("projection"));
+
+      function applyHash(){
+        if (location.hash === "#projection") setTab("projection");
+        else setTab("spending");
+      }
+      window.addEventListener("hashchange", applyHash);
+      applyHash();
+    })();
+
+    // ============================================================
+    // TAB 1: Spending Estimator (unchanged)
+    // ============================================================
+    const LOCATIONS = [
+      { id:"portland_me", name:"Portland, ME", factor:1.12, region:"Northeast" },
+      { id:"portsmouth_nh", name:"Portsmouth, NH", factor:1.22, region:"Northeast" },
+      { id:"burlington_vt", name:"Burlington, VT", factor:1.15, region:"Northeast" },
+      { id:"concord_nh", name:"Concord, NH", factor:1.10, region:"Northeast" },
+      { id:"berkshires_ma", name:"Berkshires (Pittsfield), MA", factor:1.12, region:"Northeast" },
+      { id:"worcester_ma", name:"Worcester, MA", factor:1.15, region:"Northeast" },
+      { id:"providence_ri", name:"Providence, RI", factor:1.12, region:"Northeast" },
+      { id:"mystic_ct", name:"Mystic / SE Connecticut, CT", factor:1.18, region:"Northeast" },
+
+      { id:"albany_ny", name:"Albany / Capital Region, NY", factor:1.06, region:"Mid-Atlantic" },
+      { id:"hudson_valley_ny", name:"Hudson Valley, NY", factor:1.18, region:"Mid-Atlantic" },
+      { id:"buffalo_ny", name:"Buffalo / Amherst, NY", factor:0.93, region:"Mid-Atlantic" },
+      { id:"philadelphia_pa", name:"Philadelphia suburbs, PA", factor:1.08, region:"Mid-Atlantic" },
+      { id:"lancaster_pa", name:"Lancaster, PA", factor:0.98, region:"Mid-Atlantic" },
+      { id:"virginia_beach_va", name:"Virginia Beach, VA", factor:1.02, region:"Mid-Atlantic" },
+
+      { id:"asheville_nc", name:"Asheville, NC", factor:1.02, region:"Southeast" },
+      { id:"wilmington_nc", name:"Wilmington, NC", factor:1.06, region:"Southeast" },
+      { id:"charleston_sc", name:"Charleston, SC", factor:1.10, region:"Southeast" },
+      { id:"greenville_sc", name:"Greenville, SC", factor:0.98, region:"Southeast" },
+      { id:"savannah_ga", name:"Savannah, GA", factor:1.01, region:"Southeast" },
+      { id:"atlanta_suburbs_ga", name:"North Atlanta suburbs, GA", factor:1.08, region:"Southeast" },
+      { id:"st_petersburg_fl", name:"St. Petersburg, FL", factor:1.10, region:"Southeast" },
+      { id:"sarasota_fl", name:"Sarasota, FL", factor:1.12, region:"Southeast" },
+      { id:"naples_fl", name:"Naples, FL", factor:1.30, region:"Southeast" },
+      { id:"the_villages_fl", name:"The Villages, FL", factor:1.06, region:"Southeast" },
+
+      { id:"madison_wi", name:"Madison, WI", factor:1.03, region:"Midwest" },
+      { id:"milwaukee_wi", name:"Milwaukee, WI", factor:0.98, region:"Midwest" },
+      { id:"grand_rapids_mi", name:"Grand Rapids, MI", factor:0.96, region:"Midwest" },
+      { id:"ann_arbor_mi", name:"Ann Arbor, MI", factor:1.10, region:"Midwest" },
+      { id:"columbus_oh", name:"Columbus, OH", factor:0.98, region:"Midwest" },
+      { id:"cincinnati_oh", name:"Cincinnati, OH", factor:0.95, region:"Midwest" },
+      { id:"indianapolis_in", name:"Indianapolis, IN", factor:0.93, region:"Midwest" },
+      { id:"kansas_city_mo", name:"Kansas City, MO", factor:0.92, region:"Midwest" },
+
+      { id:"scottsdale_az", name:"Scottsdale, AZ", factor:1.18, region:"Southwest" },
+      { id:"tucson_az", name:"Tucson, AZ", factor:0.92, region:"Southwest" },
+      { id:"albuquerque_nm", name:"Albuquerque, NM", factor:0.92, region:"Southwest" },
+      { id:"santa_fe_nm", name:"Santa Fe, NM", factor:1.12, region:"Southwest" },
+      { id:"el_paso_tx", name:"El Paso, TX", factor:0.90, region:"Southwest" },
+      { id:"las_cruces_nm", name:"Las Cruces, NM", factor:0.88, region:"Southwest" },
+
+      { id:"palm_springs_ca", name:"Palm Springs, CA", factor:1.24, region:"West" },
+      { id:"san_diego_ca", name:"San Diego, CA", factor:1.42, region:"West" },
+      { id:"sacramento_ca", name:"Sacramento, CA", factor:1.18, region:"West" },
+      { id:"las_vegas_nv", name:"Las Vegas / Henderson, NV", factor:1.03, region:"West" },
+      { id:"reno_nv", name:"Reno, NV", factor:1.10, region:"West" },
+      { id:"phoenix_az", name:"Phoenix, AZ", factor:1.05, region:"West" },
+
+      { id:"portland_or", name:"Portland, OR", factor:1.16, region:"Northwest" },
+      { id:"eugene_or", name:"Eugene, OR", factor:1.05, region:"Northwest" },
+      { id:"spokane_wa", name:"Spokane, WA", factor:1.02, region:"Northwest" },
+
+      { id:"denver_co", name:"Denver / Front Range, CO", factor:1.18, region:"Mountains" },
+      { id:"boise_id", name:"Boise, ID", factor:1.05, region:"Mountains" },
+      { id:"salt_lake_ut", name:"Salt Lake City, UT", factor:1.08, region:"Mountains" }
+    ];
+
+    const CATEGORIES = [
+      { key:"housing",    label:"Housing (rent/mortgage/HOA/property)", color:"#7aa2ff", advanced:false },
+      { key:"utilities",  label:"Utilities (electric, water, internet)", color:"#58d1a7", advanced:false },
+      { key:"food",       label:"Food (groceries + dining)", color:"#ffcc66", advanced:false },
+      { key:"transport",  label:"Transportation (fuel, maintenance, transit)", color:"#c792ea", advanced:false },
+      { key:"healthcare", label:"Healthcare (premiums + out-of-pocket)", color:"#ff6b6b", advanced:false },
+      { key:"leisure",    label:"Leisure & Travel", color:"#4fd1c5", advanced:false },
+      { key:"insurance",  label:"Insurance (home/auto/umbrella)", color:"#a0aec0", advanced:true },
+      { key:"taxes",      label:"Taxes (income / property / local)", color:"#e2e8f0", advanced:true },
+      { key:"gifts",      label:"Gifts & Charity", color:"#f687b3", advanced:false },
+      { key:"other",      label:"Other / Cushion", color:"#fbd38d", advanced:true }
+    ];
+
+    const BASELINE = { housing:1800, utilities:320, food:700, transport:500, healthcare:820, leisure:650, insurance:260, taxes:450, gifts:160, other:300 };
+    const FACTOR_WEIGHTS = { housing:1.25, utilities:0.70, food:0.85, transport:0.80, healthcare:0.60, leisure:0.85, insurance:0.55, taxes:0.90, gifts:0.55, other:0.60 };
+
+    function householdScalar(n){
+      n = Math.max(1, Math.min(6, Number(n || 2)));
+      const map = {1:0.80,2:1.00,3:1.18,4:1.34,5:1.48,6:1.60};
+      return map[n] ?? 1.00;
+    }
+    function money(n){
+      const v = Number(n || 0);
+      return v.toLocaleString(undefined, { style:"currency", currency:"USD", maximumFractionDigits:0 });
+    }
+    function clamp(n, min, max){
+      n = Number(n);
+      if (Number.isNaN(n)) return min;
+      return Math.max(min, Math.min(max, n));
+    }
+
+    const state = {
+      locationId: LOCATIONS[0].id,
+      values: structuredClone(BASELINE),
+      include: Object.fromEntries(CATEGORIES.map(c => [c.key, true])),
+      household: 2,
+      housingMode: "ownMortgage",
+      healthcareMode: "medicareStandard",
+      taxMode: "estimate",
+      showAdvanced: false,
+      annualize: true
+    };
+
+    const elLocation = document.getElementById("location");
+    const elApply = document.getElementById("applyDefaults");
+    const elReset = document.getElementById("resetNational");
+    const elRows = document.getElementById("rows");
+    const elMeta = document.getElementById("locationMeta");
+    const elLastApplied = document.getElementById("lastApplied");
+    const elHousehold = document.getElementById("household");
+    const elHousingMode = document.getElementById("housingMode");
+    const elHealthcareMode = document.getElementById("healthcareMode");
+    const elTaxMode = document.getElementById("taxMode");
+    const elShowAdvanced = document.getElementById("showAdvanced");
+    const elAnnualize = document.getElementById("annualize");
+
+    const elTotalMonthly = document.getElementById("totalMonthly");
+    const elTotalAnnual = document.getElementById("totalAnnual");
+    const elPerPerson = document.getElementById("perPerson");
+    const elAvgDaily = document.getElementById("avgDaily");
+
+    const elInflation = document.getElementById("inflation");
+    const elYears = document.getElementById("years");
+    const elFutureMonthly = document.getElementById("futureMonthly");
+    const elFutureAnnual = document.getElementById("futureAnnual");
+
+    const elDownloadJson = document.getElementById("downloadJson");
+    const elAdvancedSubtotalPill = document.getElementById("advancedSubtotalPill");
+
+    const canvas = document.getElementById("chart");
+    const ctx = canvas.getContext("2d");
+
+    function initLocations(){
+      elLocation.innerHTML = "";
+      const regionOrder = ["Northeast","Mid-Atlantic","Southeast","Midwest","Southwest","West","Northwest","Mountains"];
+      const orderIndex = Object.fromEntries(regionOrder.map((r,i)=>[r,i]));
+      const sorted = [...LOCATIONS].sort((a,b)=>{
+        const ra = orderIndex[a.region] ?? 999;
+        const rb = orderIndex[b.region] ?? 999;
+        if (ra !== rb) return ra - rb;
+        return a.name.localeCompare(b.name);
+      });
+
+      let currentRegion = null;
+      for (const loc of sorted){
+        if (loc.region !== currentRegion){
+          currentRegion = loc.region;
+          const og = document.createElement("optgroup");
+          og.label = currentRegion;
+          elLocation.appendChild(og);
+        }
+        const opt = document.createElement("option");
+        opt.value = loc.id;
+        opt.textContent = loc.name;
+        elLocation.lastElementChild.appendChild(opt);
+      }
+      elLocation.value = state.locationId;
+      refreshMeta();
+    }
+
+    function getLocation(){ return LOCATIONS.find(l => l.id === state.locationId) || LOCATIONS[0]; }
+    function refreshMeta(){
+      const loc = getLocation();
+      elMeta.textContent = `Location factor: ${loc.factor.toFixed(2)} • Region: ${loc.region}`;
+    }
+
+    function applyLocationDefaults(){
+      const loc = getLocation();
+      const h = householdScalar(state.household);
+      const v = {};
+      for (const cat of CATEGORIES){
+        const base = BASELINE[cat.key];
+        const w = FACTOR_WEIGHTS[cat.key] ?? 0.7;
+        const categoryFactor = 1 + (loc.factor - 1) * w;
+        v[cat.key] = base * categoryFactor;
+      }
+
+      v.food *= h;
+      v.transport *= (1 + (h - 1) * 0.55);
+      v.leisure *= (1 + (h - 1) * 0.45);
+      v.utilities *= (1 + (h - 1) * 0.35);
+      v.gifts *= (1 + (h - 1) * 0.40);
+      v.other *= (1 + (h - 1) * 0.35);
+
+      if (state.housingMode === "ownNoMortgage") v.housing *= 0.62;
+      if (state.housingMode === "rent") v.housing *= 1.05;
+
+      if (state.healthcareMode === "medicareLean") v.healthcare *= 0.82;
+      if (state.healthcareMode === "medicareRich") v.healthcare *= 1.20;
+
+      if (state.taxMode === "estimate"){
+        const pretax = (v.housing + v.utilities + v.food + v.transport + v.healthcare + v.leisure + v.insurance + v.gifts + v.other);
+        const pct = clamp(0.07 + (loc.factor - 1) * 0.03, 0.05, 0.12);
+        v.taxes = pretax * pct;
+      } else {
+        v.taxes = state.values.taxes;
+      }
+
+      for (const k of Object.keys(v)) v[k] = Math.round(v[k]);
+      state.values = v;
+      elLastApplied.textContent = `Defaults: applied (${loc.name})`;
+      render();
+    }
+
+    function resetNational(){
+      state.values = structuredClone(BASELINE);
+      elLastApplied.textContent = "Defaults: national baseline";
+      render();
+    }
+
+    function computeTotals(){
+      let monthly = 0;
+      for (const cat of CATEGORIES){
+        if (!state.include[cat.key]) continue;
+        monthly += Number(state.values[cat.key] || 0);
+      }
+      return { monthly, annual: monthly * 12 };
+    }
+
+    function computeAdvancedSubtotal(){
+      let monthly = 0;
+      for (const cat of CATEGORIES){
+        if (!cat.advanced) continue;
+        if (!state.include[cat.key]) continue;
+        monthly += Number(state.values[cat.key] || 0);
+      }
+      return { monthly, annual: monthly * 12 };
+    }
+
+    function renderRows(){
+      elRows.innerHTML = "";
+      const showAdv = state.showAdvanced;
+
+      function addSection(title, hintText){
+        const tr = document.createElement("tr");
+        tr.className = "sectionRow";
+        const td = document.createElement("td");
+        td.colSpan = 4;
+        td.innerHTML = `${title} <span class="hint">— ${hintText}</span>`;
+        tr.appendChild(td);
+        elRows.appendChild(tr);
+      }
+
+      function addCategoryRow(cat){
+        const tr = document.createElement("tr");
+
+        const tdCat = document.createElement("td");
+        tdCat.style.display = "flex";
+        tdCat.style.gap = "10px";
+        tdCat.style.alignItems = "center";
+
+        const dot = document.createElement("span");
+        dot.style.width = "10px";
+        dot.style.height = "10px";
+        dot.style.borderRadius = "999px";
+        dot.style.boxShadow = "0 0 0 3px rgba(255,255,255,.10)";
+        dot.style.flex = "none";
+        dot.style.background = cat.color;
+
+        const label = document.createElement("div");
+        label.innerHTML = `<div>${cat.label}</div><div class="small muted">${cat.key}</div>`;
+        tdCat.appendChild(dot);
+        tdCat.appendChild(label);
+
+        const tdInc = document.createElement("td");
+        const incWrap = document.createElement("div");
+        incWrap.className = "toggle";
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = !!state.include[cat.key];
+        cb.addEventListener("change", () => {
+          state.include[cat.key] = cb.checked;
+          renderTotals();
+          drawChart();
+          renderFuture();
+        });
+        const cbl = document.createElement("label");
+        cbl.textContent = "Include";
+        incWrap.appendChild(cb);
+        incWrap.appendChild(cbl);
+        tdInc.appendChild(incWrap);
+
+        const tdMon = document.createElement("td");
+        tdMon.className = "right";
+        const inp = document.createElement("input");
+        inp.type = "number";
+        inp.min = "0";
+        inp.step = "10";
+        inp.value = Math.round(state.values[cat.key] || 0);
+        inp.style.width = "130px";
+        inp.addEventListener("input", () => {
+          state.values[cat.key] = clamp(inp.value, 0, 1_000_000);
+          renderTotals();
+          drawChart();
+          renderFuture();
+        });
+        tdMon.appendChild(inp);
+
+        const tdAnn = document.createElement("td");
+        tdAnn.className = "right";
+        tdAnn.textContent = state.annualize ? money((Number(state.values[cat.key] || 0) * 12)) : "—";
+
+        tr.appendChild(tdCat);
+        tr.appendChild(tdInc);
+        tr.appendChild(tdMon);
+        tr.appendChild(tdAnn);
+        elRows.appendChild(tr);
+      }
+
+      const basic = CATEGORIES.filter(c => !c.advanced);
+      const advanced = CATEGORIES.filter(c => c.advanced);
+
+      addSection("Basic categories", "Shown by default");
+      for (const cat of basic) addCategoryRow(cat);
+
+      if (showAdv){
+        addSection("Advanced categories", "Optional (still included in totals when hidden)");
+        for (const cat of advanced) addCategoryRow(cat);
+      } else {
+        addSection("Advanced categories", "Hidden — totals still include them. Enable “Show advanced categories” to edit.");
+      }
+    }
+
+    function renderTotals(){
+      const { monthly, annual } = computeTotals();
+      elTotalMonthly.textContent = money(monthly);
+      elTotalAnnual.textContent = money(annual);
+
+      const perPerson = monthly / Math.max(1, Number(state.household || 1));
+      elPerPerson.textContent = `~ ${money(perPerson)} per person / month`;
+
+      const daily = annual / 365;
+      elAvgDaily.textContent = `~ ${money(daily)} per day`;
+
+      const adv = computeAdvancedSubtotal();
+      elAdvancedSubtotalPill.textContent = state.annualize
+        ? `Advanced subtotal: ${money(adv.monthly)} / mo • ${money(adv.annual)} / yr`
+        : `Advanced subtotal: ${money(adv.monthly)} / mo`;
+    }
+
+    function renderFuture(){
+      const { monthly, annual } = computeTotals();
+      const r = clamp(elInflation.value, 0, 12) / 100;
+      const y = clamp(elYears.value, 0, 50);
+      const factor = Math.pow(1 + r, y);
+      const futM = Math.round(monthly * factor);
+      const futA = Math.round(annual * factor);
+      elFutureMonthly.textContent = money(futM);
+      elFutureAnnual.textContent = state.annualize ? `${money(futA)} per year` : "—";
+    }
+
+    function drawChart(){
+      const { monthly } = computeTotals();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.font = "14px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      ctx.fillStyle = "rgba(234,240,255,.92)";
+      ctx.fillText("Monthly Spending Breakdown", 12, 22);
+
+      if (monthly <= 0){
+        ctx.fillStyle = "rgba(138,160,198,.9)";
+        ctx.fillText("No categories included.", 12, 48);
+        return;
+      }
+
+      const segments = [];
+      for (const cat of CATEGORIES){
+        if (!state.include[cat.key]) continue;
+        const v = Number(state.values[cat.key] || 0);
+        if (v <= 0) continue;
+        segments.push({ label: cat.label, value: v, color: cat.color });
+      }
+      segments.sort((a,b)=>b.value-a.value);
+
+      const cx = 165, cy = 185, radius = 110;
+      let start = -Math.PI / 2;
+      for (const seg of segments){
+        const angle = (seg.value / monthly) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, radius, start, start + angle);
+        ctx.closePath();
+        ctx.fillStyle = seg.color;
+        ctx.fill();
+        start += angle;
+      }
+
+      const lx = 320, ly = 60;
+      ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      let y = ly;
+      for (const seg of segments.slice(0, 8)){
+        const pct = (seg.value / monthly) * 100;
+        ctx.fillStyle = seg.color;
+        ctx.fillRect(lx, y - 9, 10, 10);
+        ctx.fillStyle = "rgba(234,240,255,.92)";
+        ctx.fillText(`${seg.label.split(" (")[0]}: ${money(seg.value)} (${pct.toFixed(0)}%)`, lx + 16, y);
+        y += 18;
+      }
+      if (segments.length > 8){
+        ctx.fillStyle = "rgba(138,160,198,.9)";
+        ctx.fillText(`+ ${segments.length - 8} more`, lx + 16, y);
+      }
+    }
+
+    function exportJson(){
+      const payload = {
+        version: "1.0",
+        timestamp: new Date().toISOString(),
+        location: getLocation(),
+        assumptions: {
+          household: state.household,
+          housingMode: state.housingMode,
+          healthcareMode: state.healthcareMode,
+          taxMode: state.taxMode
+        },
+        include: state.include,
+        valuesMonthly: state.values
+      };
+
+      const text = JSON.stringify(payload, null, 2);
+      const blob = new Blob([text], { type:"application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "retirement-spending-estimate.json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function render(){
+      refreshMeta();
+      renderRows();
+      renderTotals();
+      drawChart();
+      renderFuture();
+    }
+
+    elLocation.addEventListener("change", () => { state.locationId = elLocation.value; refreshMeta(); });
+    elApply.addEventListener("click", applyLocationDefaults);
+    elReset.addEventListener("click", resetNational);
+    elHousehold.addEventListener("input", () => {
+      state.household = clamp(elHousehold.value, 1, 6);
+      renderTotals(); drawChart(); renderFuture();
+    });
+    elHousingMode.addEventListener("change", () => state.housingMode = elHousingMode.value);
+    elHealthcareMode.addEventListener("change", () => state.healthcareMode = elHealthcareMode.value);
+    elTaxMode.addEventListener("change", () => {
+      state.taxMode = elTaxMode.value;
+      if (state.taxMode === "estimate"){
+        const loc = getLocation();
+        const pretax = (
+          (state.values.housing||0) + (state.values.utilities||0) + (state.values.food||0) +
+          (state.values.transport||0) + (state.values.healthcare||0) + (state.values.leisure||0) +
+          (state.values.insurance||0) + (state.values.gifts||0) + (state.values.other||0)
+        );
+        const pct = clamp(0.07 + (loc.factor - 1) * 0.03, 0.05, 0.12);
+        state.values.taxes = Math.round(pretax * pct);
+      }
+      render();
+    });
+    elShowAdvanced.addEventListener("change", () => { state.showAdvanced = elShowAdvanced.checked; render(); });
+    elAnnualize.addEventListener("change", () => { state.annualize = elAnnualize.checked; render(); });
+    elInflation.addEventListener("input", renderFuture);
+    elYears.addEventListener("input", renderFuture);
+    elDownloadJson.addEventListener("click", exportJson);
+
+    (function boot(){
+      initLocations();
+      elShowAdvanced.checked = state.showAdvanced;
+      elAnnualize.checked = state.annualize;
+      document.getElementById("household").value = state.household;
+      document.getElementById("housingMode").value = state.housingMode;
+      document.getElementById("healthcareMode").value = state.healthcareMode;
+      document.getElementById("taxMode").value = state.taxMode;
+      render();
+    })();
+
+    // ============================================================
+    // TAB 2: Projection Dashboard (UPDATED: Today-$ lines)
+    // ============================================================
+    window.__proj = (function(){
+      var RMD_LIFE_EXPECTANCY = {
+        70:27.4,71:26.5,72:25.6,73:24.7,74:23.8,75:22.9,76:22.0,77:21.2,78:20.3,79:19.5,
+        80:18.7,81:17.9,82:17.1,83:16.3,84:15.5,85:14.8,86:14.1,87:13.4,88:12.7,89:12.0,
+        90:11.4,91:10.8,92:10.2,93:9.6,94:9.1,95:8.6,96:8.1,97:7.6,98:7.1,99:6.7,
+        100:6.3,101:5.9,102:5.5,103:5.2,104:4.9,105:4.5,106:4.2,107:3.9,108:3.7,109:3.4,
+        110:3.1,111:2.9,112:2.6,113:2.4,114:2.1,115:1.9
+      };
+
+      var dollarsFmt = new Intl.NumberFormat("en-US", { style:"currency", currency:"USD" });
+      function formatDollars(amount){ return dollarsFmt.format(Number(amount||0)); }
+
+      var SETTINGS_KEY = "retirement_dashboard_settings_v9"; // bumped
+      var ACCOUNTS_KEY = "retirement_dashboard_accounts_v1";
+
+      function loadJson(key){
+        try{ var raw = localStorage.getItem(key); if(!raw) return null; return JSON.parse(raw); }
+        catch(e){ return null; }
+      }
+      function saveJson(key,obj){ try{ localStorage.setItem(key, JSON.stringify(obj)); } catch(e){} }
+      function clearAllSaved(){
+        try{ localStorage.removeItem(SETTINGS_KEY); } catch(e){}
+        try{ localStorage.removeItem(ACCOUNTS_KEY); } catch(e){}
+      }
+
+      function byId(id){ return document.getElementById(id); }
+      function num(id){ return Number(byId(id).value || 0); }
+
+      var accounts = [];
+      var selectedIds = {};
+      var editId = null;
+
+      function newId(){ return String(Date.now()) + "_" + String(Math.floor(Math.random()*1000000)); }
+
+      function loadAccounts(){
+        var a = loadJson(ACCOUNTS_KEY);
+        accounts = Array.isArray(a) ? a : [];
+        selectedIds = {};
+      }
+      function saveAccounts(){ saveJson(ACCOUNTS_KEY, accounts); }
+
+      function totalAccounts(){
+        var sum = 0;
+        for (var i=0;i<accounts.length;i++) sum += Number(accounts[i].amount||0);
+        return sum;
+      }
+      function setAccountsTotalPill(){ byId("accountsTotalPill").textContent = formatDollars(totalAccounts()); }
+
+      function renderAccountsTable(){
+        var tbody = byId("accountsTbody");
+        tbody.innerHTML = "";
+
+        if (accounts.length === 0){
+          var tr0=document.createElement("tr");
+          var td0=document.createElement("td");
+          td0.colSpan=4;
+          td0.className="small muted";
+          td0.textContent="No accounts yet. Add one above.";
+          tr0.appendChild(td0);
+          tbody.appendChild(tr0);
+          setAccountsTotalPill();
+          return;
+        }
+
+        for (var i=0;i<accounts.length;i++){
+          (function(acct){
+            var tr=document.createElement("tr");
+            if (selectedIds[acct.id]) tr.className="selected";
+
+            var tdSel=document.createElement("td");
+            var cb=document.createElement("input");
+            cb.type="checkbox";
+            cb.checked=!!selectedIds[acct.id];
+            cb.addEventListener("change", function(){
+              if(cb.checked) selectedIds[acct.id]=true;
+              else delete selectedIds[acct.id];
+              renderAccountsTable();
+              renderProjection();
+            });
+            tdSel.appendChild(cb);
+
+            var tdName=document.createElement("td");
+            tdName.textContent=acct.name;
+            tdName.addEventListener("dblclick", function(){ openEditModal(acct.id); });
+
+            var tdAmt=document.createElement("td");
+            tdAmt.textContent=formatDollars(acct.amount);
+            tdAmt.addEventListener("dblclick", function(){ openEditModal(acct.id); });
+
+            var tdActions=document.createElement("td");
+            tdActions.style.textAlign="right";
+
+            var editBtn=document.createElement("button");
+            editBtn.className="btn secondary";
+            editBtn.type="button";
+            editBtn.textContent="Edit";
+            editBtn.addEventListener("click", function(){ openEditModal(acct.id); });
+
+            var delBtn=document.createElement("button");
+            delBtn.className="btn danger";
+            delBtn.type="button";
+            delBtn.textContent="Delete";
+            delBtn.style.marginLeft="8px";
+            delBtn.addEventListener("click", function(){
+              var ok=window.confirm("Delete this account?");
+              if(!ok) return;
+              deleteAccount(acct.id);
+            });
+
+            tdActions.appendChild(editBtn);
+            tdActions.appendChild(delBtn);
+
+            tr.appendChild(tdSel);
+            tr.appendChild(tdName);
+            tr.appendChild(tdAmt);
+            tr.appendChild(tdActions);
+            tbody.appendChild(tr);
+          })(accounts[i]);
+        }
+        setAccountsTotalPill();
+      }
+
+      function addAccount(){
+        var name=String(byId("acctName").value||"").trim();
+        var amount=Number(byId("acctAmount").value||0);
+        if(!name) return;
+        if(!isFinite(amount)) return;
+
+        accounts.push({ id:newId(), name:name, amount:amount });
+        saveAccounts();
+        byId("acctName").value="";
+        byId("acctAmount").value="";
+        renderAccountsTable();
+        renderProjection();
+      }
+
+      function deleteAccount(id){
+        var out=[];
+        for(var i=0;i<accounts.length;i++) if(accounts[i].id!==id) out.push(accounts[i]);
+        accounts=out;
+        delete selectedIds[id];
+        saveAccounts();
+        renderAccountsTable();
+        renderProjection();
+      }
+
+      function deleteSelectedAccounts(){
+        var ids=[];
+        for(var k in selectedIds) if(selectedIds.hasOwnProperty(k)) ids.push(k);
+        if(ids.length===0) return;
+
+        var ok=window.confirm("Delete " + ids.length + " selected account(s)?");
+        if(!ok) return;
+
+        var toDelete={};
+        for(var i=0;i<ids.length;i++) toDelete[ids[i]]=true;
+
+        var keep=[];
+        for(var j=0;j<accounts.length;j++) if(!toDelete[accounts[j].id]) keep.push(accounts[j]);
+
+        accounts=keep;
+        selectedIds={};
+        saveAccounts();
+        renderAccountsTable();
+        renderProjection();
+      }
+
+      function openEditModal(id){
+        editId=id;
+        var acct=null;
+        for(var i=0;i<accounts.length;i++){ if(accounts[i].id===id){ acct=accounts[i]; break; } }
+        if(!acct) return;
+
+        byId("editAcctName").value=acct.name;
+        byId("editAcctAmount").value=acct.amount;
+        byId("editModalOverlay").classList.add("show");
+      }
+      function closeEditModal(){
+        editId=null;
+        byId("editModalOverlay").classList.remove("show");
+      }
+      function saveEditModal(){
+        if(!editId) return;
+
+        var name=String(byId("editAcctName").value||"").trim();
+        var amount=Number(byId("editAcctAmount").value||0);
+        if(!name) return;
+        if(!isFinite(amount)) return;
+
+        for(var i=0;i<accounts.length;i++){
+          if(accounts[i].id===editId){
+            accounts[i].name=name;
+            accounts[i].amount=amount;
+            break;
+          }
+        }
+        saveAccounts();
+        closeEditModal();
+        renderAccountsTable();
+        renderProjection();
+      }
+
+      function setCollapsed(el, collapsed){
+        if(!el) return;
+        if(collapsed) el.classList.add("is-collapsed");
+        else el.classList.remove("is-collapsed");
+      }
+
+      function estimateSocialSecurityAnnual(workIncome, yearsWorked){
+        var income=Math.max(0, Number(workIncome||0));
+        var yw=Math.max(0, Number(yearsWorked||0));
+        var factor=Math.min(1, yw/35);
+        var est=0.40*income*factor;
+        if(est>50000) est=50000;
+        if(!isFinite(est)) est=0;
+        return est;
+      }
+
+      function getSocialSecurityAnnualIfEnabled(){
+        var enabled=!!byId("enableSS").checked;
+        if(!enabled) return 0;
+        var useOverride=!!byId("useSSOverride").checked;
+        var overrideVal=Number(byId("ssOverride").value||0);
+        if(useOverride && isFinite(overrideVal) && overrideVal>0) return overrideVal;
+        return estimateSocialSecurityAnnual(num("workIncome"), num("yearsWorked"));
+      }
+
+      function getPensionAnnualIfEnabled(){
+        var enabled=!!byId("enablePension").checked;
+        if(!enabled) return 0;
+        return num("pension");
+      }
+
+      function updateToggleUI(){
+        setCollapsed(byId("pensionCollapse"), !byId("enablePension").checked);
+        var ssEnabled=!!byId("enableSS").checked;
+        setCollapsed(byId("ssCollapse"), !ssEnabled);
+        byId("ssDisabledPill").style.display = ssEnabled ? "none" : "inline-block";
+      }
+
+      function updateSocialSecurityPill(){
+        var ssEnabled=!!byId("enableSS").checked;
+        var ss=getSocialSecurityAnnualIfEnabled();
+        byId("ssEstimatedPill").textContent = formatDollars(ssEnabled ? ss : 0) + " / year (est.)";
+        byId("ssDisabledPill").textContent = formatDollars(0) + " / year (disabled)";
+      }
+
+      function runProjection(currentFunds, currentAge, retirementAge, deathAge,
+                             otherIncomeAnnual, annualContrib, inflation,
+                             nominalBaseRate, retirementGrowthRate){
+        var yearsToRetire=Math.max(1, retirementAge-currentAge);
+        var yearsInRetirement=Math.max(1, deathAge-retirementAge);
+
+        var nominalRates=[nominalBaseRate-0.03, nominalBaseRate, nominalBaseRate+0.03];
+        var realRates=[];
+        for(var i=0;i<nominalRates.length;i++){
+          var r=nominalRates[i];
+          realRates.push((1+r)/(1+inflation)-1);
+        }
+
+        var nominalRetGrowth=retirementGrowthRate;
+
+        function projectForRates(rates, retGrowth){
+          var results=[];
+          for(var i=0;i<rates.length;i++){
+            var r=rates[i];
+            var fv;
+            if(r!==0){
+              fv = currentFunds*Math.pow(1+r, yearsToRetire) +
+                   annualContrib*((Math.pow(1+r, yearsToRetire)-1)/r);
+            } else {
+              fv = currentFunds + annualContrib*yearsToRetire;
+            }
+
+            var rmdAge=Math.max(retirementAge, 72);
+            var factor=(RMD_LIFE_EXPECTANCY[rmdAge]!==undefined) ? RMD_LIFE_EXPECTANCY[rmdAge] : 25;
+
+            var minDisb=fv/factor;
+            var maxDisb=fv*retGrowth/(1 - Math.pow(1+retGrowth, -(yearsInRetirement+1)));
+            var midDisb=fv*0.04;
+
+            var remainingMin=fv*Math.pow(1+nominalRetGrowth, yearsInRetirement) -
+                             minDisb*((Math.pow(1+nominalRetGrowth, yearsInRetirement)-1)/nominalRetGrowth);
+            var remainingMid=fv*Math.pow(1+nominalRetGrowth, yearsInRetirement) -
+                             midDisb*((Math.pow(1+nominalRetGrowth, yearsInRetirement)-1)/nominalRetGrowth);
+
+            results.push({
+              fv:fv,
+              growth_rate:r,
+              min_disb:minDisb,
+              mid_disb:midDisb,
+              max_disb:maxDisb,
+              remaining_min:remainingMin,
+              remaining_mid:remainingMid,
+              other_income:otherIncomeAnnual
+            });
+          }
+          return results;
+        }
+
+        return {
+          nominalProj: projectForRates(nominalRates, nominalRetGrowth),
+          realProj: projectForRates(realRates, nominalRetGrowth),
+          retirementAge: retirementAge,
+          deathAge: deathAge,
+          nominalRetGrowth: nominalRetGrowth,
+          inflation: inflation
+        };
+      }
+
+      function computeDrawdown(fv, annualWithdrawalNeed, otherIncomeAnnual, growthRate, startAge, endAge){
+        var balances=[];
+        var balance=fv;
+
+        var effectiveWithdrawal=Number(annualWithdrawalNeed||0) - Number(otherIncomeAnnual||0);
+        if(!isFinite(effectiveWithdrawal)) effectiveWithdrawal=0;
+        if(effectiveWithdrawal<0) effectiveWithdrawal=0;
+
+        for(var age=startAge; age<=endAge; age++){
+          balance = balance*(1+growthRate) - effectiveWithdrawal;
+          balances.push(balance);
+        }
+        return balances;
+      }
+
+      var drawdownState={ years:[], map:{} };
+      var chartInstance=null;
+
+      function getDrawdownTitle(index){
+        var titles=[
+          "Minimum Projection - Required Minimum Distribution (RMD)",
+          "Minimum Projection - 4% Withdrawal Rule",
+          "Minimum Projection - Maximum Distribution",
+          "Medium Projection - Required Minimum Distribution (RMD)",
+          "Medium Projection - 4% Withdrawal Rule",
+          "Medium Projection - Maximum Distribution",
+          "Maximum Projection - Required Minimum Distribution (RMD)",
+          "Maximum Projection - 4% Withdrawal Rule",
+          "Maximum Projection - Maximum Distribution"
+        ];
+        return titles[index] || "Drawdown Chart";
+      }
+
+      function renderDrawdownChart(){
+        var sel=Number(byId("drawdownSelector").value||0);
+        var years=drawdownState.years||[];
+        var balances=(drawdownState.map && drawdownState.map[sel]) ? drawdownState.map[sel] : [];
+
+        byId("chartTitle").textContent=getDrawdownTitle(sel);
+
+        var ctx=byId("drawdownCanvas").getContext("2d");
+        if(chartInstance){ chartInstance.destroy(); chartInstance=null; }
+
+        chartInstance=new Chart(ctx,{
+          type:"line",
+          data:{
+            labels: years,
+            datasets:[{ label:"Balance", data:balances, pointRadius:2, tension:0.2 }]
+          },
+          options:{
+            responsive:true,
+            plugins:{ legend:{ display:true, labels:{ color:"rgba(234,240,255,.85)" } } },
+            scales:{
+              y:{
+                title:{ display:true, text:"USD (Millions)", color:"rgba(234,240,255,.75)" },
+                ticks:{ color:"rgba(234,240,255,.75)", callback:function(v){ return (Number(v)/1000000).toFixed(1); } },
+                grid:{ color:"rgba(255,255,255,.08)" }
+              },
+              x:{
+                title:{ display:true, text:"Age", color:"rgba(234,240,255,.75)" },
+                ticks:{ color:"rgba(234,240,255,.75)" },
+                grid:{ color:"rgba(255,255,255,.08)" }
+              }
+            }
+          }
+        });
+      }
+
+      var scenarioNames = ["Minimum", "Medium", "Maximum"];
+      var withdrawalNames = ["Required Minimum Distribution (RMD)", "4% Withdrawal Rule", "Maximum Distribution"];
+
+      var last = { result:null, currentFunds:0, otherIncomeAnnual:0, inflation:0, yearsToRetire:0 };
+
+      function getScenarioIndex(){ return Math.max(0, Math.min(2, Number(byId("scenarioSlider").value || 0))); }
+      function getWithdrawalIndex(){ return Math.max(0, Math.min(2, Number(byId("withdrawalSlider").value || 0))); }
+
+      function distributionFor(obj, idx){
+        if (idx === 0) return obj.min_disb;
+        if (idx === 1) return obj.mid_disb;
+        return obj.max_disb;
+      }
+      function remainingFor(obj, idx){
+        if (idx === 0) return obj.remaining_min;
+        if (idx === 1) return obj.remaining_mid;
+        return null;
+      }
+
+      // NEW: Convert a retirement-year nominal annual cashflow to "today $" using inflation and years-to-retire
+      function toTodaysDollars(nominalAnnual){
+        var infl = Number(last.inflation || 0);
+        var y = Number(last.yearsToRetire || 0);
+        if (!isFinite(infl) || infl < 0) infl = 0;
+        if (!isFinite(y) || y < 0) y = 0;
+        var denom = Math.pow(1 + infl, y);
+        if (!isFinite(denom) || denom <= 0) denom = 1;
+        return Number(nominalAnnual || 0) / denom;
+      }
+
+      function updateProjectionOutputUI(){
+        if (!last.result) return;
+
+        var sIdx = getScenarioIndex();
+        var wIdx = getWithdrawalIndex();
+
+        var nominal = last.result.nominalProj[sIdx];
+
+        var distNom = distributionFor(nominal, wIdx);
+        var totalNom = distNom + last.otherIncomeAnnual;
+
+        var distToday = toTodaysDollars(distNom);
+        var totalToday = toTodaysDollars(totalNom);
+
+        byId("scenarioLabel").textContent = scenarioNames[sIdx];
+        byId("scenarioPill").textContent = "Scenario: " + scenarioNames[sIdx];
+        byId("withdrawalLabel").textContent = withdrawalNames[wIdx];
+
+        byId("scenarioRatesPill").textContent = "Growth: " + (nominal.growth_rate * 100).toFixed(1) + "%";
+
+        byId("outCurrentPortfolio").textContent = formatDollars(last.currentFunds);
+        byId("outFVNominal").textContent = formatDollars(nominal.fv);
+
+        byId("otherIncomePill").textContent = "Other income: " + formatDollars(last.otherIncomeAnnual) + "/yr";
+
+        byId("outDistributionNominal").textContent = formatDollars(distNom) + " / yr";
+        byId("outDistributionTodayLine").textContent = "Today $: " + formatDollars(distToday) + " / yr";
+
+        byId("outTotalIncomeNominal").textContent = formatDollars(totalNom) + " / yr";
+        byId("outTotalIncomeTodayLine").textContent = "Today $: " + formatDollars(totalToday) + " / yr";
+
+        var rem = remainingFor(nominal, wIdx);
+        byId("outRemaining").textContent = (rem === null) ? "—" : formatDollars(rem);
+
+        // Keep drawdown selector in sync with sliders
+        var drawdownIndex = (sIdx * 3) + wIdx;
+        byId("drawdownSelector").value = String(drawdownIndex);
+        if (byId("chartWrap").style.display !== "none") renderDrawdownChart();
+
+        var s = loadJson(SETTINGS_KEY) || {};
+        s.uiScenarioIndex = sIdx;
+        s.uiWithdrawalIndex = wIdx;
+        saveJson(SETTINGS_KEY, s);
+      }
+
+      function renderProjection(){
+        updateToggleUI();
+
+        var currentFunds=totalAccounts();
+        var currentAge=num("currentAge");
+        var retirementAge=num("retirementAge");
+        var deathAge=num("deathAge");
+
+        var pension = (!!byId("enablePension").checked) ? num("pension") : 0;
+        var ssAnnual = (function(){
+          if (!byId("enableSS").checked) return 0;
+          var useOverride = !!byId("useSSOverride").checked;
+          var overrideVal = Number(byId("ssOverride").value || 0);
+          if (useOverride && isFinite(overrideVal) && overrideVal > 0) return overrideVal;
+          return estimateSocialSecurityAnnual(num("workIncome"), num("yearsWorked"));
+        })();
+        var otherIncomeAnnual = pension + ssAnnual;
+
+        var annualContribution=num("annualContribution");
+        var inflation=num("inflationProj")/100;
+        var growthRate=num("growthRate")/100;
+        var retirementGrowth=num("retirementGrowth")/100;
+
+        updateSocialSecurityPill();
+
+        var result=runProjection(
+          currentFunds, currentAge, retirementAge, deathAge,
+          otherIncomeAnnual, annualContribution, inflation, growthRate, retirementGrowth
+        );
+
+        last.result = result;
+        last.currentFunds = currentFunds;
+        last.otherIncomeAnnual = otherIncomeAnnual;
+        last.inflation = inflation;
+        last.yearsToRetire = Math.max(0, retirementAge - currentAge);
+
+        saveJson(SETTINGS_KEY, {
+          currentAge: currentAge,
+          retirementAge: retirementAge,
+          deathAge: deathAge,
+          enablePension: !!byId("enablePension").checked,
+          pension: num("pension"),
+          enableSS: !!byId("enableSS").checked,
+          workIncome: num("workIncome"),
+          yearsWorked: num("yearsWorked"),
+          useSSOverride: !!byId("useSSOverride").checked,
+          ssOverride: num("ssOverride"),
+          annualContribution: annualContribution,
+          inflation: num("inflationProj"),
+          growthRate: num("growthRate"),
+          retirementGrowth: num("retirementGrowth"),
+          uiScenarioIndex: getScenarioIndex(),
+          uiWithdrawalIndex: getWithdrawalIndex()
+        });
+
+        // Drawdowns
+        var years=[];
+        for(var age=retirementAge; age<=deathAge; age++) years.push(age);
+
+        var g=result.nominalRetGrowth;
+
+        var dd=[];
+        dd.push(computeDrawdown(result.nominalProj[0].fv, result.nominalProj[0].min_disb, otherIncomeAnnual, g, retirementAge, deathAge));
+        dd.push(computeDrawdown(result.nominalProj[0].fv, result.nominalProj[0].mid_disb, otherIncomeAnnual, g, retirementAge, deathAge));
+        dd.push(computeDrawdown(result.nominalProj[0].fv, result.nominalProj[0].max_disb, otherIncomeAnnual, g, retirementAge, deathAge));
+
+        dd.push(computeDrawdown(result.nominalProj[1].fv, result.nominalProj[1].min_disb, otherIncomeAnnual, g, retirementAge, deathAge));
+        dd.push(computeDrawdown(result.nominalProj[1].fv, result.nominalProj[1].mid_disb, otherIncomeAnnual, g, retirementAge, deathAge));
+        dd.push(computeDrawdown(result.nominalProj[1].fv, result.nominalProj[1].max_disb, otherIncomeAnnual, g, retirementAge, deathAge));
+
+        dd.push(computeDrawdown(result.nominalProj[2].fv, result.nominalProj[2].min_disb, otherIncomeAnnual, g, retirementAge, deathAge));
+        dd.push(computeDrawdown(result.nominalProj[2].fv, result.nominalProj[2].mid_disb, otherIncomeAnnual, g, retirementAge, deathAge));
+        dd.push(computeDrawdown(result.nominalProj[2].fv, result.nominalProj[2].max_disb, otherIncomeAnnual, g, retirementAge, deathAge));
+
+        drawdownState.years=years;
+        drawdownState.map={0:dd[0],1:dd[1],2:dd[2],3:dd[3],4:dd[4],5:dd[5],6:dd[6],7:dd[7],8:dd[8]};
+
+        setAccountsTotalPill();
+        updateProjectionOutputUI();
+      }
+
+      function setDefaultsIfEmpty(){
+        var defaults = {
+          currentAge:30, retirementAge:62, deathAge:85,
+          enablePension:false, pension:0,
+          enableSS:false, workIncome:0, yearsWorked:0, useSSOverride:false, ssOverride:0,
+          growthRate:8, annualContribution:0, retirementGrowth:3, inflation:2.5,
+          uiScenarioIndex: 1,
+          uiWithdrawalIndex: 0
+        };
+
+        var s=loadJson(SETTINGS_KEY);
+        var v=s || defaults;
+
+        byId("currentAge").value = (v.currentAge!==undefined) ? v.currentAge : defaults.currentAge;
+        byId("retirementAge").value = (v.retirementAge!==undefined) ? v.retirementAge : defaults.retirementAge;
+        byId("deathAge").value = (v.deathAge!==undefined) ? v.deathAge : defaults.deathAge;
+
+        byId("enablePension").checked = (v.enablePension!==undefined) ? !!v.enablePension : defaults.enablePension;
+        byId("pension").value = (v.pension!==undefined) ? v.pension : defaults.pension;
+
+        byId("growthRate").value = (v.growthRate!==undefined) ? v.growthRate : defaults.growthRate;
+        byId("annualContribution").value = (v.annualContribution!==undefined) ? v.annualContribution : defaults.annualContribution;
+        byId("retirementGrowth").value = (v.retirementGrowth!==undefined) ? v.retirementGrowth : defaults.retirementGrowth;
+        byId("inflationProj").value = (v.inflation!==undefined) ? v.inflation : defaults.inflation;
+
+        byId("enableSS").checked = (v.enableSS!==undefined) ? !!v.enableSS : defaults.enableSS;
+        byId("workIncome").value = (v.workIncome!==undefined) ? v.workIncome : defaults.workIncome;
+        byId("yearsWorked").value = (v.yearsWorked!==undefined) ? v.yearsWorked : defaults.yearsWorked;
+        byId("useSSOverride").checked = (v.useSSOverride!==undefined) ? !!v.useSSOverride : defaults.useSSOverride;
+        byId("ssOverride").value = (v.ssOverride!==undefined) ? v.ssOverride : defaults.ssOverride;
+
+        byId("scenarioSlider").value = (v.uiScenarioIndex !== undefined) ? String(v.uiScenarioIndex) : String(defaults.uiScenarioIndex);
+        byId("withdrawalSlider").value = (v.uiWithdrawalIndex !== undefined) ? String(v.uiWithdrawalIndex) : String(defaults.uiWithdrawalIndex);
+
+        loadAccounts();
+        renderAccountsTable();
+        setAccountsTotalPill();
+
+        updateToggleUI();
+        if(!byId("enablePension").checked) byId("pensionCollapse").classList.add("is-collapsed");
+        if(!byId("enableSS").checked) byId("ssCollapse").classList.add("is-collapsed");
+
+        updateSocialSecurityPill();
+      }
+
+      function wireEvents(){
+        var ids=["currentAge","retirementAge","deathAge","pension","growthRate","annualContribution","retirementGrowth","inflationProj","workIncome","yearsWorked","ssOverride"];
+        for(var i=0;i<ids.length;i++) byId(ids[i]).addEventListener("input", renderProjection);
+
+        byId("enablePension").addEventListener("change", renderProjection);
+        byId("enableSS").addEventListener("change", renderProjection);
+        byId("useSSOverride").addEventListener("change", renderProjection);
+
+        byId("addAcctBtn").addEventListener("click", addAccount);
+        byId("acctAmount").addEventListener("keydown", function(e){ if(e.key==="Enter") addAccount(); });
+        byId("acctName").addEventListener("keydown", function(e){ if(e.key==="Enter") addAccount(); });
+
+        byId("deleteSelectedBtn").addEventListener("click", deleteSelectedAccounts);
+
+        byId("scenarioSlider").addEventListener("input", updateProjectionOutputUI);
+        byId("withdrawalSlider").addEventListener("input", updateProjectionOutputUI);
+
+        byId("viewDrawdownBtn").addEventListener("click", function(){
+          byId("chartWrap").style.display="block";
+          renderDrawdownChart();
+        });
+
+        byId("drawdownSelector").addEventListener("change", function(){
+          var idx = Number(byId("drawdownSelector").value || 0);
+          var sIdx = Math.floor(idx / 3);
+          var wIdx = idx % 3;
+          byId("scenarioSlider").value = String(sIdx);
+          byId("withdrawalSlider").value = String(wIdx);
+          updateProjectionOutputUI();
+          if(byId("chartWrap").style.display!=="none") renderDrawdownChart();
+        });
+
+        byId("resetBtn").addEventListener("click", function(){
+          var ok=window.confirm("Reset ALL saved accounts and settings?");
+          if(!ok) return;
+
+          clearAllSaved();
+          accounts=[]; selectedIds={};
+          byId("chartWrap").style.display="none";
+          if(chartInstance){ chartInstance.destroy(); chartInstance=null; }
+
+          setDefaultsIfEmpty();
+          renderProjection();
+        });
+
+        byId("editModalCloseBtn").addEventListener("click", closeEditModal);
+        byId("editCancelBtn").addEventListener("click", closeEditModal);
+        byId("editSaveBtn").addEventListener("click", saveEditModal);
+
+        byId("editModalOverlay").addEventListener("mousedown", function(e){
+          if(e.target && e.target.id==="editModalOverlay") closeEditModal();
+        });
+      }
+
+      setDefaultsIfEmpty();
+      wireEvents();
+      renderProjection();
+
+      return { renderProjection: renderProjection, chartInstance: chartInstance };
+    })();
+  </script>
+</body>
+</html>
