@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <!-- Mobile-safe viewport (prevents iOS zoom quirks on inputs when font-size >= 16px) -->
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Retirement Toolkit</title>
 
   <!-- Chart.js (Projection tab drawdown chart) -->
@@ -19,8 +20,16 @@
       --accentBorder: rgba(122,162,255,.45);
       --dangerBg: rgba(255,107,107,.12);
       --dangerBorder: rgba(255,107,107,.35);
+
+      --radius: 14px;
+      --pad: 14px;
+
+      /* Touch target baseline */
+      --tap: 44px;
     }
+
     *{box-sizing:border-box}
+    html,body{height:100%}
     body{
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
@@ -29,6 +38,7 @@
                   var(--bg);
       color:var(--text);
       line-height:1.35;
+      font-size: 16px; /* important for mobile (prevents input zoom) */
     }
 
     header{
@@ -48,6 +58,14 @@
       gap:10px;
       flex-wrap:wrap;
       align-items:center;
+
+      /* Mobile-friendly sticky nav */
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(11,18,32,.72);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,.06);
     }
     .tabBtn{
       color:var(--text);
@@ -59,6 +77,7 @@
       transition: transform .04s ease, background .12s ease, border-color .12s ease;
       user-select:none;
       font-weight:700;
+      min-height: var(--tap);
     }
     .tabBtn:hover{background: rgba(122,162,255,.18); border-color: rgba(122,162,255,.45)}
     .tabBtn:active{transform: translateY(1px)}
@@ -90,9 +109,10 @@
     .card{
       background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
       border:1px solid var(--line);
-      border-radius:14px;
-      padding:14px;
+      border-radius: var(--radius);
+      padding: var(--pad);
       box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      overflow: hidden; /* prevents child overflow on small screens */
     }
 
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
@@ -108,6 +128,7 @@
       border-radius:10px;
       padding:10px 10px;
       outline:none;
+      min-height: var(--tap);
       min-width:140px;
     }
 
@@ -115,6 +136,7 @@
       width: 100%;
       max-width: 520px;
       accent-color: rgba(122,162,255,.85);
+      min-height: 32px;
     }
 
     select{
@@ -124,6 +146,7 @@
       border-radius:10px;
       padding:10px 10px;
       outline:none;
+      min-height: var(--tap);
       min-width: 280px;
     }
     select option{
@@ -146,6 +169,7 @@
       transition: transform .04s ease, background .12s ease, border-color .12s ease;
       user-select:none;
       font-weight:700;
+      min-height: var(--tap);
     }
     .btn:hover{background: rgba(122,162,255,.22); border-color: rgba(122,162,255,.55)}
     .btn:active{transform: translateY(1px)}
@@ -177,6 +201,13 @@
 
     .hr{height:1px;background:var(--line);margin:12px 0}
 
+    /* Responsive tables: allow horizontal scroll on small screens */
+    .tableWrap{
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 12px;
+    }
     table{
       width:100%;
       border-collapse:separate;
@@ -184,6 +215,8 @@
       overflow:hidden;
       border:1px solid var(--line);
       border-radius:12px;
+      min-width: 680px; /* ensures columns don't crush; scrolls on mobile */
+      background: rgba(0,0,0,0.06);
     }
     thead th{
       text-align:left;
@@ -192,6 +225,9 @@
       background: rgba(255,255,255,.03);
       padding:10px 10px;
       border-bottom:1px solid var(--line);
+      position: sticky; /* nice on scroll within tableWrap */
+      top: 0;
+      z-index: 1;
     }
     tbody td{
       padding:10px 10px;
@@ -204,9 +240,12 @@
     .muted{color:var(--muted)}
     .right{text-align:right}
     .toggle{display:flex; gap:8px; align-items:center; font-size:12px; color:var(--muted);}
-    .toggle input{width:16px;height:16px}
+    .toggle input{width:18px;height:18px}
 
     .kpi{display:grid;grid-template-columns: 1fr 1fr;gap:10px;}
+    @media (max-width: 520px){
+      .kpi{grid-template-columns:1fr}
+    }
     .kpi .box{
       background: rgba(255,255,255,.03);
       border:1px solid var(--line);
@@ -292,12 +331,15 @@
       border-radius:14px;
       padding:14px;
       box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      max-height: calc(100dvh - 36px);
+      overflow: auto;
     }
     .modalHeader{
       display:flex;
       justify-content:space-between;
       align-items:center;
       margin-bottom:10px;
+      gap: 10px;
     }
     .modalTitle{ font-weight:800; font-size:16px; }
     .modalGrid{
@@ -311,6 +353,7 @@
       justify-content:flex-end;
       gap:10px;
       margin-top:12px;
+      flex-wrap: wrap;
     }
 
     .tabPanel{ display:none; }
@@ -330,6 +373,7 @@
     }
     .metricTitle{ font-size:12px; color:var(--muted); }
     .metricValue{ font-size:20px; margin-top:6px; letter-spacing:.2px; }
+
     .sliderRow{
       display:grid;
       grid-template-columns: 220px 1fr 220px;
@@ -338,6 +382,41 @@
     }
     @media (max-width: 980px){
       .sliderRow{ grid-template-columns: 1fr; }
+      input[type="range"]{ max-width: 100%; }
+    }
+
+    /* Mobile-specific refinements */
+    @media (max-width: 640px){
+      header{ padding: 18px 14px 8px; }
+      .wrap{ padding: 12px 14px 22px; }
+      .tabsBar{ padding: 10px 14px; margin-top: 6px; gap: 8px; }
+      .tabBtn{ flex: 1; text-align:center; }
+
+      .card{ padding: 12px; border-radius: 14px; }
+
+      /* Make common controls full-width on small screens */
+      .row.space > div{ width: 100%; }
+      .row.space{ gap: 10px; }
+      select{ min-width: 100%; }
+      input[type="number"], input[type="text"]{ min-width: 100%; }
+      .btn{ width: 100%; }
+
+      /* Buttons that live in a row should stack nicely */
+      .row{ width: 100%; }
+      .row > .btn{ flex: 1; }
+
+      /* Drawdown selector section stacks */
+      #drawdownSelector{ width: 100% !important; }
+    }
+
+    /* Better behavior on touch devices */
+    @media (hover: none){
+      .tabBtn:hover, .btn:hover{ background: unset; border-color: unset; }
+    }
+
+    /* Reduce motion if user prefers */
+    @media (prefers-reduced-motion: reduce){
+      *{ transition: none !important; scroll-behavior: auto !important; }
     }
   </style>
 </head>
@@ -391,7 +470,7 @@
               <div class="note">Used as the base for “Replacement Rate” planning.</div>
             </div>
 
-            <!-- NEW: Replacement rate mode -->
+            <!-- Replacement rate mode -->
             <div>
               <label for="spendMode">Defaulting approach</label><br/>
               <select id="spendMode">
@@ -460,17 +539,20 @@
             </div>
           </div>
 
-          <table aria-label="Spending categories table">
-            <thead>
-              <tr>
-                <th style="width:40%">Category</th>
-                <th style="width:20%">Include</th>
-                <th class="right" style="width:20%">Monthly</th>
-                <th class="right" style="width:20%">Annual</th>
-              </tr>
-            </thead>
-            <tbody id="rows"></tbody>
-          </table>
+          <!-- Responsive table wrapper -->
+          <div class="tableWrap" aria-label="Spending categories table container">
+            <table aria-label="Spending categories table">
+              <thead>
+                <tr>
+                  <th style="width:40%">Category</th>
+                  <th style="width:20%">Include</th>
+                  <th class="right" style="width:20%">Monthly</th>
+                  <th class="right" style="width:20%">Annual</th>
+                </tr>
+              </thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
 
           <p class="note">
             Defaults are heuristics: (replacement-rate or income-allocation) → location factor → household scaling for variable categories →
@@ -508,7 +590,8 @@
           <div style="height:10px"></div>
 
           <div class="canvasWrap">
-            <canvas id="chart" width="520" height="320" aria-label="Spending pie chart" role="img"></canvas>
+            <!-- Canvas becomes responsive via JS sizing -->
+            <canvas id="chart" aria-label="Spending pie chart" role="img"></canvas>
           </div>
 
           <div class="hr"></div>
@@ -577,17 +660,20 @@
 
           <div style="height:10px;"></div>
 
-          <table aria-label="Retirement accounts table">
-            <thead>
-              <tr>
-                <th style="width:44px;"></th>
-                <th>Account</th>
-                <th style="width:190px;">Balance</th>
-                <th style="width:220px; text-align:right;">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="accountsTbody"></tbody>
-          </table>
+          <!-- Responsive table wrapper -->
+          <div class="tableWrap" aria-label="Retirement accounts table container">
+            <table aria-label="Retirement accounts table">
+              <thead>
+                <tr>
+                  <th style="width:44px;"></th>
+                  <th>Account</th>
+                  <th style="width:190px;">Balance</th>
+                  <th style="width:220px; text-align:right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="accountsTbody"></tbody>
+            </table>
+          </div>
 
           <div class="row" style="justify-content:flex-end; margin-top:10px;">
             <button class="btn secondary" id="deleteSelectedBtn" type="button">Delete Selected</button>
@@ -893,11 +979,7 @@
     })();
 
     // ============================================================
-    // TAB 1: Spending Estimator (UPDATED per recommendations)
-    // - Replacement-rate mode (recommended)
-    // - Income-band adaptive allocations
-    // - Fixed vs variable scaling (household impacts variable categories)
-    // - Taxes default to manual; optional simple bracket estimate
+    // TAB 1: Spending Estimator
     // ============================================================
     const LOCATIONS = [
       { id:"portland_me", name:"Portland, ME", factor:1.12, region:"Northeast" },
@@ -972,11 +1054,8 @@
       { key:"other",      label:"Other / Cushion", color:"#fbd38d", advanced:true, fixed:false }
     ];
 
-    // Location weights (how sensitive each category is to local cost factor)
     const FACTOR_WEIGHTS = { housing:1.25, utilities:0.70, food:0.85, transport:0.80, healthcare:0.60, leisure:0.85, insurance:0.55, taxes:0.90, gifts:0.55, other:0.60 };
 
-    // Income band allocations (share of target spending). Sums to 1.00 each.
-    // Intended behavior: higher income shifts share from essentials toward leisure/giving, while taxes creep upward.
     const ALLOC_BANDS = [
       {
         name: "Under $60k",
@@ -1021,7 +1100,6 @@
       return ALLOC_BANDS[1];
     }
 
-    // Simple bracketed effective tax rate (very rough). This is intentionally conservative and should be edited.
     function estimateTaxesAnnualSimple(targetAnnual, locFactor){
       const x = Math.max(0, Number(targetAnnual || 0));
       let rate = 0.10;
@@ -1030,7 +1108,6 @@
       else if (x < 200000) rate = 0.12;
       else rate = 0.14;
 
-      // Mild location adjustment (not state-tax accurate; just a coarse proxy)
       const lf = Number(locFactor || 1);
       const adj = clamp((lf - 1) * 0.02, -0.03, 0.03);
       rate = clamp(rate + adj, 0.05, 0.20);
@@ -1040,13 +1117,6 @@
 
     function getLocationById(id){ return LOCATIONS.find(l => l.id === id) || LOCATIONS[0]; }
 
-    // Core defaulting engine:
-    // 1) Determine target spending (replacement-rate recommended, or percent-of-income baseline)
-    // 2) Allocate across categories using income-band table
-    // 3) Apply location factor sensitivity
-    // 4) Apply housing/healthcare mode adjustments
-    // 5) Apply household scaling ONLY to variable categories
-    // 6) If taxes are estimated, overwrite taxes using a simple bracket estimate
     function computeDefaultsMonthly({
       incomeAnnual,
       mode,
@@ -1061,11 +1131,9 @@
       const rr = clamp(replacementRatePct, 0, 200) / 100;
       const loc = Number(locationFactor || 1);
 
-      // Target spending
-      const targetAnnual = (mode === "replacement") ? (inc * rr) : inc; // "income" mode uses 100% of income as baseline envelope
+      const targetAnnual = (mode === "replacement") ? (inc * rr) : inc;
       const targetMonthly = targetAnnual / 12;
 
-      // Allocation band determined from INCOME (not target) so band stays tied to household means, not replacement knob.
       const band = pickBand(inc);
       const p = band.pcts;
 
@@ -1075,26 +1143,21 @@
         v[cat.key] = targetMonthly * pct;
       }
 
-      // Location factor application (weighted)
       for (const cat of CATEGORIES){
         const w = FACTOR_WEIGHTS[cat.key] ?? 0.7;
         const factor = 1 + (loc - 1) * w;
         v[cat.key] = v[cat.key] * factor;
       }
 
-      // Housing mode adjustments (fixed)
       if (housingMode === "ownNoMortgage") v.housing *= 0.62;
       if (housingMode === "rent") v.housing *= 1.05;
 
-      // Healthcare mode adjustments (mostly fixed)
       if (healthcareMode === "medicareLean") v.healthcare *= 0.82;
       if (healthcareMode === "medicareRich") v.healthcare *= 1.20;
 
-      // Household scaling ONLY variable categories
       const h = householdScalar(householdSize);
       for (const cat of CATEGORIES){
         if (cat.fixed) continue;
-        // Apply gentle scaling (food more, transport moderate, leisure moderate, gifts/other small)
         if (cat.key === "food") v[cat.key] *= h;
         else if (cat.key === "transport") v[cat.key] *= (1 + (h - 1) * 0.55);
         else if (cat.key === "leisure") v[cat.key] *= (1 + (h - 1) * 0.45);
@@ -1103,13 +1166,11 @@
         else v[cat.key] *= (1 + (h - 1) * 0.30);
       }
 
-      // Taxes: manual keeps the allocated value; estimate overwrites with bracket estimate (annual → monthly)
       if (taxMode === "estimate"){
         const taxesA = estimateTaxesAnnualSimple(targetAnnual, loc);
         v.taxes = taxesA / 12;
       }
 
-      // Round
       for (const k of Object.keys(v)) v[k] = Math.round(v[k]);
 
       return { valuesMonthly: v, bandName: band.name, targetAnnual };
@@ -1133,8 +1194,6 @@
 
     // Elements
     const elLocation = document.getElementById("location");
-    const elApply = document.getElementById("applyDefaults");
-    const elReset = document.getElementById("resetNational");
     const elRows = document.getElementById("rows");
     const elMeta = document.getElementById("locationMeta");
     const elLastApplied = document.getElementById("lastApplied");
@@ -1163,6 +1222,7 @@
     const elDownloadJson = document.getElementById("downloadJson");
     const elAdvancedSubtotalPill = document.getElementById("advancedSubtotalPill");
 
+    // Responsive pie canvas
     const canvas = document.getElementById("chart");
     const ctx = canvas.getContext("2d");
 
@@ -1378,9 +1438,31 @@
       elFutureAnnual.textContent = state.annualize ? `${money(futA)} per year` : "—";
     }
 
+    // --- Responsive canvas sizing for the spending chart ---
+    function sizeSpendingCanvas(){
+      const container = canvas.parentElement; // .canvasWrap
+      if (!container) return;
+
+      const cssW = Math.max(260, Math.floor(container.clientWidth - 2)); // padding/border safe
+      const cssH = Math.max(220, Math.floor(Math.min(360, cssW * 0.62)));
+
+      const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      canvas.style.width = cssW + "px";
+      canvas.style.height = cssH + "px";
+      canvas.width = Math.floor(cssW * dpr);
+      canvas.height = Math.floor(cssH * dpr);
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in CSS pixels
+    }
+
     function drawChart(){
+      sizeSpendingCanvas();
+
       const { monthly } = computeTotals();
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const w = canvas.clientWidth || 520;
+      const h = canvas.clientHeight || 320;
+
+      ctx.clearRect(0, 0, w, h);
 
       ctx.font = "14px system-ui, -apple-system, Segoe UI, Roboto, Arial";
       ctx.fillStyle = "rgba(234,240,255,.92)";
@@ -1401,33 +1483,84 @@
       }
       segments.sort((a,b)=>b.value-a.value);
 
-      const cx = 165, cy = 185, radius = 110;
+      // Layout adapts to width: side legend when wide; stacked legend when narrow.
+      const wide = w >= 520;
+
+      const chartCx = wide ? Math.round(w * 0.32) : Math.round(w * 0.50);
+      const chartCy = wide ? Math.round(h * 0.60) : Math.round(h * 0.55);
+      const radius  = Math.round(Math.min(wide ? w * 0.22 : w * 0.28, h * 0.34));
+
       let start = -Math.PI / 2;
       for (const seg of segments){
         const angle = (seg.value / monthly) * Math.PI * 2;
         ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.arc(cx, cy, radius, start, start + angle);
+        ctx.moveTo(chartCx, chartCy);
+        ctx.arc(chartCx, chartCy, radius, start, start + angle);
         ctx.closePath();
         ctx.fillStyle = seg.color;
         ctx.fill();
         start += angle;
       }
 
-      const lx = 320, ly = 60;
       ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
-      let y = ly;
-      for (const seg of segments.slice(0, 8)){
-        const pct = (seg.value / monthly) * 100;
-        ctx.fillStyle = seg.color;
-        ctx.fillRect(lx, y - 9, 10, 10);
-        ctx.fillStyle = "rgba(234,240,255,.92)";
-        ctx.fillText(`${seg.label.split(" (")[0]}: ${money(seg.value)} (${pct.toFixed(0)}%)`, lx + 16, y);
-        y += 18;
-      }
-      if (segments.length > 8){
-        ctx.fillStyle = "rgba(138,160,198,.9)";
-        ctx.fillText(`+ ${segments.length - 8} more`, lx + 16, y);
+
+      if (wide){
+        const lx = Math.round(w * 0.62);
+        let y = 56;
+        for (const seg of segments.slice(0, 8)){
+          const pct = (seg.value / monthly) * 100;
+          ctx.fillStyle = seg.color;
+          ctx.fillRect(lx, y - 9, 10, 10);
+          ctx.fillStyle = "rgba(234,240,255,.92)";
+          ctx.fillText(`${seg.label.split(" (")[0]}: ${money(seg.value)} (${pct.toFixed(0)}%)`, lx + 16, y);
+          y += 18;
+        }
+        if (segments.length > 8){
+          ctx.fillStyle = "rgba(138,160,198,.9)";
+          ctx.fillText(`+ ${segments.length - 8} more`, lx + 16, y);
+        }
+      } else {
+        // Compact legend under chart
+        let y = Math.min(h - 10, Math.round(chartCy + radius + 18));
+        let x = 12;
+        const maxW = w - 12;
+        for (const seg of segments.slice(0, 6)){
+          const pct = (seg.value / monthly) * 100;
+          const label = `${seg.label.split(" (")[0]} ${pct.toFixed(0)}%`;
+          const textW = ctx.measureText(label).width;
+          const pillW = textW + 28;
+
+          if (x + pillW > maxW){
+            x = 12;
+            y += 20;
+            if (y > h - 8) break;
+          }
+
+          ctx.fillStyle = "rgba(255,255,255,.06)";
+          ctx.strokeStyle = "rgba(255,255,255,.10)";
+          ctx.lineWidth = 1;
+          const r = 10;
+          const ph = 18;
+
+          // rounded rect
+          const px = x, py = y - 14;
+          ctx.beginPath();
+          ctx.moveTo(px+r, py);
+          ctx.arcTo(px+pillW, py, px+pillW, py+ph, r);
+          ctx.arcTo(px+pillW, py+ph, px, py+ph, r);
+          ctx.arcTo(px, py+ph, px, py, r);
+          ctx.arcTo(px, py, px+pillW, py, r);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = seg.color;
+          ctx.fillRect(px + 8, y - 10, 8, 8);
+          ctx.fillStyle = "rgba(234,240,255,.92)";
+          ctx.fillText(label, px + 20, y - 2);
+
+          x += pillW + 8;
+        }
       }
     }
 
@@ -1469,10 +1602,8 @@
       drawChart();
       renderFuture();
 
-      // Replacement rate label
       elReplacementRateLabel.textContent = `${state.replacementRatePct}% target`;
 
-      // Mode summary if not set yet (e.g., before first Apply)
       if (!elModeSummary.textContent || elModeSummary.textContent === "—"){
         const band = pickBand(state.incomeAnnual);
         const modeText = (state.spendMode === "replacement")
@@ -1493,13 +1624,9 @@
 
     elHousehold.addEventListener("input", () => { state.household = clamp(elHousehold.value, 1, 6); });
 
-    elIncome.addEventListener("input", () => {
-      state.incomeAnnual = clamp(elIncome.value, 0, 100_000_000);
-    });
+    elIncome.addEventListener("input", () => { state.incomeAnnual = clamp(elIncome.value, 0, 100_000_000); });
 
-    elSpendMode.addEventListener("change", () => {
-      state.spendMode = elSpendMode.value;
-    });
+    elSpendMode.addEventListener("change", () => { state.spendMode = elSpendMode.value; });
 
     elReplacementRate.addEventListener("input", () => {
       state.replacementRatePct = clamp(elReplacementRate.value, 0, 200);
@@ -1518,11 +1645,21 @@
 
     elDownloadJson.addEventListener("click", exportJson);
 
+    // Redraw spending chart on resize/orientation changes
+    (function(){
+      let t = null;
+      function onResize(){
+        if (t) clearTimeout(t);
+        t = setTimeout(() => { try{ drawChart(); }catch(e){} }, 60);
+      }
+      window.addEventListener("resize", onResize, { passive:true });
+      window.addEventListener("orientationchange", onResize, { passive:true });
+    })();
+
     // Boot
     (function boot(){
       initLocations();
 
-      // Defaults
       state.locationId = LOCATIONS[0].id;
       state.household = 2;
       state.incomeAnnual = 80000;
@@ -1534,7 +1671,6 @@
       state.showAdvanced = false;
       state.annualize = true;
 
-      // Set UI
       elShowAdvanced.checked = state.showAdvanced;
       elAnnualize.checked = state.annualize;
       elHousehold.value = state.household;
@@ -1546,7 +1682,6 @@
       elHealthcareMode.value = state.healthcareMode;
       elTaxMode.value = state.taxMode;
 
-      // Initialize with a national (no-location) default so table isn't empty
       const out = computeDefaultsMonthly({
         incomeAnnual: state.incomeAnnual,
         mode: state.spendMode,
@@ -1566,7 +1701,7 @@
     })();
 
     // ============================================================
-    // TAB 2: Projection Dashboard (unchanged from your prior version)
+    // TAB 2: Projection Dashboard (unchanged logic)
     // ============================================================
     window.__proj = (function(){
       var RMD_LIFE_EXPECTANCY = {
@@ -2207,4 +2342,3 @@
   </script>
 </body>
 </html>
-
