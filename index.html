@@ -569,7 +569,7 @@
           <div style="height:10px;"></div>
 
           <div class="row space">
-            <div class="pill">Total retirement balance</div>
+            <div class="pill">Total included balance</div>
             <div class="pill" id="accountsTotalPill">$0</div>
           </div>
 
@@ -577,15 +577,16 @@
 
           <table aria-label="Retirement accounts table">
             <thead>
-              <tr>
+                <tr>
+                <th style="width:70px;">Use</th>
                 <th style="width:44px;"></th>
                 <th>Account</th>
                 <th style="width:190px;">Balance</th>
                 <th style="width:220px; text-align:right;">Actions</th>
-              </tr>
+                </tr>
             </thead>
             <tbody id="accountsTbody"></tbody>
-          </table>
+            </table>
 
           <div class="row" style="justify-content:flex-end; margin-top:10px;">
             <button class="btn secondary" id="deleteSelectedBtn" type="button">Delete Selected</button>
@@ -753,16 +754,31 @@
               <div class="small muted" id="withdrawalLabel">—</div>
             </div>
             <div class="rangeWrap">
-              <input id="withdrawalSlider" type="range" min="0" max="2" step="1" value="0" aria-label="Distribution method slider" />
-              <div class="rangeTicks small muted">
-                <span>RMD</span><span>4%</span><span>Max</span>
-              </div>
+                <input id="withdrawalSlider" type="range" min="0" max="3" step="1" value="0" aria-label="Distribution method slider" />
+                <div class="rangeTicks small muted">
+                <span>RMD</span><span>4%</span><span>Max</span><span>Custom</span>
+                </div>
             </div>
 
             <div class="pill" id="otherIncomePill">Other income: $0/yr</div>
           </div>
 
           <div style="height:10px;"></div>
+
+          <div class="collapse is-collapsed" id="customWithdrawCollapse" style="margin-top:8px;">
+            <div class="grid2">
+                <div>
+                <label for="customWithdraw">Custom Distribution Amount (Annual, $)</label><br/>
+                <input id="customWithdraw" type="number" min="0" step="100" placeholder="e.g., 60000" />
+                <div class="note">Used when Distribution method is set to “Custom”. Amount is portfolio-only (before adding pension/SS).</div>
+                </div>
+                <div>
+                <div class="pill" id="customWithdrawPill">$0 / yr</div>
+                <div class="note">Tip: set Custom to your desired annual drawdown to stress test spending coverage.</div>
+                </div>
+            </div>
+        </div>
+
 
           <!-- Distribution outputs -->
           <div class="metricGrid" aria-label="Distribution outputs">
@@ -791,21 +807,60 @@
 
           <!-- Removed: Retirement Income Sources Breakdown chart -->
 
-          <div class="metricGrid" aria-label="Remaining portfolio">
-            <div class="metricBox" style="grid-column: 1 / -1;">
-              <div class="metricTitle">Remaining Portfolio at Death (if applicable)</div>
-              <div class="metricValue" id="outRemaining">$—</div>
-              <div class="small muted">Shown for RMD and 4% methods (simplified)</div>
+          <div class="metricGrid" aria-label="Spending coverage and remaining portfolio">
+            <!-- NEW: Spending coverage (left) -->
+            <div class="metricBox">
+                <div class="metricTitle">Spending Coverage (vs Spending Estimator)</div>
+
+                <div style="height:8px;"></div>
+                <div class="pill" id="spendCoverageStatus">—</div>
+
+                <div class="note" style="margin-top:8px;">
+                    For more information, expand this section.
+                    <button class="btn secondary" id="toggleCoverageDetails" type="button" style="margin-left:8px; padding:6px 10px;">
+                    Expand
+                    </button>
+                </div>
+
+                <!-- Collapsible details (default collapsed) -->
+                <div class="collapse is-collapsed" id="coverageDetails">
+                    <div class="hr" style="margin:10px 0;"></div>
+
+                    <div class="small muted">Estimated spending (annual)</div>
+                    <div class="metricValue" id="spendAnnual">$—</div>
+
+                    <div style="height:8px;"></div>
+
+                    <div class="small muted">Total retirement income (annual, today’s $)</div>
+                    <div class="metricValue" id="incomeAnnualToday">$—</div>
+
+                    <div class="hr" style="margin:10px 0;"></div>
+
+                    <div class="small muted">Surplus / Shortfall (annual, today’s $)</div>
+                    <div class="metricValue" id="surplusShortfall">$—</div>
+
+                    <div style="height:6px;"></div>
+                    <div class="small muted" id="coveragePct">—</div>
+                </div>
+                </div>
+
+            <!-- Existing: Remaining portfolio (right) -->
+            <div class="metricBox">
+                <div class="metricTitle">Remaining Portfolio at Death (if applicable)</div>
+                <div class="metricValue" id="outRemaining">$—</div>
+                <div class="small muted">Shown for RMD and 4% methods (simplified)</div>
             </div>
-          </div>
+            </div>
+
         </section>
 
         <!-- Drawdown Chart -->
         <section class="card">
           <div class="row space" style="align-items:center;">
             <div>
-              <div style="font-weight:800; font-size:16px;">Drawdown Chart</div>
-              <div class="small muted">Portfolio balance path; pension/SS reduce withdrawals when enabled.</div>
+              <div style="font-weight:800; font-size:16px;">Portfolio Growth & Drawdown</div>
+              <div class="small muted">Shows accumulation (growth + contributions) then retirement drawdown (withdrawals reduced by pension/SS).</div>
+
             </div>
           </div>
 
@@ -813,16 +868,22 @@
 
           <div class="row" style="justify-content:center;">
             <select id="drawdownSelector" style="width: 740px; max-width: 100%;">
-              <option value="0">Minimum Projection - Required Minimum Distribution (RMD)</option>
-              <option value="1">Minimum Projection - 4% Withdrawal Rule</option>
-              <option value="2">Minimum Projection - Maximum Distribution</option>
-              <option value="3">Medium Projection - Required Minimum Distribution (RMD)</option>
-              <option value="4">Medium Projection - 4% Withdrawal Rule</option>
-              <option value="5">Medium Projection - Maximum Distribution</option>
-              <option value="6">Maximum Projection - Required Minimum Distribution (RMD)</option>
-              <option value="7">Maximum Projection - 4% Withdrawal Rule</option>
-              <option value="8">Maximum Projection - Maximum Distribution</option>
-            </select>
+                <option value="0">Minimum Projection - Required Minimum Distribution (RMD)</option>
+                <option value="1">Minimum Projection - 4% Withdrawal Rule</option>
+                <option value="2">Minimum Projection - Maximum Distribution</option>
+                <option value="3">Minimum Projection - Custom Distribution</option>
+
+                <option value="4">Medium Projection - Required Minimum Distribution (RMD)</option>
+                <option value="5">Medium Projection - 4% Withdrawal Rule</option>
+                <option value="6">Medium Projection - Maximum Distribution</option>
+                <option value="7">Medium Projection - Custom Distribution</option>
+
+                <option value="8">Maximum Projection - Required Minimum Distribution (RMD)</option>
+                <option value="9">Maximum Projection - 4% Withdrawal Rule</option>
+                <option value="10">Maximum Projection - Maximum Distribution</option>
+                <option value="11">Maximum Projection - Custom Distribution</option>
+                </select>
+
             <button class="btn" id="viewDrawdownBtn" type="button">View Drawdown Chart</button>
           </div>
 
@@ -1162,31 +1223,40 @@
     }
 
     function saveSpendingState(){
-      const payload = {
-        version: 1,
-        state: {
-          locationId: state.locationId,
-          incomeAnnual: state.incomeAnnual,
-          spendMode: state.spendMode,
-          replacementRatePct: state.replacementRatePct,
-          values: state.values,
-          include: state.include,
-          household: state.household,
-          housingMode: state.housingMode,
-          healthcareMode: state.healthcareMode,
-          taxMode: state.taxMode,
-          showAdvanced: state.showAdvanced,
-          annualize: state.annualize
-        },
-        ui: {
-          inflationPreview: Number(elInflation?.value || 2.5),
-          yearsToRetire: Number(elYears?.value || 0),
-          lastAppliedText: elLastApplied?.textContent || ""
-        },
-        savedAt: new Date().toISOString()
-      };
-      try { localStorage.setItem(SPENDING_KEY, JSON.stringify(payload)); } catch(e){}
+        const payload = {
+            version: 1,
+            state: {
+            locationId: state.locationId,
+            incomeAnnual: state.incomeAnnual,
+            spendMode: state.spendMode,
+            replacementRatePct: state.replacementRatePct,
+            values: state.values,
+            include: state.include,
+            household: state.household,
+            housingMode: state.housingMode,
+            healthcareMode: state.healthcareMode,
+            taxMode: state.taxMode,
+            showAdvanced: state.showAdvanced,
+            annualize: state.annualize
+            },
+            ui: {
+            inflationPreview: Number(elInflation?.value || 2.5),
+            yearsToRetire: Number(elYears?.value || 0),
+            lastAppliedText: elLastApplied?.textContent || ""
+            },
+            savedAt: new Date().toISOString()
+        };
+
+        try {
+            localStorage.setItem(SPENDING_KEY, JSON.stringify(payload));
+        } catch(e){}
+
+        // NEW: notify the Projection tab (same page) that spending changed
+        try {
+            window.dispatchEvent(new CustomEvent("rtk:spending-updated"));
+        } catch(e){}
     }
+
 
     function loadSpendingState(){
       const raw = localStorage.getItem(SPENDING_KEY);
@@ -1725,18 +1795,109 @@
 
       function newId(){ return String(Date.now()) + "_" + String(Math.floor(Math.random()*1000000)); }
 
-      function loadAccounts(){
+        function loadAccounts(){
         var a = loadJson(ACCOUNTS_KEY);
         accounts = Array.isArray(a) ? a : [];
         selectedIds = {};
-      }
+
+        // Migration/default: older saved accounts won't have included flag
+        for (var i = 0; i < accounts.length; i++){
+            if (accounts[i].included === undefined) accounts[i].included = true;
+            accounts[i].included = !!accounts[i].included;
+        }
+
+        // Persist migrated structure
+        saveAccounts();
+        }
+
+        function safeParse(raw){
+            try { return JSON.parse(raw); } catch(e){ return null; }
+            }
+
+        function getSpendingEstimatorAnnual(){
+            // This matches your Spending Estimator key:
+            var key = "retirement_spending_estimator_v1";
+            var raw = null;
+            try { raw = localStorage.getItem(key); } catch(e){ raw = null; }
+            if (!raw) return null;
+
+            var payload = safeParse(raw);
+            if (!payload || !payload.state) return null;
+
+            var st = payload.state;
+            var values = (st.values && typeof st.values === "object") ? st.values : null;
+            var include = (st.include && typeof st.include === "object") ? st.include : null;
+            if (!values || !include) return null;
+
+            var monthly = 0;
+            for (var k in values){
+                if (!values.hasOwnProperty(k)) continue;
+                if (!include[k]) continue;
+                var v = Number(values[k] || 0);
+                if (isFinite(v) && v > 0) monthly += v;
+            }
+            return monthly * 12;
+            }
+
+        function updateSpendingCoverageUI(totalIncomeTodayAnnual){
+            var spendAnnual = getSpendingEstimatorAnnual();
+
+            var elStatus = byId("spendCoverageStatus");
+            var elSpend  = byId("spendAnnual");
+            var elIncome = byId("incomeAnnualToday");
+            var elDelta  = byId("surplusShortfall");
+            var elPct    = byId("coveragePct");
+
+            // If user hasn't added the HTML block yet, don't error.
+            if (!elStatus || !elSpend || !elIncome || !elDelta || !elPct) return;
+
+            var income = Number(totalIncomeTodayAnnual || 0);
+            if (!isFinite(income) || income < 0) income = 0;
+
+            if (spendAnnual === null){
+                elStatus.textContent = "No spending estimate found (use the Spending Estimator tab first).";
+                elSpend.textContent  = "$—";
+                elIncome.textContent = formatDollars(income) + " / yr";
+                elDelta.textContent  = "$—";
+                elPct.textContent    = "—";
+                return;
+            }
+
+            spendAnnual = Math.max(0, Number(spendAnnual || 0));
+
+            elSpend.textContent  = formatDollars(spendAnnual) + " / yr";
+            elIncome.textContent = formatDollars(income) + " / yr";
+
+            var delta = income - spendAnnual;
+            var covered = (income >= spendAnnual);
+
+            elDelta.textContent =
+                formatDollars(Math.abs(delta)) + (covered ? " surplus" : " shortfall");
+
+            var pct = (spendAnnual > 0) ? (income / spendAnnual) * 100 : 0;
+            elPct.textContent = (spendAnnual > 0)
+                ? ("Coverage: " + pct.toFixed(0) + "% of estimated spending")
+                : "Coverage: —";
+
+            if (covered){
+                elStatus.textContent = "Covered. Income exceeds spending by: " + formatDollars(delta) + " / yr";
+            } else {
+                elStatus.textContent = "Shortfall. Income is below spending by: " + formatDollars(Math.abs(delta)) + " / yr";
+            }
+            }
+
+
       function saveAccounts(){ saveJson(ACCOUNTS_KEY, accounts); }
 
       function totalAccounts(){
         var sum = 0;
-        for (var i=0;i<accounts.length;i++) sum += Number(accounts[i].amount||0);
+        for (var i=0;i<accounts.length;i++){
+            if (!accounts[i].included) continue;
+            sum += Number(accounts[i].amount||0);
+        }
         return sum;
-      }
+        }
+
       function setAccountsTotalPill(){ byId("accountsTotalPill").textContent = formatDollars(totalAccounts()); }
 
       function setDeleteSelectedEnabled(){
@@ -1768,18 +1929,31 @@
             var tr=document.createElement("tr");
             if (selectedIds[acct.id]) tr.className="selected";
 
-            var tdSel=document.createElement("td");
+            // NEW: Include checkbox (use in model)
+            var tdUse = document.createElement("td");
+            var useCb = document.createElement("input");
+            useCb.type = "checkbox";
+            useCb.checked = (acct.included === undefined) ? true : !!acct.included;
+            useCb.addEventListener("change", function(){
+            acct.included = !!useCb.checked;
+            saveAccounts();
+            setAccountsTotalPill();   // updates total pill
+            renderProjection();       // re-runs model with included accounts only
+            });
+            tdUse.appendChild(useCb);
 
-            var cb=document.createElement("input");
+            // Existing: Selection checkbox (for delete selected)
+            var tdSel = document.createElement("td");
+            var cb = document.createElement("input");
             cb.type="checkbox";
             cb.checked=!!selectedIds[acct.id];
             cb.addEventListener("change", function(){
-              selectedIds[acct.id] = !!cb.checked;
-              tr.classList.toggle("selected", !!cb.checked);
-              setDeleteSelectedEnabled();
+            selectedIds[acct.id] = !!cb.checked;
+            tr.classList.toggle("selected", !!cb.checked);
+            setDeleteSelectedEnabled();
             });
-
             tdSel.appendChild(cb);
+
 
             var tdName=document.createElement("td");
             tdName.textContent=acct.name;
@@ -1812,6 +1986,7 @@
             tdActions.appendChild(editBtn);
             tdActions.appendChild(delBtn);
 
+            tr.appendChild(tdUse);
             tr.appendChild(tdSel);
             tr.appendChild(tdName);
             tr.appendChild(tdAmt);
@@ -1829,7 +2004,8 @@
         if(!name) return;
         if(!isFinite(amount) || amount < 0) return;
 
-        accounts.push({ id:newId(), name:name, amount:amount });
+        accounts.push({ id:newId(), name:name, amount:amount, included:true });
+
         saveAccounts();
         byId("acctName").value="";
         byId("acctAmount").value="";
@@ -1933,7 +2109,24 @@
         var ssEnabled=!!byId("enableSS").checked;
         setCollapsed(byId("ssCollapse"), !ssEnabled);
         byId("ssDisabledPill").style.display = ssEnabled ? "none" : "inline-block";
+        updateCustomWithdrawUI();
       }
+
+      function getCustomWithdrawAnnual(){
+        var v = Number(byId("customWithdraw").value || 0);
+        if (!isFinite(v) || v < 0) v = 0;
+        return v;
+        }
+
+        function updateCustomWithdrawUI(){
+        var wIdx = getWithdrawalIndex();
+        var show = (wIdx === 3);
+        setCollapsed(byId("customWithdrawCollapse"), !show);
+
+        var amt = getCustomWithdrawAnnual();
+        byId("customWithdrawPill").textContent = formatDollars(amt) + " / yr";
+        }
+
 
       function updateSocialSecurityPill(){
         var ssEnabled=!!byId("enableSS").checked;
@@ -2065,43 +2258,72 @@
         };
       }
 
-      function computeDrawdown(fv, annualWithdrawalNeed, otherIncomeAnnual, growthRate, startAge, endAge){
-        var balances=[];
-        var balance=fv;
+      function computePortfolioPath(currentFunds, annualContrib, preRetGrowth, retirementGrowth,
+                              annualWithdrawalNeed, otherIncomeAnnual,
+                              currentAge, retirementAge, deathAge){
 
-        var need = Number(annualWithdrawalNeed||0);
-        if(!isFinite(need) || need < 0) need = 0;
+        var balances = [];
+        var balance = Number(currentFunds || 0);
+        if (!isFinite(balance) || balance < 0) balance = 0;
 
-        var other = Number(otherIncomeAnnual||0);
-        if(!isFinite(other) || other < 0) other = 0;
+        var contrib = Number(annualContrib || 0);
+        if (!isFinite(contrib) || contrib < 0) contrib = 0;
 
+        var rPre = Number(preRetGrowth || 0);
+        if (!isFinite(rPre)) rPre = 0;
+
+        var rRet = Number(retirementGrowth || 0);
+        if (!isFinite(rRet)) rRet = 0;
+
+        var need = Number(annualWithdrawalNeed || 0);
+        if (!isFinite(need) || need < 0) need = 0;
+
+        var other = Number(otherIncomeAnnual || 0);
+        if (!isFinite(other) || other < 0) other = 0;
+
+        // Use one constant annual withdrawal need for the method,
+        // offset by other income (pension + SS), never negative.
         var effectiveWithdrawal = Math.max(0, need - other);
 
-        var g = Number(growthRate||0);
-        if(!isFinite(g)) g = 0;
+        // Full path from currentAge through deathAge (inclusive)
+        for (var age = currentAge; age <= deathAge; age++){
 
-        for(var age=startAge; age<=endAge; age++){
-          balance = balance*(1+g) - effectiveWithdrawal;
-          balances.push(balance);
+            if (age < retirementAge){
+            // Accumulation: grow then add contribution (end-of-year contribution convention)
+            balance = balance * (1 + rPre) + contrib;
+            } else {
+            // Retirement: grow then withdraw (offset by other income)
+            balance = balance * (1 + rRet) - effectiveWithdrawal;
+            }
+
+            balances.push(balance);
         }
+
         return balances;
-      }
+        }
+
 
       var drawdownState={ years:[], map:{}, remainingMap:{} };
       var chartInstance=null;
 
       function getDrawdownTitle(index){
         var titles=[
-          "Minimum Projection - Required Minimum Distribution (RMD)",
-          "Minimum Projection - 4% Withdrawal Rule",
-          "Minimum Projection - Maximum Distribution",
-          "Medium Projection - Required Minimum Distribution (RMD)",
-          "Medium Projection - 4% Withdrawal Rule",
-          "Medium Projection - Maximum Distribution",
-          "Maximum Projection - Required Minimum Distribution (RMD)",
-          "Maximum Projection - 4% Withdrawal Rule",
-          "Maximum Projection - Maximum Distribution"
-        ];
+            "Minimum Projection - Required Minimum Distribution (RMD)",
+            "Minimum Projection - 4% Withdrawal Rule",
+            "Minimum Projection - Maximum Distribution",
+            "Minimum Projection - Custom Distribution",
+
+            "Medium Projection - Required Minimum Distribution (RMD)",
+            "Medium Projection - 4% Withdrawal Rule",
+            "Medium Projection - Maximum Distribution",
+            "Medium Projection - Custom Distribution",
+
+            "Maximum Projection - Required Minimum Distribution (RMD)",
+            "Maximum Projection - 4% Withdrawal Rule",
+            "Maximum Projection - Maximum Distribution",
+            "Maximum Projection - Custom Distribution"
+            ];
+
         return titles[index] || "Drawdown Chart";
       }
 
@@ -2125,7 +2347,7 @@
           type:"line",
           data:{
             labels: years,
-            datasets:[{ label:"Balance", data:balances, pointRadius:2, tension:0.2 }]
+            datasets:[{ label:"Portfolio Balance", data:balances, pointRadius:2, tension:0.2 }]
           },
           options:{
             responsive:true,
@@ -2147,7 +2369,8 @@
       }
 
       var scenarioNames = ["Minimum", "Medium", "Maximum"];
-      var withdrawalNames = ["Required Minimum Distribution (RMD)", "4% Withdrawal Rule", "Maximum Distribution"];
+      var withdrawalNames = ["Required Minimum Distribution (RMD)", "4% Withdrawal Rule", "Maximum Distribution", "Custom Distribution"];
+
 
       var last = {
         result:null,
@@ -2158,16 +2381,19 @@
       };
 
       function getScenarioIndex(){ return Math.max(0, Math.min(2, Number(byId("scenarioSlider").value || 0))); }
-      function getWithdrawalIndex(){ return Math.max(0, Math.min(2, Number(byId("withdrawalSlider").value || 0))); }
+      function getWithdrawalIndex(){ return Math.max(0, Math.min(3, Number(byId("withdrawalSlider").value || 0))); }
+
 
       function distributionFor(obj, idx){
         if (idx === 0) return obj.min_disb;
         if (idx === 1) return obj.mid_disb;
-        return obj.max_disb;
+        if (idx === 2) return obj.max_disb;
+        return getCustomWithdrawAnnual(); // idx === 3
       }
 
+
       function remainingForScenarioAndMethod(sIdx, wIdx){
-        var drawdownIndex = (sIdx * 3) + wIdx;
+        var drawdownIndex = (sIdx * 4) + wIdx;
         if (!drawdownState.remainingMap) return null;
         var rem = drawdownState.remainingMap[drawdownIndex];
         return (rem === undefined) ? null : rem;
@@ -2193,6 +2419,27 @@
         el.style.display = "inline-block";
         el.textContent = warnings.join(" ");
       }
+
+      function refreshSpendingCoverageFromCurrentSelection(){
+        if (!last.result) return;
+
+        var sIdx = getScenarioIndex();
+        var wIdx = getWithdrawalIndex();
+        var nominal = last.result.nominalProj[sIdx];
+
+        var distNom = distributionFor(nominal, wIdx);
+        var totalNom = distNom + last.otherIncomeAnnual;
+
+        // Convert to today's dollars using your existing helper
+        var totalToday = toTodaysDollars(totalNom);
+
+        // This function should already exist from the block you added earlier
+        // and should read SPENDING_KEY from localStorage and update the UI.
+        if (typeof updateSpendingCoverageUI === "function"){
+            updateSpendingCoverageUI(totalToday);
+        }
+      }
+
 
       function updateProjectionOutputUI(){
         if (!last.result) return;
@@ -2224,13 +2471,16 @@
 
         byId("outTotalIncomeNominal").textContent = formatDollars(totalNom) + " / yr";
         byId("outTotalIncomeToday").textContent = formatDollars(totalToday) + " / yr";
+        updateSpendingCoverageUI(totalToday);
+        refreshSpendingCoverageFromCurrentSelection();
 
         var rem = remainingForScenarioAndMethod(sIdx, wIdx);
         byId("outRemaining").textContent = (rem === null) ? "—" : formatDollars(rem);
 
         // Keep drawdown selector aligned
-        var drawdownIndex = (sIdx * 3) + wIdx;
+        var drawdownIndex = (sIdx * 4) + wIdx;
         byId("drawdownSelector").value = String(drawdownIndex);
+
         if (byId("chartWrap").style.display !== "none") renderDrawdownChart();
 
         // Persist slider UI positions
@@ -2299,45 +2549,76 @@
           growthRate: num("growthRate"),
           retirementGrowth: num("retirementGrowth"),
           uiScenarioIndex: getScenarioIndex(),
-          uiWithdrawalIndex: getWithdrawalIndex()
+          uiWithdrawalIndex: getWithdrawalIndex(),
+          customWithdraw: getCustomWithdrawAnnual(),
         });
 
-        var years=[];
-        if (ages.deathAge > ages.retirementAge){
-          for(var age2=ages.retirementAge; age2<=ages.deathAge; age2++) years.push(age2);
+        // Build full portfolio path from currentAge to deathAge (inclusive)
+        var years = [];
+        if (ages.deathAge >= ages.currentAge){
+        for (var age = ages.currentAge; age <= ages.deathAge; age++) years.push(age);
         }
 
-        var g=result.nominalRetGrowth;
-
-        var dd=[];
+        var dd = [];
         if (years.length){
-          dd.push(computeDrawdown(result.nominalProj[0].fv, result.nominalProj[0].min_disb, otherIncomeAnnual, g, ages.retirementAge, ages.deathAge));
-          dd.push(computeDrawdown(result.nominalProj[0].fv, result.nominalProj[0].mid_disb, otherIncomeAnnual, g, ages.retirementAge, ages.deathAge));
-          dd.push(computeDrawdown(result.nominalProj[0].fv, result.nominalProj[0].max_disb, otherIncomeAnnual, g, ages.retirementAge, ages.deathAge));
 
-          dd.push(computeDrawdown(result.nominalProj[1].fv, result.nominalProj[1].min_disb, otherIncomeAnnual, g, ages.retirementAge, ages.deathAge));
-          dd.push(computeDrawdown(result.nominalProj[1].fv, result.nominalProj[1].mid_disb, otherIncomeAnnual, g, ages.retirementAge, ages.deathAge));
-          dd.push(computeDrawdown(result.nominalProj[1].fv, result.nominalProj[1].max_disb, otherIncomeAnnual, g, ages.retirementAge, ages.deathAge));
+        var currentFundsForPath = currentFunds; // already computed earlier
+        var contrib = annualContribution;
+        var rRet = retirementGrowth;            // already in decimal (e.g., 0.03)
 
-          dd.push(computeDrawdown(result.nominalProj[2].fv, result.nominalProj[2].min_disb, otherIncomeAnnual, g, ages.retirementAge, ages.deathAge));
-          dd.push(computeDrawdown(result.nominalProj[2].fv, result.nominalProj[2].mid_disb, otherIncomeAnnual, g, ages.retirementAge, ages.deathAge));
-          dd.push(computeDrawdown(result.nominalProj[2].fv, result.nominalProj[2].max_disb, otherIncomeAnnual, g, ages.retirementAge, ages.deathAge));
+        // For each scenario: use its scenario growth rate (already in decimal)
+        for (var s = 0; s < 3; s++){
+            var rPre = result.nominalProj[s].growth_rate;
+
+            // For each method: use the distribution calculated from FV at retirement (existing model)
+            var distRMD = result.nominalProj[s].min_disb;
+            var dist4   = result.nominalProj[s].mid_disb;
+            var distMax = result.nominalProj[s].max_disb;
+
+            var customW = getCustomWithdrawAnnual();
+
+            dd.push(computePortfolioPath(
+            currentFundsForPath, contrib, rPre, rRet,
+            distRMD, otherIncomeAnnual,
+            ages.currentAge, ages.retirementAge, ages.deathAge
+            ));
+
+            dd.push(computePortfolioPath(
+            currentFundsForPath, contrib, rPre, rRet,
+            dist4, otherIncomeAnnual,
+            ages.currentAge, ages.retirementAge, ages.deathAge
+            ));
+
+            dd.push(computePortfolioPath(
+            currentFundsForPath, contrib, rPre, rRet,
+            distMax, otherIncomeAnnual,
+            ages.currentAge, ages.retirementAge, ages.deathAge
+            ));
+
+            dd.push(computePortfolioPath(
+            currentFundsForPath, contrib, rPre, rRet,
+            customW, otherIncomeAnnual,
+            ages.currentAge, ages.retirementAge, ages.deathAge
+            ));
+
         }
+        }
+
 
         function lastVal(arr){
           return (arr && arr.length) ? arr[arr.length - 1] : null;
         }
 
         drawdownState.remainingMap = {
-          0: lastVal(dd[0]),
-          1: lastVal(dd[1]),
-          2: null,
-          3: lastVal(dd[3]),
-          4: lastVal(dd[4]),
-          5: null,
-          6: lastVal(dd[6]),
-          7: lastVal(dd[7]),
-          8: null
+            0:lastVal(dd[0]),  1:lastVal(dd[1]),  2:null,          3:lastVal(dd[3]),
+            4:lastVal(dd[4]),  5:lastVal(dd[5]),  6:null,          7:lastVal(dd[7]),
+            8:lastVal(dd[8]),  9:lastVal(dd[9]), 10:null,         11:lastVal(dd[11])
+        };
+
+        drawdownState.map = {
+            0:dd[0], 1:dd[1], 2:dd[2], 3:dd[3],
+            4:dd[4], 5:dd[5], 6:dd[6], 7:dd[7],
+            8:dd[8], 9:dd[9], 10:dd[10], 11:dd[11]
         };
 
         drawdownState.years=years;
@@ -2380,6 +2661,8 @@
 
         byId("scenarioSlider").value = (v.uiScenarioIndex !== undefined) ? String(v.uiScenarioIndex) : String(defaults.uiScenarioIndex);
         byId("withdrawalSlider").value = (v.uiWithdrawalIndex !== undefined) ? String(v.uiWithdrawalIndex) : String(defaults.uiWithdrawalIndex);
+        byId("customWithdraw").value = (v.customWithdraw!==undefined) ? v.customWithdraw : defaults.customWithdraw;
+
 
         loadAccounts();
         renderAccountsTable();
@@ -2393,7 +2676,7 @@
       }
 
       function wireEvents(){
-        var ids=["currentAge","retirementAge","deathAge","pension","growthRate","annualContribution","retirementGrowth","inflationProj","workIncome","yearsWorked","ssOverride"];
+        var ids=["currentAge","retirementAge","deathAge","pension","growthRate","annualContribution","retirementGrowth","inflationProj","workIncome","yearsWorked","ssOverride", "customWithdraw"];
         for(var i=0;i<ids.length;i++) byId(ids[i]).addEventListener("input", renderProjection);
 
         byId("enablePension").addEventListener("change", renderProjection);
@@ -2407,7 +2690,11 @@
         byId("deleteSelectedBtn").addEventListener("click", deleteSelectedAccounts);
 
         byId("scenarioSlider").addEventListener("input", updateProjectionOutputUI);
-        byId("withdrawalSlider").addEventListener("input", updateProjectionOutputUI);
+        byId("withdrawalSlider").addEventListener("input", function(){
+            updateCustomWithdrawUI();
+            updateProjectionOutputUI();
+        });
+
 
         byId("viewDrawdownBtn").addEventListener("click", function(){
           byId("chartWrap").style.display="block";
@@ -2416,8 +2703,9 @@
 
         byId("drawdownSelector").addEventListener("change", function(){
           var idx = Number(byId("drawdownSelector").value || 0);
-          var sIdx = Math.floor(idx / 3);
-          var wIdx = idx % 3;
+          var sIdx = Math.floor(idx / 4);
+          var wIdx = idx % 4;
+
           byId("scenarioSlider").value = String(sIdx);
           byId("withdrawalSlider").value = String(wIdx);
           updateProjectionOutputUI();
@@ -2435,6 +2723,7 @@
 
           setDefaultsIfEmpty();
           renderProjection();
+          updateCustomWithdrawUI();
         });
 
         byId("editModalCloseBtn").addEventListener("click", closeEditModal);
@@ -2444,6 +2733,41 @@
         byId("editModalOverlay").addEventListener("mousedown", function(e){
           if(e.target && e.target.id==="editModalOverlay") closeEditModal();
         });
+
+        // Spending coverage details toggle (default collapsed)
+        (function(){
+            var btn = byId("toggleCoverageDetails");
+            var panel = byId("coverageDetails");
+            if (!btn || !panel) return;
+
+            function setExpanded(expanded){
+                panel.classList.toggle("is-collapsed", !expanded);
+                btn.textContent = expanded ? "Collapse" : "Expand";
+            }
+
+            // Default: collapsed
+            setExpanded(false);
+
+            btn.addEventListener("click", function(){
+                var isCollapsed = panel.classList.contains("is-collapsed");
+                setExpanded(isCollapsed); // if collapsed -> expand, else collapse
+            });
+        })();
+
+        // Update coverage block when Spending Estimator changes
+        window.addEventListener("rtk:spending-updated", function(){
+        refreshSpendingCoverageFromCurrentSelection();
+        });
+
+        // If the user has the tool open in two tabs/windows, this catches updates
+        window.addEventListener("storage", function(e){
+        if (e && e.key === "retirement_spending_estimator_v1"){
+            refreshSpendingCoverageFromCurrentSelection();
+        }
+        });
+
+
+
       }
 
       function resizeCharts(){
