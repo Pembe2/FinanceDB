@@ -168,6 +168,11 @@
       background: rgba(255,255,255,.03);
       white-space:nowrap;
     }
+    .pill.warn{
+      border-color: rgba(255,198,87,.35);
+      background: rgba(255,198,87,.10);
+      color: rgba(255,230,175,.92);
+    }
 
     .grid2{display:grid;grid-template-columns: 1fr 1fr;gap:10px;}
     @media (max-width: 520px){
@@ -341,24 +346,22 @@
     }
 
     .rangeWrap{
-    width: 100%;
-    max-width: 520px;         /* match your slider cap */
+      width: 100%;
+      max-width: 520px;
     }
 
     .rangeWrap input[type="range"]{
-    width: 100%;
-    max-width: none;          /* max width is controlled by the wrapper */
+      width: 100%;
+      max-width: none;
     }
 
-    /* Tick labels aligned to the range width */
     .rangeTicks{
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-    padding: 0 10px;          /* small inset to account for thumb radius */
-    margin-top: 4px;
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      padding: 0 10px;
+      margin-top: 4px;
     }
-
   </style>
 </head>
 
@@ -370,18 +373,19 @@
     </p>
   </header>
 
+  <!-- Default tab is now Projection Dashboard (and hash can override: #spending or #projection) -->
   <nav class="tabsBar" role="tablist" aria-label="Retirement toolkit tabs">
-    <button class="tabBtn" id="tabSpending" role="tab" aria-selected="true" aria-controls="panelSpending" type="button">
+    <button class="tabBtn" id="tabSpending" role="tab" aria-selected="false" aria-controls="panelSpending" type="button">
       Spending Estimator
     </button>
-    <button class="tabBtn" id="tabProjection" role="tab" aria-selected="false" aria-controls="panelProjection" type="button">
+    <button class="tabBtn" id="tabProjection" role="tab" aria-selected="true" aria-controls="panelProjection" type="button">
       Projection Dashboard
     </button>
   </nav>
 
   <div class="wrap">
     <!-- TAB 1: Spending Estimator -->
-    <section id="panelSpending" class="tabPanel active" role="tabpanel" aria-labelledby="tabSpending">
+    <section id="panelSpending" class="tabPanel" role="tabpanel" aria-labelledby="tabSpending">
       <div class="spendingMain">
         <section class="card" aria-label="Inputs">
           <div class="row space">
@@ -398,6 +402,9 @@
 
           <div class="hr"></div>
 
+          <!-- Streamlined: removed Defaulting approach, Healthcare coverage, Taxes selectors.
+               The calculator still uses default assumptions:
+               spendMode="replacement", healthcareMode="medicareStandard", taxMode="manual". -->
           <div class="grid2" role="group" aria-label="Household assumptions">
             <div>
               <label for="household">Household size</label><br/>
@@ -409,16 +416,6 @@
               <label for="householdIncome">Household Annual Income ($)</label><br/>
               <input id="householdIncome" type="number" min="0" step="1000" value="80000" />
               <div class="note">Used as the base for “Replacement Rate” planning.</div>
-            </div>
-
-            <!-- Replacement rate mode -->
-            <div>
-              <label for="spendMode">Defaulting approach</label><br/>
-              <select id="spendMode">
-                <option value="replacement">Income replacement rate (retirement planning)</option>
-                <option value="income">Percent-of-income allocation (simple baseline)</option>
-              </select>
-              <div class="note">Replacement rate is recommended for retirement planning.</div>
             </div>
 
             <div>
@@ -435,25 +432,6 @@
                 <option value="rent">Rent</option>
               </select>
               <div class="note">Affects housing default (fixed cost).</div>
-            </div>
-
-            <div>
-              <label for="healthcareMode">Healthcare coverage</label><br/>
-              <select id="healthcareMode">
-                <option value="medicareStandard">Medicare + typical supplemental</option>
-                <option value="medicareLean">Medicare (lower supplemental spend)</option>
-                <option value="medicareRich">Medicare (higher out-of-pocket)</option>
-              </select>
-              <div class="note">Affects healthcare default (mostly fixed).</div>
-            </div>
-
-            <div>
-              <label for="taxMode">Taxes</label><br/>
-              <select id="taxMode">
-                <option value="manual">Manual (recommended)</option>
-                <option value="estimate">Simple tax estimate (splits income vs property)</option>
-              </select>
-              <div class="note">Tax estimates vary widely in retirement; manual is safer.</div>
             </div>
           </div>
 
@@ -493,8 +471,8 @@
           </table>
 
           <p class="note">
-            Defaults are heuristics: (replacement-rate or income-allocation) → location factor → household scaling for variable categories →
-            housing/healthcare mode adjustments → optional simple tax estimate. Adjust line items for realism.
+            Defaults are heuristics: replacement-rate envelope → location factor → household scaling for variable categories →
+            housing adjustments → advanced categories optional. Adjust line items for realism.
           </p>
         </section>
 
@@ -560,7 +538,7 @@
     </section>
 
     <!-- TAB 2: Projection Dashboard -->
-    <section id="panelProjection" class="tabPanel" role="tabpanel" aria-labelledby="tabProjection">
+    <section id="panelProjection" class="tabPanel active" role="tabpanel" aria-labelledby="tabProjection">
       <div class="projMain">
         <!-- Accounts -->
         <section class="card">
@@ -665,7 +643,6 @@
 
               <label>Inflation (% for “Today $”)</label><br/>
               <input id="inflationProj" type="number" min="0" max="10" step="0.1" />
-
             </div>
           </div>
         </section>
@@ -731,6 +708,9 @@
             <div class="pill" id="scenarioPill">Scenario: —</div>
           </div>
 
+          <div style="height:8px;"></div>
+          <div class="pill warn" id="projWarnings" style="display:none;">—</div>
+
           <div class="hr"></div>
 
           <!-- Scenario slider -->
@@ -740,10 +720,10 @@
               <div class="small muted" id="scenarioLabel">—</div>
             </div>
             <div class="rangeWrap">
-                <input id="scenarioSlider" type="range" min="0" max="2" step="1" value="1" aria-label="Projection scenario slider" />
-                <div class="rangeTicks small muted">
-                    <span>Minimum</span><span>Medium</span><span>Maximum</span>
-                </div>
+              <input id="scenarioSlider" type="range" min="0" max="2" step="1" value="1" aria-label="Projection scenario slider" />
+              <div class="rangeTicks small muted">
+                <span>Minimum</span><span>Medium</span><span>Maximum</span>
+              </div>
             </div>
 
             <div class="pill" id="scenarioRatesPill">Growth: —</div>
@@ -773,10 +753,10 @@
               <div class="small muted" id="withdrawalLabel">—</div>
             </div>
             <div class="rangeWrap">
-                <input id="withdrawalSlider" type="range" min="0" max="2" step="1" value="0" aria-label="Distribution method slider" />
-                <div class="rangeTicks small muted">
-                    <span>RMD</span><span>4%</span><span>Max</span>
-                </div>
+              <input id="withdrawalSlider" type="range" min="0" max="2" step="1" value="0" aria-label="Distribution method slider" />
+              <div class="rangeTicks small muted">
+                <span>RMD</span><span>4%</span><span>Max</span>
+              </div>
             </div>
 
             <div class="pill" id="otherIncomePill">Other income: $0/yr</div>
@@ -784,7 +764,7 @@
 
           <div style="height:10px;"></div>
 
-          <!-- Distribution outputs: nominal + today's dollars blocks -->
+          <!-- Distribution outputs -->
           <div class="metricGrid" aria-label="Distribution outputs">
             <div class="metricBox">
               <div class="metricTitle">Distribution Amount (Portfolio only)</div>
@@ -809,10 +789,14 @@
 
           <div style="height:10px;"></div>
 
-          <div class="metricBox">
-            <div class="metricTitle">Remaining Portfolio at Death (if applicable)</div>
-            <div class="metricValue" id="outRemaining">$—</div>
-            <div class="small muted">Shown for RMD and 4% methods (simplified)</div>
+          <!-- Removed: Retirement Income Sources Breakdown chart -->
+
+          <div class="metricGrid" aria-label="Remaining portfolio">
+            <div class="metricBox" style="grid-column: 1 / -1;">
+              <div class="metricTitle">Remaining Portfolio at Death (if applicable)</div>
+              <div class="metricValue" id="outRemaining">$—</div>
+              <div class="small muted">Shown for RMD and 4% methods (simplified)</div>
+            </div>
           </div>
         </section>
 
@@ -881,7 +865,7 @@
 
   <script>
     // ============================================================
-    // Tabs
+    // Tabs (Default to Projection Dashboard)
     // ============================================================
     (function(){
       const tabSpending = document.getElementById("tabSpending");
@@ -895,8 +879,10 @@
         tabProjection.setAttribute("aria-selected", spendingOn ? "false" : "true");
         panelSpending.classList.toggle("active", spendingOn);
         panelProjection.classList.toggle("active", !spendingOn);
-        if (!spendingOn && window.__proj && window.__proj.chartInstance) {
-          try { window.__proj.chartInstance.resize(); } catch(e) {}
+
+        // Resize projection charts after tab becomes visible
+        if (!spendingOn && window.__proj) {
+          try { window.__proj.resizeCharts(); } catch(e) {}
         }
       }
 
@@ -904,8 +890,12 @@
       tabProjection.addEventListener("click", () => setTab("projection"));
 
       function applyHash(){
-        if (location.hash === "#projection") setTab("projection");
-        else setTab("spending");
+        // Explicit overrides:
+        if (location.hash === "#spending") { setTab("spending"); return; }
+        if (location.hash === "#projection") { setTab("projection"); return; }
+
+        // Default:
+        setTab("projection");
       }
       window.addEventListener("hashchange", applyHash);
       applyHash();
@@ -913,7 +903,6 @@
 
     // ============================================================
     // TAB 1: Spending Estimator
-    // UPDATED: split "Taxes" into "Income Tax" and "Property Tax"
     // ============================================================
     const LOCATIONS = [
       { id:"portland_me", name:"Portland, ME", factor:1.12, region:"Northeast" },
@@ -975,9 +964,8 @@
       { id:"salt_lake_ut", name:"Salt Lake City, UT", factor:1.08, region:"Mountains" }
     ];
 
-    // --- UPDATED CATEGORIES: ---
     const CATEGORIES = [
-      { key:"housing",      label:"Housing (rent/mortgage/HOA/property tax)", color:"#7aa2ff", advanced:false, fixed:true },
+      { key:"housing",      label:"Housing (rent/mortgage/HOA)", color:"#7aa2ff", advanced:false, fixed:true },
       { key:"utilities",    label:"Utilities (electric, water, internet)", color:"#58d1a7", advanced:false, fixed:true },
       { key:"food",         label:"Food (groceries + dining)", color:"#ffcc66", advanced:false, fixed:false },
       { key:"transport",    label:"Transportation (fuel, maintenance, transit)", color:"#c792ea", advanced:false, fixed:false },
@@ -989,14 +977,11 @@
       { key:"other",        label:"Other / Cushion", color:"#fbd38d", advanced:true, fixed:false }
     ];
 
-    // Location weights (how sensitive each category is to local cost factor)
     const FACTOR_WEIGHTS = {
       housing:1.25, utilities:0.70, food:0.85, transport:0.80, healthcare:0.60, leisure:0.85,
       insurance:0.55, incomeTax:0.65, gifts:0.55, other:0.60
     };
 
-    // Income band allocations (share of target spending). Sums to 1.00 each.
-    
     const ALLOC_BANDS = [
       {
         name: "Under $60k",
@@ -1050,8 +1035,6 @@
       return ALLOC_BANDS[1];
     }
 
-    // Simple bracketed effective tax rate (very rough). This is intentionally conservative and should be edited.
-    // Returns TOTAL annual taxes (income + property proxy). We then split into two line items.
     function estimateTaxesAnnualSimple(targetAnnual, locFactor){
       const x = Math.max(0, Number(targetAnnual || 0));
       let rate = 0.10;
@@ -1060,7 +1043,6 @@
       else if (x < 200000) rate = 0.12;
       else rate = 0.14;
 
-      // Mild location adjustment (coarse proxy)
       const lf = Number(locFactor || 1);
       const adj = clamp((lf - 1) * 0.02, -0.03, 0.03);
       rate = clamp(rate + adj, 0.05, 0.20);
@@ -1070,13 +1052,6 @@
 
     function getLocationById(id){ return LOCATIONS.find(l => l.id === id) || LOCATIONS[0]; }
 
-    // Core defaulting engine:
-    // 1) Determine target spending (replacement-rate recommended, or percent-of-income baseline)
-    // 2) Allocate across categories using income-band table
-    // 3) Apply location factor sensitivity
-    // 4) Apply housing/healthcare mode adjustments
-    // 5) Apply household scaling ONLY to variable categories
-    // 6) If taxes are estimated, overwrite incomeTax + propertyTax using a simple bracket estimate split
     function computeDefaultsMonthly({
       incomeAnnual,
       mode,
@@ -1091,11 +1066,9 @@
       const rr = clamp(replacementRatePct, 0, 200) / 100;
       const loc = Number(locationFactor || 1);
 
-      // Target spending
       const targetAnnual = (mode === "replacement") ? (inc * rr) : inc;
       const targetMonthly = targetAnnual / 12;
 
-      // Band determined from INCOME (not target)
       const band = pickBand(inc);
       const p = band.pcts;
 
@@ -1105,22 +1078,18 @@
         v[cat.key] = targetMonthly * pct;
       }
 
-      // Location factor application (weighted)
       for (const cat of CATEGORIES){
         const w = FACTOR_WEIGHTS[cat.key] ?? 0.7;
         const factor = 1 + (loc - 1) * w;
         v[cat.key] = v[cat.key] * factor;
       }
 
-      // Housing mode adjustments (fixed)
       if (housingMode === "ownNoMortgage") v.housing *= 0.62;
       if (housingMode === "rent") v.housing *= 1.05;
 
-      // Healthcare mode adjustments (mostly fixed)
       if (healthcareMode === "medicareLean") v.healthcare *= 0.82;
       if (healthcareMode === "medicareRich") v.healthcare *= 1.20;
 
-      // Household scaling ONLY variable categories
       const h = householdScalar(householdSize);
       for (const cat of CATEGORIES){
         if (cat.fixed) continue;
@@ -1132,13 +1101,11 @@
         else v[cat.key] *= (1 + (h - 1) * 0.30);
       }
 
-      // Taxes: manual keeps allocated values; estimate overwrites with bracket estimate split (annual → monthly)
       if (taxMode === "estimate"){
         const totalTaxA = estimateTaxesAnnualSimple(targetAnnual, loc);
         v.incomeTax = totalTaxA/12;
       }
 
-      // Round
       for (const k of Object.keys(v)) v[k] = Math.round(v[k]);
 
       return { valuesMonthly: v, bandName: band.name, targetAnnual };
@@ -1147,15 +1114,17 @@
     const state = {
       locationId: LOCATIONS[0].id,
       incomeAnnual: 80000,
+
+      // Streamlined UI defaults (fixed; no longer user-selectable in the UI)
       spendMode: "replacement",
+      healthcareMode: "medicareStandard",
+      taxMode: "manual",
+
       replacementRatePct: 75,
       values: {},
-
       include: Object.fromEntries(CATEGORIES.map(c => [c.key, true])),
       household: 2,
       housingMode: "ownMortgage",
-      healthcareMode: "medicareStandard",
-      taxMode: "manual",
       showAdvanced: false,
       annualize: true
     };
@@ -1166,80 +1135,96 @@
     const SPENDING_KEY = "retirement_spending_estimator_v1";
 
     function safeParseJSON(raw){
-    try { return JSON.parse(raw); } catch(e){ return null; }
+      try { return JSON.parse(raw); } catch(e){ return null; }
+    }
+
+    function normalizeSpendingState(){
+      if (!state.include || typeof state.include !== "object") state.include = {};
+      for (const cat of CATEGORIES){
+        if (state.include[cat.key] === undefined) state.include[cat.key] = true;
+        else state.include[cat.key] = !!state.include[cat.key];
+      }
+
+      if (!state.values || typeof state.values !== "object") state.values = {};
+      for (const cat of CATEGORIES){
+        const n = Number(state.values[cat.key] ?? 0);
+        state.values[cat.key] = (isFinite(n) && n >= 0) ? n : 0;
+      }
+
+      const allowed = new Set(CATEGORIES.map(c => c.key));
+      for (const k of Object.keys(state.values)) if (!allowed.has(k)) delete state.values[k];
+      for (const k of Object.keys(state.include)) if (!allowed.has(k)) delete state.include[k];
+
+      // Enforce streamlined defaults regardless of saved state
+      state.spendMode = "replacement";
+      state.healthcareMode = "medicareStandard";
+      state.taxMode = "manual";
     }
 
     function saveSpendingState(){
-    const payload = {
+      const payload = {
         version: 1,
         state: {
-        locationId: state.locationId,
-        incomeAnnual: state.incomeAnnual,
-        spendMode: state.spendMode,
-        replacementRatePct: state.replacementRatePct,
-        values: state.values,
-        include: state.include,
-        household: state.household,
-        housingMode: state.housingMode,
-        healthcareMode: state.healthcareMode,
-        taxMode: state.taxMode,
-        showAdvanced: state.showAdvanced,
-        annualize: state.annualize
+          locationId: state.locationId,
+          incomeAnnual: state.incomeAnnual,
+          spendMode: state.spendMode,
+          replacementRatePct: state.replacementRatePct,
+          values: state.values,
+          include: state.include,
+          household: state.household,
+          housingMode: state.housingMode,
+          healthcareMode: state.healthcareMode,
+          taxMode: state.taxMode,
+          showAdvanced: state.showAdvanced,
+          annualize: state.annualize
         },
         ui: {
-        inflationPreview: Number(elInflation?.value || 2.5),
-        yearsToRetire: Number(elYears?.value || 0),
-        lastAppliedText: elLastApplied?.textContent || ""
+          inflationPreview: Number(elInflation?.value || 2.5),
+          yearsToRetire: Number(elYears?.value || 0),
+          lastAppliedText: elLastApplied?.textContent || ""
         },
         savedAt: new Date().toISOString()
-    };
-
-    try { localStorage.setItem(SPENDING_KEY, JSON.stringify(payload)); } catch(e){}
+      };
+      try { localStorage.setItem(SPENDING_KEY, JSON.stringify(payload)); } catch(e){}
     }
 
     function loadSpendingState(){
-    const raw = localStorage.getItem(SPENDING_KEY);
-    if (!raw) return false;
+      const raw = localStorage.getItem(SPENDING_KEY);
+      if (!raw) return false;
 
-    const payload = safeParseJSON(raw);
-    if (!payload || !payload.state) return false;
+      const payload = safeParseJSON(raw);
+      if (!payload || !payload.state) return false;
 
-    const s = payload.state;
+      const s = payload.state;
 
-    // Restore state with sane fallbacks
-    state.locationId = s.locationId || state.locationId;
-    state.incomeAnnual = Number(s.incomeAnnual ?? state.incomeAnnual);
-    state.spendMode = s.spendMode || state.spendMode;
-    state.replacementRatePct = Number(s.replacementRatePct ?? state.replacementRatePct);
+      state.locationId = s.locationId || state.locationId;
+      state.incomeAnnual = Number(s.incomeAnnual ?? state.incomeAnnual);
+      state.replacementRatePct = Number(s.replacementRatePct ?? state.replacementRatePct);
 
-    state.values = (s.values && typeof s.values === "object") ? s.values : state.values;
-    state.include = (s.include && typeof s.include === "object") ? s.include : state.include;
+      state.values = (s.values && typeof s.values === "object") ? s.values : state.values;
+      state.include = (s.include && typeof s.include === "object") ? s.include : state.include;
 
-    state.household = Number(s.household ?? state.household);
-    state.housingMode = s.housingMode || state.housingMode;
-    state.healthcareMode = s.healthcareMode || state.healthcareMode;
-    state.taxMode = s.taxMode || state.taxMode;
+      state.household = Number(s.household ?? state.household);
+      state.housingMode = s.housingMode || state.housingMode;
 
-    state.showAdvanced = !!s.showAdvanced;
-    state.annualize = !!s.annualize;
+      state.showAdvanced = !!s.showAdvanced;
+      state.annualize = !!s.annualize;
 
-    // Restore UI extras
-    if (payload.ui){
+      normalizeSpendingState();
+
+      if (payload.ui){
         if (elInflation) elInflation.value = String(payload.ui.inflationPreview ?? elInflation.value);
         if (elYears) elYears.value = String(payload.ui.yearsToRetire ?? elYears.value);
         if (elLastApplied && payload.ui.lastAppliedText) elLastApplied.textContent = payload.ui.lastAppliedText;
+      }
+      return true;
     }
 
-    return true;
-    }
-
-    // Optional: debounce saves so localStorage isn't hammered on every keystroke
     let __saveTimer = null;
     function saveSpendingStateDebounced(){
-    clearTimeout(__saveTimer);
-    __saveTimer = setTimeout(saveSpendingState, 120);
+      clearTimeout(__saveTimer);
+      __saveTimer = setTimeout(saveSpendingState, 140);
     }
-
 
     // Elements
     const elLocation = document.getElementById("location");
@@ -1248,12 +1233,9 @@
     const elLastApplied = document.getElementById("lastApplied");
     const elHousehold = document.getElementById("household");
     const elIncome = document.getElementById("householdIncome");
-    const elSpendMode = document.getElementById("spendMode");
     const elReplacementRate = document.getElementById("replacementRate");
     const elReplacementRateLabel = document.getElementById("replacementRateLabel");
     const elHousingMode = document.getElementById("housingMode");
-    const elHealthcareMode = document.getElementById("healthcareMode");
-    const elTaxMode = document.getElementById("taxMode");
     const elShowAdvanced = document.getElementById("showAdvanced");
     const elAnnualize = document.getElementById("annualize");
     const elModeSummary = document.getElementById("modeSummary");
@@ -1330,6 +1312,7 @@
     }
 
     function applyDefaults(useLocationFactor){
+      normalizeSpendingState(); // ensures streamlined defaults are applied
       const loc = getLocationById(state.locationId);
       const locFactor = useLocationFactor ? loc.factor : 1;
 
@@ -1345,11 +1328,9 @@
       });
 
       state.values = out.valuesMonthly;
+      normalizeSpendingState();
 
-      const modeText = (state.spendMode === "replacement")
-        ? `Replacement-rate mode: ${state.replacementRatePct}% of income`
-        : "Income-allocation mode: 100% of income envelope";
-
+      const modeText = `Replacement-rate mode: ${state.replacementRatePct}% of income`;
       elModeSummary.textContent = `${modeText} • Band: ${out.bandName} • Target: ${money(out.targetAnnual)} / yr`;
 
       elLastApplied.textContent = useLocationFactor
@@ -1403,12 +1384,9 @@
         cb.type = "checkbox";
         cb.checked = !!state.include[cat.key];
         cb.addEventListener("change", () => {
-        state.include[cat.key] = cb.checked;
-
-        // Re-render so annual column stays accurate and consistent
-        render();
-
-        saveSpendingStateDebounced();
+          state.include[cat.key] = cb.checked;
+          render();
+          saveSpendingStateDebounced();
         });
 
         const cbl = document.createElement("label");
@@ -1425,27 +1403,24 @@
         inp.step = "10";
         inp.value = Math.round(state.values[cat.key] || 0);
         inp.style.width = "130px";
-        inp.addEventListener("input", () => {
-        const val = clamp(inp.value, 0, 1_000_000);
-        state.values[cat.key] = val;
-
-        // Update the annual cell for THIS row immediately (no rerender)
-        tdAnn.textContent = state.annualize ? money(val * 12) : "—";
-
-        // Update the rest of the UI that depends on totals
-        renderTotals();
-        drawChart();
-        renderFuture();
-
-        // (Optional, recommended) persist changes
-        saveSpendingState();
-        });
-
-        tdMon.appendChild(inp);
 
         const tdAnn = document.createElement("td");
         tdAnn.className = "right";
         tdAnn.textContent = state.annualize ? money((Number(state.values[cat.key] || 0) * 12)) : "—";
+
+        inp.addEventListener("input", () => {
+          const val = clamp(inp.value, 0, 1_000_000);
+          state.values[cat.key] = val;
+
+          tdAnn.textContent = state.annualize ? money(val * 12) : "—";
+          renderTotals();
+          drawChart();
+          renderFuture();
+
+          saveSpendingStateDebounced();
+        });
+
+        tdMon.appendChild(inp);
 
         tr.appendChild(tdCat);
         tr.appendChild(tdInc);
@@ -1556,17 +1531,17 @@
     function exportJson(){
       const loc = getLocationById(state.locationId);
       const payload = {
-        version: "2.1",
+        version: "2.3",
         timestamp: new Date().toISOString(),
         location: loc,
         assumptions: {
           household: state.household,
           householdIncomeAnnual: state.incomeAnnual,
-          spendMode: state.spendMode,
+          spendMode: state.spendMode,              // fixed default
           replacementRatePct: state.replacementRatePct,
           housingMode: state.housingMode,
-          healthcareMode: state.healthcareMode,
-          taxMode: state.taxMode
+          healthcareMode: state.healthcareMode,    // fixed default
+          taxMode: state.taxMode                   // fixed default
         },
         include: state.include,
         valuesMonthly: state.values
@@ -1586,6 +1561,7 @@
 
     function render(){
       refreshMeta();
+      normalizeSpendingState();
       renderRows();
       renderTotals();
       drawChart();
@@ -1593,16 +1569,9 @@
 
       elReplacementRateLabel.textContent = `${state.replacementRatePct}% target`;
 
-      if (!elModeSummary.textContent || elModeSummary.textContent === "—"){
-        const band = pickBand(state.incomeAnnual);
-        const modeText = (state.spendMode === "replacement")
-          ? `Replacement-rate mode: ${state.replacementRatePct}% of income`
-          : "Income-allocation mode: 100% of income envelope";
-        const targetAnnual = (state.spendMode === "replacement")
-          ? state.incomeAnnual * (state.replacementRatePct/100)
-          : state.incomeAnnual;
-        elModeSummary.textContent = `${modeText} • Band: ${band.name} • Target: ${money(targetAnnual)} / yr`;
-      }
+      const band = pickBand(state.incomeAnnual);
+      const targetAnnual = state.incomeAnnual * (state.replacementRatePct/100);
+      elModeSummary.textContent = `Replacement-rate mode: ${state.replacementRatePct}% of income • Band: ${band.name} • Target: ${money(targetAnnual)} / yr`;
     }
 
     // Wiring
@@ -1610,129 +1579,117 @@
     document.getElementById("resetNational").addEventListener("click", () => applyDefaults(false));
 
     elLocation.addEventListener("change", () => {
-        state.locationId = elLocation.value;
-        refreshMeta();
-        saveSpendingStateDebounced();
+      state.locationId = elLocation.value;
+      refreshMeta();
+      saveSpendingStateDebounced();
     });
 
     elHousehold.addEventListener("input", () => {
-    state.household = clamp(elHousehold.value, 1, 6);
-    saveSpendingStateDebounced();
+      state.household = clamp(elHousehold.value, 1, 6);
+      saveSpendingStateDebounced();
     });
 
     elIncome.addEventListener("input", () => {
-    state.incomeAnnual = clamp(elIncome.value, 0, 100_000_000);
-    saveSpendingStateDebounced();
-    });
-
-    elSpendMode.addEventListener("change", () => {
-    state.spendMode = elSpendMode.value;
-    saveSpendingStateDebounced();
+      state.incomeAnnual = clamp(elIncome.value, 0, 100_000_000);
+      saveSpendingStateDebounced();
     });
 
     elReplacementRate.addEventListener("input", () => {
-    state.replacementRatePct = clamp(elReplacementRate.value, 0, 200);
-    elReplacementRateLabel.textContent = `${state.replacementRatePct}% target`;
-    saveSpendingStateDebounced();
+      state.replacementRatePct = clamp(elReplacementRate.value, 0, 200);
+      elReplacementRateLabel.textContent = `${state.replacementRatePct}% target`;
+      saveSpendingStateDebounced();
     });
 
     elHousingMode.addEventListener("change", () => {
-    state.housingMode = elHousingMode.value;
-    saveSpendingStateDebounced();
+      state.housingMode = elHousingMode.value;
+      saveSpendingStateDebounced();
     });
 
-    elHealthcareMode.addEventListener("change", () => { state.healthcareMode = elHealthcareMode.value;
-        saveSpendingStateDebounced();
-     });
-
-    elTaxMode.addEventListener("change", () => { state.taxMode = elTaxMode.value;
-        saveSpendingStateDebounced();
-     });
-
-    elShowAdvanced.addEventListener("change", () => { state.showAdvanced = elShowAdvanced.checked; render();
-        saveSpendingStateDebounced();
-     });
+    elShowAdvanced.addEventListener("change", () => {
+      state.showAdvanced = elShowAdvanced.checked;
+      render();
+      saveSpendingStateDebounced();
+    });
 
     elAnnualize.addEventListener("change", () => {
-    state.annualize = elAnnualize.checked;
-    render(); // OK here
-    saveSpendingStateDebounced();
+      state.annualize = elAnnualize.checked;
+      render();
+      saveSpendingStateDebounced();
     });
 
     elInflation.addEventListener("input", () => {
-    renderFuture();
-    saveSpendingStateDebounced();
-    });    
+      renderFuture();
+      saveSpendingStateDebounced();
+    });
 
     elYears.addEventListener("input", () => {
-    renderFuture();
-    saveSpendingStateDebounced();
+      renderFuture();
+      saveSpendingStateDebounced();
     });
 
     elDownloadJson.addEventListener("click", exportJson);
 
     // Boot
     (function boot(){
-  initLocations();
+      initLocations();
 
-  const loaded = loadSpendingState();
+      const loaded = loadSpendingState();
 
-  if (!loaded){
-    // Initialize ONLY on first run (no saved state)
-    state.locationId = LOCATIONS[0].id;
-    state.household = 2;
-    state.incomeAnnual = 80000;
-    state.spendMode = "replacement";
-    state.replacementRatePct = 75;
-    state.housingMode = "ownMortgage";
-    state.healthcareMode = "medicareStandard";
-    state.taxMode = "manual";
-    state.showAdvanced = false;
-    state.annualize = true;
+      if (!loaded){
+        state.locationId = LOCATIONS[0].id;
+        state.household = 2;
+        state.incomeAnnual = 80000;
 
-    // Start with national (no-location) defaults so table isn't empty
-    const out = computeDefaultsMonthly({
-      incomeAnnual: state.incomeAnnual,
-      mode: state.spendMode,
-      replacementRatePct: state.replacementRatePct,
-      householdSize: state.household,
-      housingMode: state.housingMode,
-      healthcareMode: state.healthcareMode,
-      taxMode: state.taxMode,
-      locationFactor: 1
-    });
-    state.values = out.valuesMonthly;
+        // Streamlined fixed defaults
+        state.spendMode = "replacement";
+        state.healthcareMode = "medicareStandard";
+        state.taxMode = "manual";
 
-    elLastApplied.textContent = "Defaults: applied (no location factor)";
-    elModeSummary.textContent =
-      `Replacement-rate mode: ${state.replacementRatePct}% of income • Band: ${out.bandName} • Target: ${money(out.targetAnnual)} / yr`;
-  }
+        state.replacementRatePct = 75;
+        state.housingMode = "ownMortgage";
+        state.showAdvanced = false;
+        state.annualize = true;
 
-  // Apply CURRENT state to UI (whether loaded or defaulted)
-  elShowAdvanced.checked = !!state.showAdvanced;
-  elAnnualize.checked = !!state.annualize;
+        const out = computeDefaultsMonthly({
+          incomeAnnual: state.incomeAnnual,
+          mode: state.spendMode,
+          replacementRatePct: state.replacementRatePct,
+          householdSize: state.household,
+          housingMode: state.housingMode,
+          healthcareMode: state.healthcareMode,
+          taxMode: state.taxMode,
+          locationFactor: 1
+        });
+        state.values = out.valuesMonthly;
+        normalizeSpendingState();
 
-  elHousehold.value = state.household;
-  elIncome.value = state.incomeAnnual;
-  elSpendMode.value = state.spendMode;
-  elReplacementRate.value = state.replacementRatePct;
-  elReplacementRateLabel.textContent = `${state.replacementRatePct}% target`;
-  elHousingMode.value = state.housingMode;
-  elHealthcareMode.value = state.healthcareMode;
-  elTaxMode.value = state.taxMode;
+        elLastApplied.textContent = "Defaults: applied (no location factor)";
+      } else {
+        // Even if loaded, enforce streamlined defaults
+        normalizeSpendingState();
+      }
 
-  elLocation.value = state.locationId;
-  refreshMeta();
+      elShowAdvanced.checked = !!state.showAdvanced;
+      elAnnualize.checked = !!state.annualize;
 
-  render();
+      elHousehold.value = state.household;
+      elIncome.value = state.incomeAnnual;
+      elReplacementRate.value = state.replacementRatePct;
+      elReplacementRateLabel.textContent = `${state.replacementRatePct}% target`;
+      elHousingMode.value = state.housingMode;
 
-  // Save once on first run to create the key
-  if (!loaded) saveSpendingStateDebounced();
-})();
+      elLocation.value = state.locationId;
+      refreshMeta();
 
+      render();
+
+      if (!loaded) saveSpendingStateDebounced();
+    })();
 
     // ============================================================
-    // TAB 2: Projection Dashboard (unchanged from your prior version)
+    // TAB 2: Projection Dashboard
+    // Changes performed:
+    // - Removed Retirement Income Sources Breakdown chart
     // ============================================================
     window.__proj = (function(){
       var RMD_LIFE_EXPECTANCY = {
@@ -1782,6 +1739,13 @@
       }
       function setAccountsTotalPill(){ byId("accountsTotalPill").textContent = formatDollars(totalAccounts()); }
 
+      function setDeleteSelectedEnabled(){
+        var hasAny = false;
+        for (var k in selectedIds){ if (selectedIds.hasOwnProperty(k) && selectedIds[k]) { hasAny = true; break; } }
+        byId("deleteSelectedBtn").disabled = !hasAny;
+        byId("deleteSelectedBtn").style.opacity = hasAny ? "1" : "0.6";
+      }
+
       function renderAccountsTable(){
         var tbody = byId("accountsTbody");
         tbody.innerHTML = "";
@@ -1795,6 +1759,7 @@
           tr0.appendChild(td0);
           tbody.appendChild(tr0);
           setAccountsTotalPill();
+          setDeleteSelectedEnabled();
           return;
         }
 
@@ -1804,21 +1769,16 @@
             if (selectedIds[acct.id]) tr.className="selected";
 
             var tdSel=document.createElement("td");
+
             var cb=document.createElement("input");
             cb.type="checkbox";
             cb.checked=!!selectedIds[acct.id];
-            cb.addEventListener("change", () => {
-            state.include[cat.key] = cb.checked;
-
-            // Annual cell should reflect include state if you want it to blank when excluded
-            const val = Number(state.values[cat.key] || 0);
-            tdAnn.textContent = state.annualize ? money(val * 12) : "—";
-
-            renderTotals();
-            drawChart();
-            renderFuture();
-            saveSpendingState();
+            cb.addEventListener("change", function(){
+              selectedIds[acct.id] = !!cb.checked;
+              tr.classList.toggle("selected", !!cb.checked);
+              setDeleteSelectedEnabled();
             });
+
             tdSel.appendChild(cb);
 
             var tdName=document.createElement("td");
@@ -1860,13 +1820,14 @@
           })(accounts[i]);
         }
         setAccountsTotalPill();
+        setDeleteSelectedEnabled();
       }
 
       function addAccount(){
         var name=String(byId("acctName").value||"").trim();
         var amount=Number(byId("acctAmount").value||0);
         if(!name) return;
-        if(!isFinite(amount)) return;
+        if(!isFinite(amount) || amount < 0) return;
 
         accounts.push({ id:newId(), name:name, amount:amount });
         saveAccounts();
@@ -1888,7 +1849,7 @@
 
       function deleteSelectedAccounts(){
         var ids=[];
-        for(var k in selectedIds) if(selectedIds.hasOwnProperty(k)) ids.push(k);
+        for(var k in selectedIds) if(selectedIds.hasOwnProperty(k) && selectedIds[k]) ids.push(k);
         if(ids.length===0) return;
 
         var ok=window.confirm("Delete " + ids.length + " selected account(s)?");
@@ -1927,7 +1888,7 @@
         var name=String(byId("editAcctName").value||"").trim();
         var amount=Number(byId("editAcctAmount").value||0);
         if(!name) return;
-        if(!isFinite(amount)) return;
+        if(!isFinite(amount) || amount < 0) return;
 
         for(var i=0;i<accounts.length;i++){
           if(accounts[i].id===editId){
@@ -1981,11 +1942,55 @@
         byId("ssDisabledPill").textContent = formatDollars(0) + " / year (disabled)";
       }
 
+      function sanitizeAges(currentAge, retirementAge, deathAge){
+        var warnings = [];
+        var ca = Number(currentAge||0), ra = Number(retirementAge||0), da = Number(deathAge||0);
+
+        if(!isFinite(ca) || ca <= 0) { ca = 30; warnings.push("Current age was invalid; using 30."); }
+        if(!isFinite(ra) || ra <= 0) { ra = 62; warnings.push("Retirement age was invalid; using 62."); }
+        if(!isFinite(da) || da <= 0) { da = 85; warnings.push("Death age was invalid; using 85."); }
+
+        if(ra < ca){
+          warnings.push("Retirement age is below current age; treating years-to-retirement as 0.");
+          ra = ca;
+        }
+        if(da <= ra){
+          warnings.push("Death age must be greater than retirement age to model drawdown; drawdown will be unavailable.");
+        }
+
+        return { currentAge: ca, retirementAge: ra, deathAge: da, warnings: warnings };
+      }
+
+      function safeAnnuitizeMaxWithdrawal(fv, retGrowth, yearsInRetirement){
+        var n = Math.max(0, Number(yearsInRetirement||0));
+        if(n <= 0) return 0;
+
+        var g = Number(retGrowth||0);
+        if(!isFinite(g)) g = 0;
+
+        if(Math.abs(g) < 1e-9){
+          return fv / n;
+        }
+
+        var denom = (1 - Math.pow(1+g, -(n+1)));
+        if(!isFinite(denom) || Math.abs(denom) < 1e-9){
+          return fv / n;
+        }
+
+        return fv*g/denom;
+      }
+
       function runProjection(currentFunds, currentAge, retirementAge, deathAge,
                              otherIncomeAnnual, annualContrib, inflation,
                              nominalBaseRate, retirementGrowthRate){
-        var yearsToRetire=Math.max(1, retirementAge-currentAge);
-        var yearsInRetirement=Math.max(1, deathAge-retirementAge);
+
+        var ages = sanitizeAges(currentAge, retirementAge, deathAge);
+        currentAge = ages.currentAge;
+        retirementAge = ages.retirementAge;
+        deathAge = ages.deathAge;
+
+        var yearsToRetire = Math.max(0, retirementAge-currentAge);
+        var yearsInRetirement = Math.max(0, deathAge-retirementAge);
 
         var nominalRates=[nominalBaseRate-0.03, nominalBaseRate, nominalBaseRate+0.03];
         var realRates=[];
@@ -2001,7 +2006,10 @@
           for(var i=0;i<rates.length;i++){
             var r=rates[i];
             var fv;
-            if(r!==0){
+
+            if (yearsToRetire === 0){
+              fv = currentFunds;
+            } else if (r!==0){
               fv = currentFunds*Math.pow(1+r, yearsToRetire) +
                    annualContrib*((Math.pow(1+r, yearsToRetire)-1)/r);
             } else {
@@ -2011,14 +2019,26 @@
             var rmdAge=Math.max(retirementAge, 72);
             var factor=(RMD_LIFE_EXPECTANCY[rmdAge]!==undefined) ? RMD_LIFE_EXPECTANCY[rmdAge] : 25;
 
-            var minDisb=fv/factor;
-            var maxDisb=fv*retGrowth/(1 - Math.pow(1+retGrowth, -(yearsInRetirement+1)));
-            var midDisb=fv*0.04;
+            var minDisb = (factor > 0) ? (fv/factor) : 0;
+            var midDisb = fv*0.04;
+            var maxDisb = safeAnnuitizeMaxWithdrawal(fv, retGrowth, yearsInRetirement);
 
-            var remainingMin=fv*Math.pow(1+nominalRetGrowth, yearsInRetirement) -
-                             minDisb*((Math.pow(1+nominalRetGrowth, yearsInRetirement)-1)/nominalRetGrowth);
-            var remainingMid=fv*Math.pow(1+nominalRetGrowth, yearsInRetirement) -
-                             midDisb*((Math.pow(1+nominalRetGrowth, yearsInRetirement)-1)/nominalRetGrowth);
+            var remainingMin = null;
+            var remainingMid = null;
+            if (yearsInRetirement > 0){
+              var g = Number(nominalRetGrowth||0);
+              if(!isFinite(g)) g = 0;
+
+              if (Math.abs(g) < 1e-9){
+                remainingMin = fv - (minDisb * yearsInRetirement);
+                remainingMid = fv - (midDisb * yearsInRetirement);
+              } else {
+                remainingMin = fv*Math.pow(1+g, yearsInRetirement) -
+                              minDisb*((Math.pow(1+g, yearsInRetirement)-1)/g);
+                remainingMid = fv*Math.pow(1+g, yearsInRetirement) -
+                              midDisb*((Math.pow(1+g, yearsInRetirement)-1)/g);
+              }
+            }
 
             results.push({
               fv:fv,
@@ -2040,7 +2060,8 @@
           retirementAge: retirementAge,
           deathAge: deathAge,
           nominalRetGrowth: nominalRetGrowth,
-          inflation: inflation
+          inflation: inflation,
+          warnings: ages.warnings
         };
       }
 
@@ -2048,12 +2069,19 @@
         var balances=[];
         var balance=fv;
 
-        var effectiveWithdrawal=Number(annualWithdrawalNeed||0);
-        if(!isFinite(effectiveWithdrawal)) effectiveWithdrawal=0;
-        if(effectiveWithdrawal<0) effectiveWithdrawal=0;
+        var need = Number(annualWithdrawalNeed||0);
+        if(!isFinite(need) || need < 0) need = 0;
+
+        var other = Number(otherIncomeAnnual||0);
+        if(!isFinite(other) || other < 0) other = 0;
+
+        var effectiveWithdrawal = Math.max(0, need - other);
+
+        var g = Number(growthRate||0);
+        if(!isFinite(g)) g = 0;
 
         for(var age=startAge; age<=endAge; age++){
-          balance = balance*(1+growthRate) - effectiveWithdrawal;
+          balance = balance*(1+g) - effectiveWithdrawal;
           balances.push(balance);
         }
         return balances;
@@ -2121,7 +2149,13 @@
       var scenarioNames = ["Minimum", "Medium", "Maximum"];
       var withdrawalNames = ["Required Minimum Distribution (RMD)", "4% Withdrawal Rule", "Maximum Distribution"];
 
-      var last = { result:null, currentFunds:0, otherIncomeAnnual:0, inflation:0, yearsToRetire:0 };
+      var last = {
+        result:null,
+        currentFunds:0,
+        otherIncomeAnnual:0,
+        inflation:0,
+        yearsToRetire:0
+      };
 
       function getScenarioIndex(){ return Math.max(0, Math.min(2, Number(byId("scenarioSlider").value || 0))); }
       function getWithdrawalIndex(){ return Math.max(0, Math.min(2, Number(byId("withdrawalSlider").value || 0))); }
@@ -2132,12 +2166,12 @@
         return obj.max_disb;
       }
 
-        function remainingForScenarioAndMethod(sIdx, wIdx){
+      function remainingForScenarioAndMethod(sIdx, wIdx){
         var drawdownIndex = (sIdx * 3) + wIdx;
         if (!drawdownState.remainingMap) return null;
         var rem = drawdownState.remainingMap[drawdownIndex];
         return (rem === undefined) ? null : rem;
-        }
+      }
 
       function toTodaysDollars(nominalAnnual){
         var infl = Number(last.inflation || 0);
@@ -2147,6 +2181,17 @@
         var denom = Math.pow(1 + infl, y);
         if (!isFinite(denom) || denom <= 0) denom = 1;
         return Number(nominalAnnual || 0) / denom;
+      }
+
+      function updateWarnings(warnings){
+        var el = byId("projWarnings");
+        if (!warnings || !warnings.length){
+          el.style.display = "none";
+          el.textContent = "";
+          return;
+        }
+        el.style.display = "inline-block";
+        el.textContent = warnings.join(" ");
       }
 
       function updateProjectionOutputUI(){
@@ -2183,10 +2228,12 @@
         var rem = remainingForScenarioAndMethod(sIdx, wIdx);
         byId("outRemaining").textContent = (rem === null) ? "—" : formatDollars(rem);
 
+        // Keep drawdown selector aligned
         var drawdownIndex = (sIdx * 3) + wIdx;
         byId("drawdownSelector").value = String(drawdownIndex);
         if (byId("chartWrap").style.display !== "none") renderDrawdownChart();
 
+        // Persist slider UI positions
         var s = loadJson(SETTINGS_KEY) || {};
         s.uiScenarioIndex = sIdx;
         s.uiWithdrawalIndex = wIdx;
@@ -2197,11 +2244,13 @@
         updateToggleUI();
 
         var currentFunds=totalAccounts();
+
         var currentAge=num("currentAge");
         var retirementAge=num("retirementAge");
         var deathAge=num("deathAge");
 
-        var pension = (!!byId("enablePension").checked) ? num("pension") : 0;
+        var pensionAnnual = (!!byId("enablePension").checked) ? num("pension") : 0;
+
         var ssAnnual = (function(){
           if (!byId("enableSS").checked) return 0;
           var useOverride = !!byId("useSSOverride").checked;
@@ -2209,7 +2258,8 @@
           if (useOverride && isFinite(overrideVal) && overrideVal > 0) return overrideVal;
           return estimateSocialSecurityAnnual(num("workIncome"), num("yearsWorked"));
         })();
-        var otherIncomeAnnual = pension + ssAnnual;
+
+        var otherIncomeAnnual = pensionAnnual + ssAnnual;
 
         var annualContribution=num("annualContribution");
         var inflation=num("inflationProj")/100;
@@ -2227,12 +2277,16 @@
         last.currentFunds = currentFunds;
         last.otherIncomeAnnual = otherIncomeAnnual;
         last.inflation = inflation;
-        last.yearsToRetire = Math.max(0, retirementAge - currentAge);
+
+        var ages = sanitizeAges(currentAge, retirementAge, deathAge);
+        last.yearsToRetire = Math.max(0, ages.retirementAge - ages.currentAge);
+
+        updateWarnings(result.warnings);
 
         saveJson(SETTINGS_KEY, {
-          currentAge: currentAge,
-          retirementAge: retirementAge,
-          deathAge: deathAge,
+          currentAge: ages.currentAge,
+          retirementAge: ages.retirementAge,
+          deathAge: ages.deathAge,
           enablePension: !!byId("enablePension").checked,
           pension: num("pension"),
           enableSS: !!byId("enableSS").checked,
@@ -2249,41 +2303,41 @@
         });
 
         var years=[];
-        for(var age=retirementAge; age<=deathAge; age++) years.push(age);
+        if (ages.deathAge > ages.retirementAge){
+          for(var age2=ages.retirementAge; age2<=ages.deathAge; age2++) years.push(age2);
+        }
 
         var g=result.nominalRetGrowth;
 
         var dd=[];
-        dd.push(computeDrawdown(result.nominalProj[0].fv, result.nominalProj[0].min_disb, otherIncomeAnnual, g, retirementAge, deathAge));
-        dd.push(computeDrawdown(result.nominalProj[0].fv, result.nominalProj[0].mid_disb, otherIncomeAnnual, g, retirementAge, deathAge));
-        dd.push(computeDrawdown(result.nominalProj[0].fv, result.nominalProj[0].max_disb, otherIncomeAnnual, g, retirementAge, deathAge));
+        if (years.length){
+          dd.push(computeDrawdown(result.nominalProj[0].fv, result.nominalProj[0].min_disb, otherIncomeAnnual, g, ages.retirementAge, ages.deathAge));
+          dd.push(computeDrawdown(result.nominalProj[0].fv, result.nominalProj[0].mid_disb, otherIncomeAnnual, g, ages.retirementAge, ages.deathAge));
+          dd.push(computeDrawdown(result.nominalProj[0].fv, result.nominalProj[0].max_disb, otherIncomeAnnual, g, ages.retirementAge, ages.deathAge));
 
-        dd.push(computeDrawdown(result.nominalProj[1].fv, result.nominalProj[1].min_disb, otherIncomeAnnual, g, retirementAge, deathAge));
-        dd.push(computeDrawdown(result.nominalProj[1].fv, result.nominalProj[1].mid_disb, otherIncomeAnnual, g, retirementAge, deathAge));
-        dd.push(computeDrawdown(result.nominalProj[1].fv, result.nominalProj[1].max_disb, otherIncomeAnnual, g, retirementAge, deathAge));
+          dd.push(computeDrawdown(result.nominalProj[1].fv, result.nominalProj[1].min_disb, otherIncomeAnnual, g, ages.retirementAge, ages.deathAge));
+          dd.push(computeDrawdown(result.nominalProj[1].fv, result.nominalProj[1].mid_disb, otherIncomeAnnual, g, ages.retirementAge, ages.deathAge));
+          dd.push(computeDrawdown(result.nominalProj[1].fv, result.nominalProj[1].max_disb, otherIncomeAnnual, g, ages.retirementAge, ages.deathAge));
 
-        dd.push(computeDrawdown(result.nominalProj[2].fv, result.nominalProj[2].min_disb, otherIncomeAnnual, g, retirementAge, deathAge));
-        dd.push(computeDrawdown(result.nominalProj[2].fv, result.nominalProj[2].mid_disb, otherIncomeAnnual, g, retirementAge, deathAge));
-        dd.push(computeDrawdown(result.nominalProj[2].fv, result.nominalProj[2].max_disb, otherIncomeAnnual, g, retirementAge, deathAge));
-
-        function lastVal(arr){
-        return (arr && arr.length) ? arr[arr.length - 1] : null;
+          dd.push(computeDrawdown(result.nominalProj[2].fv, result.nominalProj[2].min_disb, otherIncomeAnnual, g, ages.retirementAge, ages.deathAge));
+          dd.push(computeDrawdown(result.nominalProj[2].fv, result.nominalProj[2].mid_disb, otherIncomeAnnual, g, ages.retirementAge, ages.deathAge));
+          dd.push(computeDrawdown(result.nominalProj[2].fv, result.nominalProj[2].max_disb, otherIncomeAnnual, g, ages.retirementAge, ages.deathAge));
         }
 
-        // Index mapping matches your drawdownSelector options:
-        // 0..2 = Minimum scenario (RMD, 4%, Max)
-        // 3..5 = Medium scenario (RMD, 4%, Max)
-        // 6..8 = Maximum scenario (RMD, 4%, Max)
+        function lastVal(arr){
+          return (arr && arr.length) ? arr[arr.length - 1] : null;
+        }
+
         drawdownState.remainingMap = {
-        0: lastVal(dd[0]),
-        1: lastVal(dd[1]),
-        2: null,           // Max distribution: you chose not to show remaining
-        3: lastVal(dd[3]),
-        4: lastVal(dd[4]),
-        5: null,
-        6: lastVal(dd[6]),
-        7: lastVal(dd[7]),
-        8: null
+          0: lastVal(dd[0]),
+          1: lastVal(dd[1]),
+          2: null,
+          3: lastVal(dd[3]),
+          4: lastVal(dd[4]),
+          5: null,
+          6: lastVal(dd[6]),
+          7: lastVal(dd[7]),
+          8: null
         };
 
         drawdownState.years=years;
@@ -2392,11 +2446,18 @@
         });
       }
 
+      function resizeCharts(){
+        try { if (chartInstance) chartInstance.resize(); } catch(e){}
+      }
+
       setDefaultsIfEmpty();
       wireEvents();
       renderProjection();
 
-      return { renderProjection: renderProjection, chartInstance: chartInstance };
+      return {
+        renderProjection: renderProjection,
+        resizeCharts: resizeCharts
+      };
     })();
   </script>
 </body>
