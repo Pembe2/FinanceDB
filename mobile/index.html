@@ -870,18 +870,19 @@
         return nominal / denom;
       }
 
-      function computeRemainingAtDeath(fvAtRet, retReturn, yearsInRet, withdrawalAnnual){
-        // Remaining portfolio depends ONLY on portfolio dynamics:
-        // constant portfolio withdrawal (dist) and constant retirement return.
+      function computeRemainingAtDeath(fvAtRet, retReturn, yearsInRet, withdrawalAnnual, otherIncomeAnnual){
+        // Simplified: constant withdrawal need (portfolio-only), constant return during retirement.
         fvAtRet = Math.max(0, Number(fvAtRet||0));
         retReturn = Number(retReturn||0);
         yearsInRet = Math.max(0, Math.round(Number(yearsInRet||0)));
-      
-        const w = Math.max(0, Number(withdrawalAnnual||0));
-      
+
+        const wNeed = Math.max(0, Number(withdrawalAnnual||0));
+        const other = Math.max(0, Number(otherIncomeAnnual||0));
+        const effective = Math.max(0, wNeed - other);
+
         let bal = fvAtRet;
-        for (let i = 0; i < yearsInRet; i++){
-          bal = bal * (1 + retReturn) - w;
+        for (let i=0;i<yearsInRet;i++){
+          bal = bal * (1 + retReturn) - effective;
           if (!isFinite(bal)) return 0;
         }
         return Math.max(0, bal);
@@ -1068,14 +1069,9 @@
         const totalToday = toTodaysDollars(totalNominal, infl, yearsToRetire);
 
         // Remaining at death (simplified)
-        // Remaining at death (portfolio-only; pension/SS do NOT affect portfolio balance)
-        let remaining = (deathAge <= retireAge)
+        const remaining = (deathAge <= retireAge)
           ? 0
-          : computeRemainingAtDeath(fv, retRet, yearsInRet, dist);
-        
-        // For "Max level withdrawal", the intent is to amortize to ~0 at death.
-        // Clamp to exactly 0 to avoid tiny rounding leftovers.
-        if (method === "max") remaining = 0;
+          : computeRemainingAtDeath(fv, retRet, yearsInRet, dist, otherIncome);
 
         // Coverage (today's dollars vs today's spending)
         let coveragePct = null;
