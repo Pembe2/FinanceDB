@@ -264,6 +264,18 @@
       margin-top: 10px;
     }
 
+    /* Small layout for category rows */
+    .cat-row{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      margin-bottom:8px;
+    }
+    .cat-row label{ flex:1; font-weight:700; color:var(--text); font-size:13px; }
+    .cat-row input[type="number"]{ width:140px; min-width:120px; }
+
+    .categories-controls{ display:flex; gap:10px; margin-top:8px; flex-wrap:wrap; }
+
     .kpiGrid{
       display:grid;
       grid-template-columns: 1fr;
@@ -424,10 +436,27 @@
             <label for="spendingAnnual">Estimated retirement spending (annual, today’s $)</label>
             <input id="spendingAnnual" type="number" min="0" step="1000" />
             <div class="note">Used only for the coverage status and bar (today’s dollars comparison).</div>
+
+            <!-- Popular categories collapsible -->
+            <details id="popularCategories">
+              <summary>Popular spending categories (tap to expand)</summary>
+              <div class="content" id="categoriesContent">
+                <!-- Rendered by JS -->
+                <div class="note" style="margin-bottom:8px;">Tap a category to include it in the total; edit amounts to match your situation. Use the buttons to apply the total to the spending field.</div>
+                <div id="categoriesList"></div>
+
+                <div class="categories-controls">
+                  <div class="pill" id="categoriesSumPill">Total: $—</div>
+                  <button class="btn secondary" id="applyCategoriesBtn" type="button">Use total as spending estimate</button>
+                  <button class="btn" id="addCategoriesBtn" type="button">Add total to current spending</button>
+                </div>
+              </div>
+            </details>
+
           </div>
           <div>
             <label for="withdrawalMethod">Distribution method</label>
-            <select id="withdrawalMethod" style="width:100%;min-height:44px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.045);color:var(--text);padding:10px 10px;outline:none;">
+            <select id="withdrawalMethod" style="width:100%;min-height:44px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.045);color:var(--text);padding:10px 10px;">
               <option value="rmd">RMD (simple)</option>
               <option value="rule4">4% rule</option>
               <option value="max">Max level withdrawal (annuity-style)</option>
@@ -549,6 +578,12 @@
       const elCustomWrap = $("customWrap");
       const elCustom     = $("customWithdrawal");
 
+      // Category UI elements
+      const elCategoriesList = $("categoriesList");
+      const elCategoriesSumPill = $("categoriesSumPill");
+      const elApplyCategoriesBtn = $("applyCategoriesBtn");
+      const elAddCategoriesBtn = $("addCategoriesBtn");
+
       // Outputs
       const elYearsPill  = $("yearsPill");
       const elStatusPill = $("statusPill");
@@ -601,6 +636,20 @@
         }
         return 25.6;
       }
+
+      // Popular categories (annual estimates)
+      const POPULAR_CATEGORIES = [
+        { key: 'housing', label: 'Housing (rent/mortgage, maintenance)', value: 18000 },
+        { key: 'food', label: 'Food (groceries + dining out)', value: 7200 },
+        { key: 'transport', label: 'Transportation (car, fuel, transit)', value: 6000 },
+        { key: 'health', label: 'Healthcare & meds', value: 8000 },
+        { key: 'insurance', label: 'Insurance (home/auto/health)', value: 3600 },
+        { key: 'utilities', label: 'Utilities & bills', value: 3600 },
+        { key: 'leisure', label: 'Leisure & hobbies', value: 4800 },
+        { key: 'travel', label: 'Travel & vacations', value: 6000 },
+        { key: 'taxes', label: 'Taxes (estimate)', value: 8000 },
+        { key: 'misc', label: 'Misc / contingency', value: 3000 }
+      ];
 
       function save(){
         const payload = {
@@ -741,6 +790,50 @@
           if (!isFinite(bal)) return 0;
         }
         return Math.max(0, bal);
+      }
+
+      // Category helpers
+      function renderCategories(){
+        const html = POPULAR_CATEGORIES.map(cat => {
+          return `<div class="cat-row" data-key="${cat.key}">
+            <input type="checkbox" id="cat_chk_${cat.key}" data-key="${cat.key}" />
+            <label for="cat_chk_${cat.key}">${cat.label}</label>
+            <input type="number" id="cat_amt_${cat.key}" min="0" step="100" value="${cat.value}" aria-label="${cat.label} amount" />
+          </div>`;
+        }).join('\n');
+        elCategoriesList.innerHTML = html;
+
+        // attach listeners
+        POPULAR_CATEGORIES.forEach(cat => {
+          const chk = document.getElementById('cat_chk_' + cat.key);
+          const amt = document.getElementById('cat_amt_' + cat.key);
+          if (!chk || !amt) return;
+          chk.addEventListener('change', updateCategoriesSum);
+          amt.addEventListener('input', updateCategoriesSum);
+        });
+
+        updateCategoriesSum();
+      }
+
+      function updateCategoriesSum(){
+        let total = 0;
+        POPULAR_CATEGORIES.forEach(cat => {
+          const chk = document.getElementById('cat_chk_' + cat.key);
+          const amt = document.getElementById('cat_amt_' + cat.key);
+          if (!chk || !amt) return;
+          const val = Math.max(0, Number(amt.value||0));
+          if (chk.checked) total += val;
+        });
+        elCategoriesSumPill.textContent = 'Total: ' + fmtUSD0.format(total) + ' / yr';
+        return total;
+      }
+
+      function applyCategoriesToSpending(setAs){
+        const total = updateCategoriesSum();
+        const cur = Math.max(0, Number(elSpend.value||0));
+        if (setAs) elSpend.value = String(Math.round(total));
+        else elSpend.value = String(Math.round(cur + total));
+        updateUI();
       }
 
       function updateUI(){
@@ -901,6 +994,10 @@
           });
         }
 
+        // Category buttons
+        elApplyCategoriesBtn.addEventListener('click', () => applyCategoriesToSpending(true));
+        elAddCategoriesBtn.addEventListener('click', () => applyCategoriesToSpending(false));
+
         $("printBtn").addEventListener("click", () => window.print());
 
         $("resetBtn").addEventListener("click", () => {
@@ -909,11 +1006,16 @@
           try { localStorage.removeItem(KEY); } catch(e){}
           setDefaults();
           elCustomWrap.style.display = (String(elMethod.value) === "custom") ? "block" : "none";
+          // reset categories to defaults
+          renderCategories();
           updateUI();
         });
 
         // Ensure custom visibility on load
         elCustomWrap.style.display = (String(elMethod.value) === "custom") ? "block" : "none";
+
+        // Render category UI
+        renderCategories();
       }
 
       // Boot
