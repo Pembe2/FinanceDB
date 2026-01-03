@@ -274,7 +274,7 @@
     .cat-row label{ flex:1; font-weight:700; color:var(--text); font-size:13px; }
     .cat-row input[type="number"]{ width:140px; min-width:120px; }
 
-    .categories-controls{ display:flex; gap:10px; margin-top:8px; flex-wrap:wrap; }
+    .categories-controls{ display:flex; gap:10px; margin-top:8px; flex-wrap:wrap; align-items:center; }
 
     .kpiGrid{
       display:grid;
@@ -437,18 +437,39 @@
             <input id="spendingAnnual" type="number" min="0" step="1000" />
             <div class="note">Used only for the coverage status and bar (today’s dollars comparison).</div>
 
+            <!-- Household income -->
+            <div style="margin-top:10px;">
+              <label for="householdIncome">Household income (annual, $)</label>
+              <input id="householdIncome" type="number" min="0" step="1000" />
+              <div class="note">Used to compute suggested category defaults. Default: $150,000.</div>
+            </div>
+
             <!-- Popular categories collapsible -->
-            <details id="popularCategories">
+            <details id="popularCategories" style="margin-top:10px;">
               <summary>Popular spending categories (tap to expand)</summary>
               <div class="content" id="categoriesContent">
                 <!-- Rendered by JS -->
                 <div class="note" style="margin-bottom:8px;">Tap a category to include it in the total; edit amounts to match your situation. Use the buttons to apply the total to the spending field.</div>
+
+                <!-- Presets -->
+                <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+                  <label style="margin:0;font-weight:700;color:var(--text);">Presets</label>
+                  <select id="presetSelect" style="min-width:160px;border-radius:10px;padding:8px;background:rgba(255,255,255,.03);border:1px solid var(--line);">
+                    <option value="typical">Typical</option>
+                    <option value="frugal">Frugal</option>
+                    <option value="affluent">Affluent</option>
+                  </select>
+                  <button class="btn secondary" id="applyPresetBtn" type="button">Apply preset</button>
+                  <button class="btn" id="recalcFromIncomeBtn" type="button">Recalc from income</button>
+                </div>
+
                 <div id="categoriesList"></div>
 
                 <div class="categories-controls">
                   <div class="pill" id="categoriesSumPill">Total: $—</div>
                   <button class="btn secondary" id="applyCategoriesBtn" type="button">Use total as spending estimate</button>
                   <button class="btn" id="addCategoriesBtn" type="button">Add total to current spending</button>
+                  <div id="saveStatusPill" class="pill" style="margin-left:auto;">Saving: —</div>
                 </div>
               </div>
             </details>
@@ -583,6 +604,11 @@
       const elCategoriesSumPill = $("categoriesSumPill");
       const elApplyCategoriesBtn = $("applyCategoriesBtn");
       const elAddCategoriesBtn = $("addCategoriesBtn");
+      const elSaveStatusPill = $("saveStatusPill");
+      const elHouseholdIncome = $("householdIncome");
+      const elRecalcFromIncomeBtn = $("recalcFromIncomeBtn");
+      const elPresetSelect = $("presetSelect");
+      const elApplyPresetBtn = $("applyPresetBtn");
 
       // Outputs
       const elYearsPill  = $("yearsPill");
@@ -637,23 +663,77 @@
         return 25.6;
       }
 
-      // Popular categories (annual estimates)
+      // Category definitions and default percentages of household income
+      const CATEGORY_PCTS = {
+        housing: 0.20,
+        food: 0.06,
+        transport: 0.05,
+        health: 0.06,
+        insurance: 0.03,
+        utilities: 0.03,
+        leisure: 0.04,
+        travel: 0.04,
+        taxes: 0.20,
+        misc: 0.02
+      };
+
       const POPULAR_CATEGORIES = [
-        { key: 'housing', label: 'Housing (rent/mortgage, maintenance)', value: 18000 },
-        { key: 'food', label: 'Food (groceries + dining out)', value: 7200 },
-        { key: 'transport', label: 'Transportation (car, fuel, transit)', value: 6000 },
-        { key: 'health', label: 'Healthcare & meds', value: 8000 },
-        { key: 'insurance', label: 'Insurance (home/auto/health)', value: 3600 },
-        { key: 'utilities', label: 'Utilities & bills', value: 3600 },
-        { key: 'leisure', label: 'Leisure & hobbies', value: 4800 },
-        { key: 'travel', label: 'Travel & vacations', value: 6000 },
-        { key: 'taxes', label: 'Taxes (estimate)', value: 8000 },
-        { key: 'misc', label: 'Misc / contingency', value: 3000 }
+        { key: 'housing', label: 'Housing (rent/mortgage, maintenance)' },
+        { key: 'food', label: 'Food (groceries + dining out)' },
+        { key: 'transport', label: 'Transportation (car, fuel, transit)' },
+        { key: 'health', label: 'Healthcare & meds' },
+        { key: 'insurance', label: 'Insurance (home/auto/health)' },
+        { key: 'utilities', label: 'Utilities & bills' },
+        { key: 'leisure', label: 'Leisure & hobbies' },
+        { key: 'travel', label: 'Travel & vacations' },
+        { key: 'taxes', label: 'Taxes (estimate)' },
+        { key: 'misc', label: 'Misc / contingency' }
       ];
 
+      // Presets: defines checkedKeys and a multiplier relative to CATEGORY_PCTS defaults
+      const PRESETS = {
+        frugal:  { checked: ['housing','food','utilities','insurance','misc'], mult: 0.8 },
+        typical: { checked: ['housing','food','transport','health','insurance','utilities','leisure','taxes','misc'], mult: 1.0 },
+        affluent:{ checked: ['housing','food','transport','health','insurance','utilities','leisure','travel','taxes','misc'], mult: 1.4 }
+      };
+
+      // localStorage availability flag
+      let LS_OK = true;
+      try {
+        const testKey = '__rtk_test__';
+        localStorage.setItem(testKey, '1');
+        localStorage.removeItem(testKey);
+      } catch (e){ LS_OK = false; }
+
+      function safeSetItem(k, v){
+        if (!LS_OK) return false;
+        try { localStorage.setItem(k, v); return true; } catch(e){ LS_OK = false; return false; }
+      }
+      function safeGetItem(k){
+        if (!LS_OK) return null;
+        try { return localStorage.getItem(k); } catch(e){ LS_OK = false; return null; }
+      }
+
+      let lastSavedAt = null;
+      let saveTimer = null;
+      function scheduleSave(delay = 150){
+        if (saveTimer) clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => { save(); }, delay);
+      }
+
       function save(){
+        const cats = {};
+        POPULAR_CATEGORIES.forEach(cat => {
+          const chk = document.getElementById('cat_chk_' + cat.key);
+          const amt = document.getElementById('cat_amt_' + cat.key);
+          cats[cat.key] = {
+            checked: !!(chk && chk.checked),
+            value: Number(amt ? amt.value : 0)
+          };
+        });
+
         const payload = {
-          v: 1,
+          v: 2,
           state: {
             currentAge: Number(elCurrentAge.value||0),
             retireAge: Number(elRetireAge.value||0),
@@ -672,16 +752,22 @@
             spending: Number(elSpend.value||0),
 
             method: String(elMethod.value||"rule4"),
-            custom: Number(elCustom.value||0)
+            custom: Number(elCustom.value||0),
+
+            householdIncome: Number(elHouseholdIncome.value||150000),
+            categories: cats
           },
           savedAt: new Date().toISOString()
         };
-        try { localStorage.setItem(KEY, JSON.stringify(payload)); } catch(e){}
+
+        const ok = safeSetItem(KEY, JSON.stringify(payload));
+        if (ok) lastSavedAt = new Date();
+        updateSavePill();
+        return ok;
       }
 
       function load(){
-        let raw = null;
-        try { raw = localStorage.getItem(KEY); } catch(e){ raw = null; }
+        const raw = safeGetItem(KEY);
         if (!raw) return false;
         let payload = null;
         try { payload = JSON.parse(raw); } catch(e){ payload = null; }
@@ -689,7 +775,7 @@
 
         const s = payload.state;
         elCurrentAge.value = String(s.currentAge ?? 40);
-        elRetireAge.value  = String(s.retireAge ?? 65);
+        elRetireAge.value  = String(s.retireAge ?? s.retireAge_alt ?? 65);
         elDeathAge.value   = String(s.deathAge ?? 90);
         elPortfolio.value  = String(s.portfolio ?? 500000);
 
@@ -707,6 +793,14 @@
         elMethod.value     = String(s.method ?? "rule4");
         elCustom.value     = String(s.custom ?? 60000);
 
+        elHouseholdIncome.value = String(s.householdIncome ?? 150000);
+
+        // try to set lastSavedAt from payload
+        if (payload.savedAt){
+          try { lastSavedAt = new Date(payload.savedAt); } catch(e){ lastSavedAt = null; }
+        }
+
+        // categories restored later in renderCategories
         return true;
       }
 
@@ -729,6 +823,8 @@
 
         elMethod.value     = "rule4";
         elCustom.value     = "60000";
+
+        elHouseholdIncome.value = "150000";
       }
 
       function pvToFV(pv, r, n, c){
@@ -793,12 +889,34 @@
       }
 
       // Category helpers
+      function computeDefaultAmount(key, income, multiplier=1.0){
+        const pct = CATEGORY_PCTS[key] || 0;
+        return Math.round(income * pct * multiplier);
+      }
+
       function renderCategories(){
+        // read saved categories from storage if available
+        let savedCats = null;
+        try{
+          const raw = safeGetItem(KEY);
+          if (raw){
+            const p = JSON.parse(raw);
+            if (p && p.state && p.state.categories) savedCats = p.state.categories;
+          }
+        } catch(e){ savedCats = null; }
+
+        const income = Math.max(0, Number(elHouseholdIncome.value||150000));
+
         const html = POPULAR_CATEGORIES.map(cat => {
+          const saved = savedCats && savedCats[cat.key];
+          const val = (saved && typeof saved.value === 'number')
+            ? saved.value
+            : computeDefaultAmount(cat.key, income, 1.0);
+          const checkedAttr = (saved && saved.checked) ? 'checked' : '';
           return `<div class="cat-row" data-key="${cat.key}">
-            <input type="checkbox" id="cat_chk_${cat.key}" data-key="${cat.key}" />
+            <input type="checkbox" id="cat_chk_${cat.key}" data-key="${cat.key}" ${checkedAttr} />
             <label for="cat_chk_${cat.key}">${cat.label}</label>
-            <input type="number" id="cat_amt_${cat.key}" min="0" step="100" value="${cat.value}" aria-label="${cat.label} amount" />
+            <input type="number" id="cat_amt_${cat.key}" min="0" step="100" value="${val}" aria-label="${cat.label} amount" />
           </div>`;
         }).join('\n');
         elCategoriesList.innerHTML = html;
@@ -808,8 +926,9 @@
           const chk = document.getElementById('cat_chk_' + cat.key);
           const amt = document.getElementById('cat_amt_' + cat.key);
           if (!chk || !amt) return;
-          chk.addEventListener('change', updateCategoriesSum);
-          amt.addEventListener('input', updateCategoriesSum);
+          chk.addEventListener('change', () => { updateCategoriesSum(); scheduleSave(); });
+          amt.addEventListener('input', () => { updateCategoriesSum(); scheduleSave(); });
+          amt.addEventListener('change', () => { scheduleSave(); });
         });
 
         updateCategoriesSum();
@@ -834,6 +953,54 @@
         if (setAs) elSpend.value = String(Math.round(total));
         else elSpend.value = String(Math.round(cur + total));
         updateUI();
+        scheduleSave();
+      }
+
+      function recalcCategoriesFromIncome(){
+        const income = Math.max(0, Number(elHouseholdIncome.value||150000));
+        POPULAR_CATEGORIES.forEach(cat => {
+          const amt = document.getElementById('cat_amt_' + cat.key);
+          if (!amt) return;
+          // Only update the amount, do not change checked state
+          amt.value = computeDefaultAmount(cat.key, income, 1.0);
+        });
+        updateCategoriesSum();
+        scheduleSave();
+      }
+
+      function applyPreset(name){
+        const preset = PRESETS[name];
+        if (!preset) return;
+        const income = Math.max(0, Number(elHouseholdIncome.value||150000));
+        POPULAR_CATEGORIES.forEach(cat => {
+          const chk = document.getElementById('cat_chk_' + cat.key);
+          const amt = document.getElementById('cat_amt_' + cat.key);
+          if (amt) amt.value = computeDefaultAmount(cat.key, income, preset.mult);
+          if (chk) chk.checked = preset.checked.includes(cat.key);
+        });
+        updateCategoriesSum();
+        scheduleSave();
+      }
+
+      function updateSavePill(){
+        if (!LS_OK){
+          elSaveStatusPill.textContent = 'Saving: unavailable (private mode)';
+          elSaveStatusPill.className = 'pill warn';
+          return;
+        }
+        if (lastSavedAt){
+          try{
+            const t = lastSavedAt.toLocaleString();
+            elSaveStatusPill.textContent = 'Saved: ' + t;
+            elSaveStatusPill.className = 'pill ok';
+          } catch(e){
+            elSaveStatusPill.textContent = 'Saving: OK';
+            elSaveStatusPill.className = 'pill ok';
+          }
+        } else {
+          elSaveStatusPill.textContent = 'Saving: OK';
+          elSaveStatusPill.className = 'pill ok';
+        }
       }
 
       function updateUI(){
@@ -972,31 +1139,36 @@
         if (yearsToRetire === 0) warnings.push("You are modeled as already at retirement age (years-to-retirement = 0).");
         elWarnings.textContent = warnings.length ? ("Notes: " + warnings.join(" ")) : "Notes: —";
 
-        // Persist
-        save();
+        // Persist — update save (use schedule to avoid heavy writes on rapid input)
+        scheduleSave();
       }
 
       function wire(){
         const inputs = [
           elCurrentAge, elRetireAge, elDeathAge, elPortfolio,
           elContrib, elInflation, elPreRet, elRetRet,
-          elPension, elSS, elSpend, elMethod, elCustom
+          elPension, elSS, elSpend, elMethod, elCustom, elHouseholdIncome
         ];
 
         for (const el of inputs){
           el.addEventListener("input", () => {
-            // Toggle custom field visibility if method changes
             if (el === elMethod){
               const isCustom = (String(elMethod.value) === "custom");
               elCustomWrap.style.display = isCustom ? "block" : "none";
             }
             updateUI();
+            // schedule save on input for mobile responsiveness
+            scheduleSave();
           });
+          // also save on change (helps mobile spinners)
+          el.addEventListener("change", () => save());
         }
 
         // Category buttons
         elApplyCategoriesBtn.addEventListener('click', () => applyCategoriesToSpending(true));
         elAddCategoriesBtn.addEventListener('click', () => applyCategoriesToSpending(false));
+        elRecalcFromIncomeBtn.addEventListener('click', () => recalcCategoriesFromIncome());
+        elApplyPresetBtn.addEventListener('click', () => applyPreset(elPresetSelect.value));
 
         $("printBtn").addEventListener("click", () => window.print());
 
@@ -1005,8 +1177,6 @@
           if (!ok) return;
           try { localStorage.removeItem(KEY); } catch(e){}
           setDefaults();
-          elCustomWrap.style.display = (String(elMethod.value) === "custom") ? "block" : "none";
-          // reset categories to defaults
           renderCategories();
           updateUI();
         });
@@ -1016,6 +1186,13 @@
 
         // Render category UI
         renderCategories();
+
+        // Save on pagehide/visibilitychange to improve mobile persistence
+        window.addEventListener('pagehide', () => save());
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') save(); });
+        window.addEventListener('beforeunload', () => save());
+
+        updateSavePill();
       }
 
       // Boot
