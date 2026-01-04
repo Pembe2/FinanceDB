@@ -1,0 +1,1651 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Retirement Calculator (Simplified)</title>
+
+  <style>
+    :root{
+      --bg:#0b1220;
+      --panel: rgba(255,255,255,.04);
+      --panel2: rgba(255,255,255,.03);
+      --text:#eaf0ff;
+      --muted:#8aa0c6;
+      --line:rgba(255,255,255,.12);
+
+      --accent: rgba(122,162,255,.22);
+      --accentBorder: rgba(122,162,255,.55);
+
+      --okBg: rgba(88,209,167,.12);
+      --okBorder: rgba(88,209,167,.38);
+
+      --warnBg: rgba(255,198,87,.12);
+      --warnBorder: rgba(255,198,87,.38);
+
+      --badBg: rgba(255,107,107,.12);
+      --badBorder: rgba(255,107,107,.38);
+    }
+
+    *{ box-sizing:border-box; }
+    html, body{
+        min-height:100%;
+    }
+
+        body{
+        margin:0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+        color:var(--text);
+        background: var(--bg); /* solid fallback */
+        line-height:1.35;
+        }
+    /* Fixed gradient background layer (mobile-safe) */
+    body::before{
+    content:"";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+
+    background:
+        radial-gradient(
+        1200px 700px at 20% -10%,
+        rgba(122,162,255,.22),
+        transparent 55%
+        ),
+        radial-gradient(
+        900px 600px at 95% 10%,
+        rgba(88,209,167,.16),
+        transparent 50%
+        ),
+        var(--bg);
+
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+
+      /* iOS notch / safe-area support */
+    padding:
+        env(safe-area-inset-top)
+        env(safe-area-inset-right)
+        env(safe-area-inset-bottom)
+        env(safe-area-inset-left);
+    }
+
+
+    a{ color:inherit; }
+
+    .wrap{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 18px 14px 28px;
+    }
+
+    header{
+      padding: 8px 4px 12px;
+    }
+    h1{
+      margin: 0 0 6px;
+      font-size: clamp(18px, 3.6vw, 22px);
+      letter-spacing:.2px;
+    }
+    header p{
+      margin:0;
+      color:var(--muted);
+      font-size: 13px;
+      max-width: 74ch;
+    }
+
+    .navPanel{
+      margin: 0 0 12px;
+    }
+    .navCard{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      background: var(--panel);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:10px 12px;
+    }
+    .navLabel{
+      font-size:11px;
+      color:var(--muted);
+      letter-spacing:.2px;
+      text-transform:uppercase;
+    }
+    .navLink{
+      color:var(--text);
+      text-decoration:none;
+      background: var(--panel2);
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:7px 10px;
+      font-weight:700;
+    }
+    .navLink[aria-current="page"]{
+      background: rgba(122,162,255,.22);
+      border-color: rgba(122,162,255,.55);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    @media (min-width: 900px){
+      .grid{
+        grid-template-columns: 1fr 1fr;
+        align-items:start;
+      }
+      .sticky{
+        position: sticky;
+        top: 12px;
+      }
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.02));
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+
+    .titleRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:baseline;
+      gap:10px;
+      margin-bottom: 10px;
+    }
+    .titleRow .title{
+      font-weight: 850;
+      font-size: 15px;
+      letter-spacing:.2px;
+    }
+    .titleRow .sub{
+      color: var(--muted);
+      font-size: 12px;
+      white-space:nowrap;
+    }
+
+    .hr{
+      height:1px;
+      background: var(--line);
+      margin: 12px 0;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      color: var(--muted);
+      font-size: 12px;
+      white-space:nowrap;
+    }
+    .pill.ok{ background: var(--okBg); border-color: var(--okBorder); color: rgba(191,255,232,.92); }
+    .pill.warn{ background: var(--warnBg); border-color: var(--warnBorder); color: rgba(255,230,175,.92); }
+    .pill.bad{ background: var(--badBg); border-color: var(--badBorder); color: rgba(255,200,200,.92); }
+
+    label{
+      display:block;
+      font-size:12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    input, select, button{
+      font:inherit;
+    }
+
+    input[type="number"], input[type="text"]{
+      width: 100%;
+      min-height: 44px;                 /* mobile tap target */
+      padding: 10px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.045);
+      color: var(--text);
+      outline:none;
+    }
+
+    select{
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.045);
+      color: var(--text);
+      outline:none;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+    }
+    select option{
+      color:#0b1220;
+      background:#ffffff;
+    }
+
+    input[type="range"]{
+      width: 100%;
+      accent-color: rgba(122,162,255,.9);
+    }
+
+    input:focus{
+      border-color: rgba(122,162,255,.70);
+      box-shadow: 0 0 0 3px rgba(122,162,255,.18);
+    }
+
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    @media (min-width: 520px){
+      .grid2{ grid-template-columns: 1fr 1fr; }
+    }
+
+    .alignedGrid{
+      align-items:end;
+    }
+    .alignedGrid label{
+      min-height: 38px;
+      line-height: 1.2;
+    }
+
+    .btnRow{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .btn{
+      min-height: 44px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(122,162,255,.35);
+      background: rgba(122,162,255,.16);
+      color: var(--text);
+      font-weight: 750;
+      cursor:pointer;
+      user-select:none;
+      transition: transform .04s ease, background .12s ease, border-color .12s ease;
+    }
+    .btn:hover{ background: rgba(122,162,255,.22); border-color: rgba(122,162,255,.55); }
+    .btn:active{ transform: translateY(1px); }
+    .btn.secondary{
+      border-color: var(--line);
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      font-weight: 700;
+    }
+    .btn.danger{
+      border-color: var(--badBorder);
+      background: var(--badBg);
+    }
+
+    .note{
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    details{
+      border:1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255,255,255,.02);
+      padding: 10px 10px;
+    }
+    details summary{
+      cursor:pointer;
+      font-weight: 800;
+      font-size: 13px;
+      list-style:none;
+      user-select:none;
+    }
+    details summary::-webkit-details-marker{ display:none; }
+    details .content{
+      margin-top: 10px;
+    }
+
+    .spendGrid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:10px;
+    }
+    @media (min-width: 520px){
+      .spendGrid{ grid-template-columns: 1fr 1fr; }
+    }
+    .spendRow{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap:8px;
+      align-items:center;
+    }
+    .spendRow label{
+      grid-column: 1 / -1;
+    }
+    .spendRow input{
+      width:100%;
+    }
+    .annualTag{
+      display:inline-block;
+      font-size:11px;
+      color:var(--muted);
+      white-space:nowrap;
+    }
+
+    .inlineError{
+      margin-top:6px;
+      color: rgba(255,200,200,.95);
+      font-size: 12px;
+    }
+
+    .kpiGrid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    @media (min-width: 520px){
+      .kpiGrid{ grid-template-columns: 1fr 1fr; }
+    }
+
+    .kpi{
+      border:1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255,255,255,.03);
+      padding: 12px;
+    }
+    .kpi .k{
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .kpi .v{
+      margin-top: 6px;
+      font-size: clamp(18px, 3.8vw, 22px);
+      letter-spacing:.2px;
+      font-weight: 900;
+    }
+    .kpi .s{
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .chartCard{
+      border:1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255,255,255,.03);
+      padding: 12px;
+    }
+    .chartTitle{
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .chartWrap{
+      border:1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255,255,255,.02);
+      padding: 8px;
+    }
+    .chartWrap canvas{
+      width: 100%;
+      height: 180px;
+      display:block;
+    }
+
+    .bar{
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+    .bar > span{
+      display:block;
+      height:100%;
+      width:0%;
+      background: rgba(88,209,167,.55);
+      transition: width 160ms ease;
+    }
+
+    .footer{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 0 14px 18px;
+      color: var(--muted);
+      font-size: 12px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      opacity:.9;
+    }
+
+    .toast{
+      position: fixed;
+      left: 14px;
+      right: 14px;
+      bottom: 18px;
+      background: rgba(255,107,107,.18);
+      border: 1px solid rgba(255,107,107,.45);
+      color: #ffe6e6;
+      padding: 10px 12px;
+      border-radius: 12px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.35);
+      font-size: 12px;
+      display:none;
+      z-index: 1000;
+    }
+    .toast.show{ display:block; }
+
+    /* Print */
+    @media print{
+      body{ background:#fff !important; color:#111 !important; }
+      .btnRow, .btn, .note, details, .footer{ display:none !important; }
+      .card{ box-shadow:none !important; border:1px solid #ddd !important; background:#fff !important; }
+      .pill{ border:1px solid #ddd !important; background:#fff !important; color:#444 !important; }
+      .kpi{ border:1px solid #ddd !important; background:#fff !important; }
+      .kpi .k, .kpi .s{ color:#444 !important; }
+      .wrap{ max-width:none !important; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <nav class="navPanel" aria-label="Site navigation">
+      <div class="navCard">
+        <span class="navLabel">Tools</span>
+        <a class="navLink" href="./Rev 1/index.html">Tool Index</a>
+        <a class="navLink" href="./Mobile Version.html" aria-current="page">Mobile</a>
+        <a class="navLink" href="./Rev 1/Complete Retirement Tool/">Complete Retirement Tool</a>
+      </div>
+    </nav>
+    <header>
+      <h1>Retirement Calculator</h1>
+      <p>
+        Simplified, mobile-first retirement projection. No tabs, no tables, just the core inputs and outputs.
+        Your settings persist locally in your browser. Educational use only.
+      </p>
+    </header>
+
+    <div class="grid">
+      <!-- INPUTS -->
+      <section class="card" aria-label="Inputs">
+        <div class="titleRow">
+          <div class="title">Inputs</div>
+          <div class="sub"><span class="pill" id="yearsPill">Years to retire: —</span></div>
+        </div>
+
+        <div class="grid2" aria-label="Ages">
+          <div>
+            <label for="currentAge">Current age</label>
+            <input id="currentAge" type="number" min="18" max="100" step="1" />
+          </div>
+          <div>
+            <label for="retireAge">Retirement age</label>
+            <input id="retireAge" type="number" min="20" max="100" step="1" />
+          </div>
+          <div>
+            <label for="deathAge">Age at death</label>
+            <input id="deathAge" type="number" min="50" max="120" step="1" />
+          </div>
+          <div>
+            <label for="currentPortfolio">Current portfolio ($)</label>
+            <input id="currentPortfolio"  min="0" step="1000" /type="text" inputmode="numeric">
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="grid2" aria-label="Savings and assumptions">
+          <div>
+            <label for="annualContribution">Annual Contribution ($)</label>
+            <input id="annualContribution"  min="0" step="1000" /type="text" inputmode="numeric">
+            <div class="note">Assumed end-of-year contributions.</div>
+            <div style="height:6px;"></div>
+          </div>
+          <div>
+            <label for="inflation">Inflation (% used for “today’s dollars”)</label>
+            <input id="inflation" type="number" min="0" max="12" step="0.1" />
+          </div>
+        </div>
+
+        <details>
+          <summary>Advanced assumptions (returns + other income)</summary>
+          <div class="content">
+            <div class="grid2">
+              <div>
+                <label for="preRetReturn">Pre-retirement return (% nominal)</label>
+                <input id="preRetReturn" type="number" min="-10" max="20" step="0.1" />
+              </div>
+              <div>
+                <label for="retReturn">Retirement return (% nominal)</label>
+                <input id="retReturn" type="number" min="-10" max="20" step="0.1" />
+              </div>
+            </div>
+
+            <div class="hr"></div>
+
+            <div>
+              <label>Stress test presets</label>
+              <div class="row" style="gap:8px; flex-wrap:wrap;">
+                <button class="btn secondary" type="button" id="presetBase">Base</button>
+                <button class="btn secondary" type="button" id="presetHighInfl">High inflation</button>
+                <button class="btn secondary" type="button" id="presetEarlyBear">Early bear</button>
+              </div>
+              <div class="note">Applies sample return/inflation assumptions for quick stress testing.</div>
+            </div>
+
+            <div class="hr"></div>
+
+            <div class="grid2">
+              <div>
+                <label for="pensionAnnual">Pension (annual, $)</label>
+                <input id="pensionAnnual"  min="0" step="1000" /type="text" inputmode="numeric">
+              </div>
+              <div>
+                <label for="ssAnnual">Social Security (annual, $)</label>
+                <input id="ssAnnual"  min="0" step="1000" /type="text" inputmode="numeric">
+                <div class="note">Optional: use the estimate toggle below for a ballpark value.</div>
+
+                <div class="row" style="margin-top:8px; gap:8px;">
+                  <label style="display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted);">
+                    <input id="ssEstimateToggle" type="checkbox" />
+                    Estimate SS (ballpark)
+                  </label>
+                </div>
+                <div class="grid2 alignedGrid" style="margin-top:8px; display:none;" id="ssEstimateFields">
+                  <div>
+                    <label for="ssEstimateIncome">Work income (annual, $)</label>
+                    <input id="ssEstimateIncome"  min="0" step="1000" /type="text" inputmode="numeric">
+                  </div>
+                  <div>
+                    <label for="ssEstimateYears">Years worked</label>
+                    <input id="ssEstimateYears" type="number" min="0" max="40" step="1" />
+                  </div>
+                </div>
+                <div class="note">Annual SS ≈ 40% × Working Income × min(1, YearsWorked / 35), capped at $50,000. This is intentionally simplified for planning purposes.</div>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <div class="hr"></div>
+
+        <div aria-label="Spending coverage">
+          <div>
+            <label for="withdrawalMethod">Distribution method</label>
+            <select id="withdrawalMethod" style="width:100%;min-height:44px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.045);color:var(--text);padding:10px 10px;outline:none;">
+              <option value="rmd">RMD (simple)</option>
+              <option value="rule4">4% rule</option>
+              <option value="custom">Custom amount</option>
+            </select>
+
+            <div id="customWrap" style="margin-top:10px;display:none;">
+              <label for="customWithdrawal" title="Portfolio-only amount; pension and Social Security are added on top in outputs.">Custom distribution (annual, portfolio only, $)</label>
+              <input id="customWithdrawal" type="range" min="0" max="0" step="100" title="Portfolio-only amount; pension and Social Security are added on top in outputs." />
+              <div class="row" style="justify-content:space-between; margin-top:6px;">
+                <span class="pill" id="customValuePill">$0 / yr</span>
+                <span class="pill" id="customMaxPill">Max: $0 / yr</span>
+              </div>
+              <div class="inlineError" id="customError" aria-live="polite"></div>
+            </div>
+          </div>
+
+          <div style="height:12px;"></div>
+
+          <div>
+            <label for="spendingAnnual">Estimated retirement spending (annual, today's $)</label>
+            <input id="spendingAnnual" type="text" inputmode="numeric" min="0" step="1000" />
+          </div>
+          <div class="note">Used for coverage evaluation.</div>
+        </div>
+        <div style="height:12px;"></div>
+
+        <details id="spendingDetails">
+          <summary>Expand for detailed spending categories (monthly)</summary>
+          <div class="content">
+            <div class="grid2">
+              <div>
+                <label for="householdIncome">Household income (annual, $)</label>
+                <input id="householdIncome"  min="0" step="1000" /type="text" inputmode="numeric">
+                <div class="note">Used to seed category defaults based on a spending profile.</div>
+              </div>
+              <div>
+                <label for="replacementRate">Replacement rate (% of income)</label>
+                <input id="replacementRate" type="range" min="50" max="100" step="1" value="75" />
+                <div class="note" id="replacementRateLabel">75% of income baseline</div>
+              </div>
+            </div>
+
+            <div class="row" style="margin-top:10px; justify-content:space-between;">
+              <span class="pill" id="spendingTotalPill">Category total: $0 / yr</span>
+              <button class="btn secondary" id="applySpendingPreset" type="button">Apply preset</button>
+            </div>
+
+            <div class="hr"></div>
+
+            <div class="spendGrid" aria-label="Spending categories">
+              <div class="spendRow">
+                <label for="spendHousing">Housing (monthly)</label>
+                <input id="spendHousing"  min="0" step="50" /type="text" inputmode="numeric">
+                <span class="annualTag" id="spendHousingAnnual">$0 / yr</span>
+              </div>
+              <div class="spendRow">
+                <label for="spendUtilities">Utilities (monthly)</label>
+                <input id="spendUtilities"  min="0" step="50" /type="text" inputmode="numeric">
+                <span class="annualTag" id="spendUtilitiesAnnual">$0 / yr</span>
+              </div>
+              <div class="spendRow">
+                <label for="spendFood">Food (monthly)</label>
+                <input id="spendFood"  min="0" step="50" /type="text" inputmode="numeric">
+                <span class="annualTag" id="spendFoodAnnual">$0 / yr</span>
+              </div>
+              <div class="spendRow">
+                <label for="spendHealthcare">Healthcare (monthly)</label>
+                <input id="spendHealthcare"  min="0" step="50" /type="text" inputmode="numeric">
+                <span class="annualTag" id="spendHealthcareAnnual">$0 / yr</span>
+              </div>
+              <div class="spendRow">
+                <label for="spendTransport">Transportation (monthly)</label>
+                <input id="spendTransport"  min="0" step="50" /type="text" inputmode="numeric">
+                <span class="annualTag" id="spendTransportAnnual">$0 / yr</span>
+              </div>
+              <div class="spendRow">
+                <label for="spendInsurance">Insurance/Taxes (monthly)</label>
+                <input id="spendInsurance"  min="0" step="50" /type="text" inputmode="numeric">
+                <span class="annualTag" id="spendInsuranceAnnual">$0 / yr</span>
+              </div>
+              <div class="spendRow">
+                <label for="spendLeisure">Leisure/Travel (monthly)</label>
+                <input id="spendLeisure"  min="0" step="50" /type="text" inputmode="numeric">
+                <span class="annualTag" id="spendLeisureAnnual">$0 / yr</span>
+              </div>
+              <div class="spendRow">
+                <label for="spendOther">Gifts/Other (monthly)</label>
+                <input id="spendOther"  min="0" step="50" /type="text" inputmode="numeric">
+                <span class="annualTag" id="spendOtherAnnual">$0 / yr</span>
+              </div>
+            </div>
+
+            <div class="note">Adjust categories for your situation. Totals feed the spending estimate above.</div>
+          </div>
+        </details>
+
+        <div class="hr"></div>
+
+        <div class="btnRow">
+          <button class="btn secondary" id="printBtn" type="button">Print / Save PDF</button>
+          <button class="btn danger" id="resetBtn" type="button">Reset</button>
+        </div>
+
+        <div class="note">
+          Modeling conventions: annual time steps; withdrawals begin at retirement; “today’s dollars” discounts by inflation over years-to-retirement.
+          This tool does not model taxes, fees, allocation, or sequence-of-returns risk.
+        </div>
+      </section>
+
+      <!-- OUTPUTS -->
+      <section class="card sticky" aria-label="Outputs">
+        <div class="titleRow">
+          <div class="title">Results</div>
+          <div class="sub"><span class="pill" id="statusPill">Plan status: —</span></div>
+        </div>
+
+        <div class="kpiGrid">
+          <div class="kpi">
+            <div class="k">Portfolio at retirement (nominal)</div>
+            <div class="v" id="outFV">$—</div>
+            <div class="s" id="outFVToday">Today’s $: —</div>
+          </div>
+          <div class="kpi">
+            <div class="k">Distribution (portfolio only)</div>
+            <div class="v" id="outDist">$—</div>
+            <div class="s" id="outDistToday">Today’s $: —</div>
+          </div>
+        </div>
+
+        <div style="height:10px;"></div>
+
+        <div class="kpiGrid">
+          <div class="kpi">
+            <div class="k">Other income (pension + SS)</div>
+            <div class="v" id="outOther">$—</div>
+            <div class="s">Annual nominal</div>
+          </div>
+          <div class="kpi">
+            <div class="k">Total retirement income</div>
+            <div class="v" id="outTotal">$—</div>
+            <div class="s" id="outTotalToday">Today’s $: —</div>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="row" style="justify-content:space-between; gap:10px;">
+          <span class="pill" id="coverageLine">Coverage: —</span>
+          <span class="pill" id="methodLine">Method: —</span>
+        </div>
+
+        <div style="height:10px;"></div>
+
+        <div class="bar" aria-label="Coverage bar">
+          <span id="coverageFill"></span>
+        </div>
+        <div class="note" id="coverageNote">—</div>
+
+        <div class="hr"></div>
+
+        <div class="kpi">
+          <div class="k">Remaining portfolio at death (simple)</div>
+          <div class="v" id="outRemaining">$—</div>
+          <div class="s">Assumes constant annual withdrawal (portfolio-only) and constant retirement return.</div>
+        </div>
+        <div style="height:10px;"></div>
+
+        <div class="kpi">
+          <div class="k">Surplus invested value at death</div>
+          <div class="v" id="outSurplus">$?</div>
+          <div class="s">Grows surplus income (total income minus spending) at the retirement return.</div>
+        </div>
+        <div class="hr"></div>
+
+        <div class="chartCard">
+          <div class="chartTitle">Portfolio growth and drawdown</div>
+          <div class="chartWrap">
+            <canvas id="portfolioChart" aria-label="Portfolio growth and drawdown chart" role="img"></canvas>
+          </div>
+        </div>
+
+        <div style="height:10px;"></div>
+
+        <div class="chartCard">
+          <div class="chartTitle">Surplus growth (retirement years)</div>
+          <div class="chartWrap">
+            <canvas id="surplusChart" aria-label="Surplus growth chart" role="img"></canvas>
+          </div>
+        </div>
+
+
+
+
+
+        <div class="note" id="warnings" style="margin-top:10px;">—</div>
+      </section>
+    </div>
+  </div>
+
+  <div class="toast" id="customToast" role="alert"></div>
+
+  <div class="footer">
+    <div><strong>Retirement Calculator</strong> • Simplified Mobile Version</div>
+    <div>Local-only storage • No data is transmitted • Educational use only</div>
+  </div>
+
+  <script>
+    (function(){
+      const KEY = "rtk_simplified_v1";
+
+      const $ = (id) => document.getElementById(id);
+
+      // Inputs
+      const elCurrentAge = $("currentAge");
+      const elRetireAge  = $("retireAge");
+      const elDeathAge   = $("deathAge");
+      const elPortfolio  = $("currentPortfolio");
+
+      const elContrib    = $("annualContribution");
+      const elInflation  = $("inflation");
+
+      const elPreRet     = $("preRetReturn");
+      const elRetRet     = $("retReturn");
+
+      const elPension    = $("pensionAnnual");
+      const elSS         = $("ssAnnual");
+      const elSSEstimateToggle = $("ssEstimateToggle");
+      const elSSEstimateIncome = $("ssEstimateIncome");
+      const elSSEstimateYears = $("ssEstimateYears");
+      const elSSEstimateFields = $("ssEstimateFields");
+
+      const elSpend      = $("spendingAnnual");
+      const elHouseholdIncome = $("householdIncome");
+      const elReplacementRate = $("replacementRate");
+      const elReplacementRateLabel = $("replacementRateLabel");
+      const elSpendingTotalPill = $("spendingTotalPill");
+      const elApplySpendingPreset = $("applySpendingPreset");
+
+      const elSpendHousing = $("spendHousing");
+      const elSpendUtilities = $("spendUtilities");
+      const elSpendFood = $("spendFood");
+      const elSpendHealthcare = $("spendHealthcare");
+      const elSpendTransport = $("spendTransport");
+      const elSpendInsurance = $("spendInsurance");
+      const elSpendLeisure = $("spendLeisure");
+      const elSpendOther = $("spendOther");
+
+      const elSpendHousingAnnual = $("spendHousingAnnual");
+      const elSpendUtilitiesAnnual = $("spendUtilitiesAnnual");
+      const elSpendFoodAnnual = $("spendFoodAnnual");
+      const elSpendHealthcareAnnual = $("spendHealthcareAnnual");
+      const elSpendTransportAnnual = $("spendTransportAnnual");
+      const elSpendInsuranceAnnual = $("spendInsuranceAnnual");
+      const elSpendLeisureAnnual = $("spendLeisureAnnual");
+      const elSpendOtherAnnual = $("spendOtherAnnual");
+
+      const elMethod     = $("withdrawalMethod");
+      const elCustomWrap = $("customWrap");
+      const elCustom     = $("customWithdrawal");
+      const elCustomError = $("customError");
+      const elCustomValuePill = $("customValuePill");
+      const elCustomMaxPill = $("customMaxPill");
+
+      const elPresetBase = $("presetBase");
+      const elPresetHighInfl = $("presetHighInfl");
+      const elPresetEarlyBear = $("presetEarlyBear");
+
+      // Outputs
+      const elYearsPill  = $("yearsPill");
+      const elStatusPill = $("statusPill");
+
+      const elOutFV      = $("outFV");
+      const elOutFVToday = $("outFVToday");
+
+      const elOutDist      = $("outDist");
+      const elOutDistToday = $("outDistToday");
+
+      const elOutOther   = $("outOther");
+      const elOutTotal   = $("outTotal");
+      const elOutTotalToday = $("outTotalToday");
+
+      const elCoverageLine = $("coverageLine");
+      const elMethodLine   = $("methodLine");
+      const elCoverageFill = $("coverageFill");
+      const elCoverageNote = $("coverageNote");
+
+      const elOutRemaining = $("outRemaining");
+      const elOutSurplus = $("outSurplus");
+      const elWarnings = $("warnings");
+      const elPortfolioChart = $("portfolioChart");
+      const elSurplusChart = $("surplusChart");
+
+      const fmtUSD0 = new Intl.NumberFormat("en-US", { style:"currency", currency:"USD", maximumFractionDigits:0 });
+
+      function parseMoneyValue(val){
+        var cleaned = String(val || "").replace(/[^0-9.-]/g, "");
+        var num = Number(cleaned);
+        return isFinite(num) ? num : 0;
+      }
+
+      function formatMoneyValue(num){
+        return fmtUSD0.format(Math.round(Number(num||0)));
+      }
+
+      function formatMoneyInput(el){
+        if (!el) return;
+        el.value = formatMoneyValue(parseMoneyValue(el.value));
+      }
+
+      function unformatMoneyInput(el){
+        if (!el) return;
+        el.value = String(parseMoneyValue(el.value));
+      }
+
+      function clamp(n, min, max){
+        n = Number(n);
+        if (!isFinite(n)) return min;
+        return Math.max(min, Math.min(max, n));
+      }
+
+      function toRatePct(x){ return Number(x||0) / 100; }
+
+      // Simple-ish Uniform Lifetime Table factor (approx) for RMD start ~72+.
+      // This is intentionally simple, but stable and clear.
+      const RMD_FACTOR = {
+        72: 25.6, 73: 24.7, 74: 23.8, 75: 22.9, 76: 22.0, 77: 21.2, 78: 20.3, 79: 19.5,
+        80: 18.7, 81: 17.9, 82: 17.1, 83: 16.3, 84: 15.5, 85: 14.8, 86: 14.1, 87: 13.4,
+        88: 12.7, 89: 12.0, 90: 11.4, 91: 10.8, 92: 10.2, 93: 9.6, 94: 9.1, 95: 8.6,
+        96: 8.1, 97: 7.6, 98: 7.1, 99: 6.7, 100: 6.3
+      };
+
+      function estimateSS(income, yearsWorked){
+        var inc = Math.max(0, Number(income||0));
+        var yw = Math.max(0, Number(yearsWorked||0));
+        var factor = Math.min(1, yw / 35);
+        var est = 0.40 * inc * factor;
+        if (est > 50000) est = 50000;
+        if (!isFinite(est)) est = 0;
+        return est;
+      }
+
+      function rmdFactorForAge(age){
+        const a = Math.round(Number(age||72));
+        if (RMD_FACTOR[a] !== undefined) return RMD_FACTOR[a];
+        if (a < 72) return RMD_FACTOR[72];
+        if (a > 100) return 6.3; // clamp
+        // nearest lower key fallback
+        for (let k = a; k >= 72; k--){
+          if (RMD_FACTOR[k] !== undefined) return RMD_FACTOR[k];
+        }
+        return 25.6;
+      }
+
+      function save(){
+        const payload = {
+          v: 1,
+          state: {
+            currentAge: Number(elCurrentAge.value||0),
+            retireAge: Number(elRetireAge.value||0),
+            deathAge: Number(elDeathAge.value||0),
+            portfolio: parseMoneyValue(elPortfolio.value),
+
+            contrib: parseMoneyValue(elContrib.value),
+            inflation: Number(elInflation.value||0),
+
+            preRet: Number(elPreRet.value||0),
+            retRet: Number(elRetRet.value||0),
+
+            pension: parseMoneyValue(elPension.value),
+            ss: parseMoneyValue(elSS.value),
+            ssEstimateEnabled: !!(elSSEstimateToggle && elSSEstimateToggle.checked),
+            ssEstimateIncome: parseMoneyValue(elSSEstimateIncome && elSSEstimateIncome.value),
+            ssEstimateYears: Number(elSSEstimateYears && elSSEstimateYears.value||0),
+
+            spending: parseMoneyValue(elSpend.value),
+            householdIncome: parseMoneyValue(elHouseholdIncome.value),
+            replacementRate: Number(elReplacementRate.value||75),
+            spendingCats: {
+              housing: parseMoneyValue(elSpendHousing.value),
+              utilities: parseMoneyValue(elSpendUtilities.value),
+              food: parseMoneyValue(elSpendFood.value),
+              healthcare: parseMoneyValue(elSpendHealthcare.value),
+              transport: parseMoneyValue(elSpendTransport.value),
+              insurance: parseMoneyValue(elSpendInsurance.value),
+              leisure: parseMoneyValue(elSpendLeisure.value),
+              other: parseMoneyValue(elSpendOther.value)
+            },
+
+            method: String(elMethod.value||"rule4"),
+            custom: Number(elCustom.value||0)
+          },
+          savedAt: new Date().toISOString()
+        };
+        try { localStorage.setItem(KEY, JSON.stringify(payload)); } catch(e){}
+      }
+
+      function load(){
+        let raw = null;
+        try { raw = localStorage.getItem(KEY); } catch(e){ raw = null; }
+        if (!raw) return false;
+        let payload = null;
+        try { payload = JSON.parse(raw); } catch(e){ payload = null; }
+        if (!payload || !payload.state) return false;
+
+        const s = payload.state;
+        elCurrentAge.value = String(s.currentAge ?? 40);
+        elRetireAge.value  = String(s.retireAge ?? 65);
+        elDeathAge.value   = String(s.deathAge ?? 90);
+        elPortfolio.value  = formatMoneyValue(s.portfolio ?? 500000);
+
+        elContrib.value    = formatMoneyValue(s.contrib ?? 0);
+        elInflation.value  = String(s.inflation ?? 2.5);
+
+        elPreRet.value     = String(s.preRet ?? 7.0);
+        elRetRet.value     = String(s.retRet ?? 3.0);
+
+        elPension.value    = formatMoneyValue(s.pension ?? 0);
+        elSS.value         = formatMoneyValue(s.ss ?? 0);
+        if (elSSEstimateToggle) elSSEstimateToggle.checked = !!s.ssEstimateEnabled;
+        if (elSSEstimateIncome) elSSEstimateIncome.value = formatMoneyValue(s.ssEstimateIncome ?? 60000);
+        if (elSSEstimateYears) elSSEstimateYears.value = String(s.ssEstimateYears ?? 35);
+
+        elSpend.value      = formatMoneyValue(s.spending ?? 0);
+        elHouseholdIncome.value = formatMoneyValue(s.householdIncome ?? 80000);
+        elReplacementRate.value = String(s.replacementRate ?? 75);
+
+        if (s.spendingCats){
+          const c = s.spendingCats;
+          elSpendHousing.value = formatMoneyValue(c.housing ?? 0);
+          elSpendUtilities.value = formatMoneyValue(c.utilities ?? 0);
+          elSpendFood.value = formatMoneyValue(c.food ?? 0);
+          elSpendHealthcare.value = formatMoneyValue(c.healthcare ?? 0);
+          elSpendTransport.value = formatMoneyValue(c.transport ?? 0);
+          elSpendInsurance.value = formatMoneyValue(c.insurance ?? 0);
+          elSpendLeisure.value = formatMoneyValue(c.leisure ?? 0);
+          elSpendOther.value = formatMoneyValue(c.other ?? 0);
+          window.__hasSpendCats = true;
+        } else {
+          window.__hasSpendCats = false;
+        }
+
+        elMethod.value     = String(s.method ?? "rule4");
+        elCustom.value     = String(s.custom ?? 60000);
+
+        return true;
+      }
+
+      function setDefaults(){
+        elCurrentAge.value = "40";
+        elRetireAge.value  = "65";
+        elDeathAge.value   = "90";
+        elPortfolio.value  = formatMoneyValue(500000);
+
+        elContrib.value    = formatMoneyValue(0);
+        elInflation.value  = "2.5";
+
+        elPreRet.value     = "7.0";
+        elRetRet.value     = "3.0";
+
+        elPension.value    = formatMoneyValue(0);
+        elSS.value         = formatMoneyValue(0);
+        if (elSSEstimateToggle) elSSEstimateToggle.checked = false;
+        if (elSSEstimateIncome) elSSEstimateIncome.value = formatMoneyValue(60000);
+        if (elSSEstimateYears) elSSEstimateYears.value = "35";
+
+        elSpend.value      = formatMoneyValue(0);
+        elHouseholdIncome.value = formatMoneyValue(80000);
+        elReplacementRate.value = "75";
+
+        elSpendHousing.value = formatMoneyValue(0);
+        elSpendUtilities.value = formatMoneyValue(0);
+        elSpendFood.value = formatMoneyValue(0);
+        elSpendHealthcare.value = formatMoneyValue(0);
+        elSpendTransport.value = formatMoneyValue(0);
+        elSpendInsurance.value = formatMoneyValue(0);
+        elSpendLeisure.value = formatMoneyValue(0);
+        elSpendOther.value = formatMoneyValue(0);
+
+        elMethod.value     = "rule4";
+        elCustom.value     = "60000";
+      }
+
+      function pvToFV(pv, r, n, c){
+        // End-of-year contribution model
+        pv = Math.max(0, Number(pv||0));
+        c  = Math.max(0, Number(c||0));
+        r  = Number(r||0);
+        n  = Math.max(0, Math.round(Number(n||0)));
+
+        if (n === 0) return pv;
+
+        if (!isFinite(r)) r = 0;
+        if (Math.abs(r) < 1e-10) return pv + c*n;
+
+        const growth = Math.pow(1 + r, n);
+        const fv = pv*growth + c*((growth - 1)/r);
+        return isFinite(fv) ? fv : 0;
+      }
+
+      function annuityWithdrawal(principal, r, nYears){
+        // Level annual withdrawal that amortizes principal to ~0 by age of death.
+        principal = Math.max(0, Number(principal||0));
+        r = Number(r||0);
+        nYears = Math.max(0, Math.round(Number(nYears||0)));
+        const periods = Math.max(1, nYears + 1);
+        if (!isFinite(r)) r = 0;
+
+        if (Math.abs(r) < 1e-10) return principal / periods;
+
+        const denom = 1 - Math.pow(1 + r, -(periods));
+        if (!isFinite(denom) || Math.abs(denom) < 1e-10) return principal / periods;
+
+        const w = principal * (r / denom);
+        return isFinite(w) ? w : 0;
+      }
+
+      function showToast(msg){
+        var el = document.getElementById("customToast");
+        if (!el) return;
+        el.textContent = msg;
+        el.classList.add("show");
+        if (el.__hideTimer) clearTimeout(el.__hideTimer);
+        el.__hideTimer = setTimeout(function(){
+          el.classList.remove("show");
+        }, 2600);
+      }
+
+      function setCustomSliderBounds(minAllowed, maxAllowed){
+        if (!elCustom) return;
+        var minVal = Math.max(0, Math.floor(Number(minAllowed||0)));
+        var maxVal = Math.max(0, Math.floor(Number(maxAllowed||0)));
+        if (!isFinite(minVal)) minVal = 0;
+        if (!isFinite(maxVal)) maxVal = 0;
+        if (maxVal < minVal) maxVal = minVal;
+
+        elCustom.min = String(minVal);
+        elCustom.max = String(maxVal);
+
+        if (maxVal <= 0){
+          elCustom.value = "0";
+          if (elCustomValuePill) elCustomValuePill.textContent = "$0 / yr";
+          if (elCustomMaxPill) elCustomMaxPill.textContent = "Max: $0 / yr";
+          return;
+        }
+        var raw = Number(elCustom.value||0);
+        if (!isFinite(raw) || raw < minVal) raw = minVal;
+        if (raw > maxVal) raw = maxVal;
+        elCustom.value = String(raw);
+        if (elCustomValuePill) elCustomValuePill.textContent = fmtUSD0.format(raw) + " / yr";
+        if (elCustomMaxPill) elCustomMaxPill.textContent = "Max: " + fmtUSD0.format(maxVal) + " / yr";
+      }
+
+      function capCustomWithdrawal(maxAllowed, warnings){
+        if (!elCustom) return;
+        if (!isFinite(maxAllowed) || maxAllowed <= 0){
+          elCustom.removeAttribute("max");
+          return;
+        }
+
+        const maxVal = Math.floor(maxAllowed);
+        elCustom.max = String(maxVal);
+
+        const raw = Number(elCustom.value||0);
+        if (!isFinite(raw) || raw < 0) return;
+
+        if (raw > maxVal){
+          if (warnings) warnings.push("Custom distribution exceeds the maximum distribution; reduce the amount to avoid a negative balance at death.");
+          if (elCustomError) elCustomError.textContent = "Must be less than " + fmtUSD0.format(maxVal) + " / yr.";
+        } else {
+          if (elCustomError) elCustomError.textContent = "";
+        }
+      }
+
+      function toTodaysDollars(nominal, infl, yearsToRetire){
+        nominal = Number(nominal||0);
+        infl = Math.max(0, Number(infl||0));
+        yearsToRetire = Math.max(0, Number(yearsToRetire||0));
+        const denom = Math.pow(1 + infl, yearsToRetire);
+        if (!isFinite(denom) || denom <= 0) return nominal;
+        return nominal / denom;
+      }
+
+      const SPENDING_WEIGHTS = {
+        housing: 0.28,
+        utilities: 0.06,
+        food: 0.14,
+        healthcare: 0.12,
+        transport: 0.10,
+        insurance: 0.10,
+        leisure: 0.10,
+        other: 0.10
+      };
+
+      function getReplacementRate(){
+        var v = Number(elReplacementRate.value||75);
+        if (!isFinite(v)) v = 75;
+        return Math.max(50, Math.min(100, v)) / 100;
+      }
+
+      function updateReplacementRateLabel(){
+        if (!elReplacementRateLabel) return;
+        var pct = Math.round(Number(elReplacementRate.value||75));
+        elReplacementRateLabel.textContent = pct + "% of income baseline";
+      }
+
+      function sumSpendingCategories(){
+        const vals = [
+          elSpendHousing, elSpendUtilities, elSpendFood, elSpendHealthcare,
+          elSpendTransport, elSpendInsurance, elSpendLeisure, elSpendOther
+        ];
+        let totalMonthly = 0;
+        for (const el of vals){
+          const v = parseMoneyValue(el.value);
+          if (isFinite(v) && v > 0) totalMonthly += v;
+        }
+        return { monthly: totalMonthly, annual: totalMonthly * 12 };
+      }
+
+      function setAnnualTag(el, monthly){
+        if (!el) return;
+        const annual = Math.max(0, Number(monthly||0)) * 12;
+        el.textContent = fmtUSD0.format(Math.round(annual)) + " / yr";
+      }
+
+      function updateSpendingTotals(){
+        const totals = sumSpendingCategories();
+        if (elSpendingTotalPill) elSpendingTotalPill.textContent = "Category total: " + fmtUSD0.format(Math.round(totals.annual)) + " / yr";
+        elSpend.value = formatMoneyValue(Math.round(totals.annual));
+
+        setAnnualTag(elSpendHousingAnnual, parseMoneyValue(elSpendHousing.value));
+        setAnnualTag(elSpendUtilitiesAnnual, parseMoneyValue(elSpendUtilities.value));
+        setAnnualTag(elSpendFoodAnnual, parseMoneyValue(elSpendFood.value));
+        setAnnualTag(elSpendHealthcareAnnual, parseMoneyValue(elSpendHealthcare.value));
+        setAnnualTag(elSpendTransportAnnual, parseMoneyValue(elSpendTransport.value));
+        setAnnualTag(elSpendInsuranceAnnual, parseMoneyValue(elSpendInsurance.value));
+        setAnnualTag(elSpendLeisureAnnual, parseMoneyValue(elSpendLeisure.value));
+        setAnnualTag(elSpendOtherAnnual, parseMoneyValue(elSpendOther.value));
+      }
+
+      function applySpendingPreset(){
+        const income = Math.max(0, Number(elHouseholdIncome.value||0));
+        const annualBase = income * getReplacementRate();
+        const monthlyBase = annualBase / 12;
+
+        elSpendHousing.value = formatMoneyValue(Math.round(monthlyBase * SPENDING_WEIGHTS.housing));
+        elSpendUtilities.value = formatMoneyValue(Math.round(monthlyBase * SPENDING_WEIGHTS.utilities));
+        elSpendFood.value = formatMoneyValue(Math.round(monthlyBase * SPENDING_WEIGHTS.food));
+        elSpendHealthcare.value = formatMoneyValue(Math.round(monthlyBase * SPENDING_WEIGHTS.healthcare));
+        elSpendTransport.value = formatMoneyValue(Math.round(monthlyBase * SPENDING_WEIGHTS.transport));
+        elSpendInsurance.value = formatMoneyValue(Math.round(monthlyBase * SPENDING_WEIGHTS.insurance));
+        elSpendLeisure.value = formatMoneyValue(Math.round(monthlyBase * SPENDING_WEIGHTS.leisure));
+        elSpendOther.value = formatMoneyValue(Math.round(monthlyBase * SPENDING_WEIGHTS.other));
+
+        updateSpendingTotals();
+      }
+
+      function drawLineChart(canvas, labels, values, lineColor){
+        if (!canvas || !values || values.length < 2) return;
+        var ctx = canvas.getContext("2d");
+        var dpr = window.devicePixelRatio || 1;
+        var width = canvas.clientWidth || 300;
+        var height = canvas.clientHeight || 180;
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, width, height);
+
+        var pad = 28;
+        var innerW = Math.max(10, width - pad * 2);
+        var innerH = Math.max(10, height - pad * 2);
+
+        var min = Math.min.apply(null, values);
+        var max = Math.max.apply(null, values);
+        if (!isFinite(min) || !isFinite(max)) return;
+        if (min > 0) min = 0;
+        if (max === min){ max = min + 1; }
+
+        ctx.strokeStyle = "rgba(255,255,255,0.15)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(pad, pad);
+        ctx.lineTo(pad, pad + innerH);
+        ctx.lineTo(pad + innerW, pad + innerH);
+        ctx.stroke();
+
+        ctx.strokeStyle = lineColor || "rgba(122,162,255,0.8)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (var i=0;i<values.length;i++){
+          var x = pad + (innerW * (values.length === 1 ? 0 : i/(values.length-1)));
+          var t = (values[i] - min) / (max - min);
+          var y = pad + innerH * (1 - t);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+      function buildPortfolioPath(currentAge, retirementAge, deathAge, startBal, contrib, rPre, rRet, withdrawal){
+        var ages = [];
+        var balances = [];
+        var bal = Math.max(0, Number(startBal||0));
+        var c = Math.max(0, Number(contrib||0));
+        var rp = Number(rPre||0);
+        var rr = Number(rRet||0);
+        var w = Math.max(0, Number(withdrawal||0));
+        for (var age = currentAge; age <= deathAge; age++){
+          if (age < retirementAge){
+            bal = bal * (1 + rp) + c;
+          } else {
+            bal = bal * (1 + rr) - w;
+          }
+          ages.push(age);
+          balances.push(bal);
+        }
+        return { labels: ages, values: balances };
+      }
+
+      function buildSurplusPath(retirementAge, deathAge, surplusAnnual, rRet){
+        var ages = [];
+        var values = [];
+        var val = 0;
+        var surplus = Math.max(0, Number(surplusAnnual||0));
+        var rr = Number(rRet||0);
+        for (var age = retirementAge; age <= deathAge; age++){
+          val = val * (1 + rr) + surplus;
+          ages.push(age);
+          values.push(val);
+        }
+        return { labels: ages, values: values };
+      }
+
+      function computeSurplusAtDeath(surplusAnnual, retReturn, yearsInRet){
+        var surplus = Math.max(0, Number(surplusAnnual||0));
+        var r = Number(retReturn||0);
+        var n = Math.max(0, Math.round(Number(yearsInRet||0)));
+        if (!isFinite(r)) r = 0;
+        if (n <= 0 || surplus <= 0) return 0;
+
+        var value = 0;
+        for (var i=0;i<n;i++){
+          value = value * (1 + r) + surplus;
+          if (!isFinite(value)) return 0;
+        }
+        return value;
+      }
+
+      function computeRemainingAtDeath(fvAtRet, retReturn, yearsInRet, withdrawalAnnual){
+        // Simplified: constant portfolio withdrawal, constant return during retirement.
+        fvAtRet = Math.max(0, Number(fvAtRet||0));
+        retReturn = Number(retReturn||0);
+        yearsInRet = Math.max(0, Math.round(Number(yearsInRet||0)));
+
+        const wNeed = Math.max(0, Number(withdrawalAnnual||0));
+
+        let bal = fvAtRet;
+        for (let i=0;i<yearsInRet;i++){
+          bal = bal * (1 + retReturn) - wNeed;
+          if (!isFinite(bal)) return 0;
+        }
+        return Math.max(0, bal);
+      }
+
+      function applyStressPreset(kind){
+        if (kind === "base"){
+          elInflation.value = "2.5";
+          elPreRet.value = "7.0";
+          elRetRet.value = "3.0";
+        } else if (kind === "highInfl"){
+          elInflation.value = "5.0";
+          elPreRet.value = "6.0";
+          elRetRet.value = "2.5";
+        } else if (kind === "earlyBear"){
+          elInflation.value = "3.0";
+          elPreRet.value = "4.5";
+          elRetRet.value = "1.5";
+        }
+        updateUI();
+      }
+
+      function updateUI(){
+        const warnings = [];
+
+        const currentAge = clamp(elCurrentAge.value, 18, 100);
+        let retireAge    = clamp(elRetireAge.value, 20, 100);
+        let deathAge     = clamp(elDeathAge.value, 50, 120);
+
+        if (retireAge < currentAge){
+          warnings.push("Retirement age is below current age; treating years-to-retirement as 0.");
+          retireAge = currentAge;
+        }
+        if (deathAge <= retireAge){
+          warnings.push("Age at death must be greater than retirement age to model retirement drawdown; remaining-at-death will be shown as $0.");
+        }
+
+        const yearsToRetire = Math.max(0, retireAge - currentAge);
+        const yearsInRet = Math.max(0, deathAge - retireAge);
+
+        elYearsPill.textContent = "Years to retire: " + yearsToRetire;
+
+        const portfolio = Math.max(0, parseMoneyValue(elPortfolio.value));
+        const contrib   = Math.max(0, parseMoneyValue(elContrib.value));
+
+        const infl = Math.max(0, toRatePct(elInflation.value));
+
+        const preRet = toRatePct(elPreRet.value);
+        const retRet = toRatePct(elRetRet.value);
+
+        const pension = Math.max(0, parseMoneyValue(elPension.value));
+        let ss = Math.max(0, parseMoneyValue(elSS.value));
+        if (elSSEstimateToggle && elSSEstimateToggle.checked){
+          ss = estimateSS(elSSEstimateIncome && elSSEstimateIncome.value, elSSEstimateYears && elSSEstimateYears.value);
+          elSS.value = String(Math.round(ss));
+          if (elSSEstimateFields) elSSEstimateFields.style.display = "grid";
+        } else {
+          if (elSSEstimateFields) elSSEstimateFields.style.display = "none";
+        }
+        const otherIncome = pension + ss;
+
+        const spendingToday = Math.max(0, parseMoneyValue(elSpend.value));
+
+        // FV at retirement
+        const fv = pvToFV(portfolio, preRet, yearsToRetire, contrib);
+        const fvToday = toTodaysDollars(fv, infl, yearsToRetire);
+
+        // Distribution method
+        const method = String(elMethod.value||"rule4");
+        let dist = 0;
+        let methodLabel = "4% rule";
+
+        // RMD minimum for slider floor
+        const startAge = Math.max(72, retireAge);
+        const factor = rmdFactorForAge(startAge);
+        const rmdMin = (factor > 0) ? (fv / factor) : 0;
+
+        const maxDisb = annuityWithdrawal(fv, retRet, yearsInRet);
+        setCustomSliderBounds(rmdMin, maxDisb);
+        if (method === "custom"){
+          capCustomWithdrawal(maxDisb, warnings);
+        }
+
+        if (method === "rmd"){
+          // simple: use factor at max(retireAge,72)
+          const startAge = Math.max(72, retireAge);
+          const factor = rmdFactorForAge(startAge);
+          dist = (factor > 0) ? (fv / factor) : 0;
+          methodLabel = "RMD (simple)";
+        } else if (method === "rule4"){
+          dist = fv * 0.04;
+          methodLabel = "4% rule";
+        } else {
+          dist = Math.max(0, Number(elCustom.value||0));
+          methodLabel = "Custom";
+        }
+
+        const distToday = toTodaysDollars(dist, infl, yearsToRetire);
+
+        const totalNominal = dist + otherIncome;
+        const totalToday = toTodaysDollars(totalNominal, infl, yearsToRetire);
+
+        // Remaining at death (simplified)
+        const remaining = (deathAge <= retireAge)
+          ? 0
+          : computeRemainingAtDeath(fv, retRet, yearsInRet, dist);
+
+        // Coverage (today's dollars vs today's spending)
+        let coveragePct = null;
+        let status = "Plan status: Unknown";
+        let pillClass = "pill warn";
+        let coverageText = "Coverage: —";
+        let coverageNote = "Enter an annual spending estimate to evaluate coverage.";
+
+        if (spendingToday > 0){
+          coveragePct = (totalToday / spendingToday) * 100;
+          const delta = totalToday - spendingToday;
+
+          coverageText = "Coverage: " + coveragePct.toFixed(0) + "%";
+          coverageNote = (delta >= 0)
+            ? ("Covered. Income exceeds spending by: " + fmtUSD0.format(delta) + " / yr (today’s $).")
+            : ("Shortfall. Income is below spending by: " + fmtUSD0.format(Math.abs(delta)) + " / yr (today’s $).");
+
+          // Tiering
+          if (coveragePct >= 105){
+            status = "Plan status: Funded";
+            pillClass = "pill ok";
+          } else if (coveragePct >= 95){
+            status = "Plan status: Marginal";
+            pillClass = "pill warn";
+          } else {
+            status = "Plan status: Shortfall";
+            pillClass = "pill bad";
+          }
+
+          // Coverage bar (cap at 200%)
+          const pctClamped = Math.max(0, Math.min(200, coveragePct));
+          elCoverageFill.style.width = (pctClamped / 200 * 100).toFixed(1) + "%";
+          if (coveragePct < 95) elCoverageFill.style.background = "rgba(255,107,107,.55)";
+          else if (coveragePct < 105) elCoverageFill.style.background = "rgba(255,198,87,.55)";
+          else elCoverageFill.style.background = "rgba(88,209,167,.55)";
+        } else {
+          elCoverageFill.style.width = "0%";
+          elCoverageFill.style.background = "rgba(88,209,167,.55)";
+        }
+
+        // Update outputs
+        elStatusPill.className = pillClass;
+        elStatusPill.textContent = status;
+
+        elOutFV.textContent = fmtUSD0.format(fv);
+        elOutFVToday.textContent = "Today’s $: " + fmtUSD0.format(fvToday);
+
+        elOutDist.textContent = fmtUSD0.format(dist) + " / yr";
+        elOutDistToday.textContent = "Today’s $: " + fmtUSD0.format(distToday) + " / yr";
+
+        elOutOther.textContent = fmtUSD0.format(otherIncome) + " / yr";
+
+        elOutTotal.textContent = fmtUSD0.format(totalNominal) + " / yr";
+        elOutTotalToday.textContent = "Today’s $: " + fmtUSD0.format(totalToday) + " / yr";
+
+        elCoverageLine.textContent = coverageText;
+        elMethodLine.textContent = "Method: " + methodLabel;
+
+        elCoverageNote.textContent = coverageNote;
+
+        elOutRemaining.textContent = fmtUSD0.format(remaining);
+
+        var spendingNominal = spendingToday * Math.pow(1 + infl, yearsToRetire);
+        var surplusAnnual = Math.max(0, totalNominal - spendingNominal);
+        var surplusValue = computeSurplusAtDeath(surplusAnnual, retRet, yearsInRet);
+        if (elOutSurplus) elOutSurplus.textContent = fmtUSD0.format(surplusValue);
+
+        // Charts
+        var portfolioPath = buildPortfolioPath(currentAge, retireAge, deathAge, portfolio, contrib, preRet, retRet, dist);
+        drawLineChart(elPortfolioChart, portfolioPath.labels, portfolioPath.values, "rgba(122,162,255,0.85)");
+
+        var spendNominal = spendingToday * Math.pow(1 + infl, yearsToRetire);
+        var surplusNominal = Math.max(0, totalNominal - spendNominal);
+        var surplusPath = buildSurplusPath(retireAge, deathAge, surplusNominal, retRet);
+        drawLineChart(elSurplusChart, surplusPath.labels, surplusPath.values, "rgba(88,209,167,0.85)");
+
+        // Warnings
+        if (!isFinite(fv) || !isFinite(totalNominal)) warnings.push("Some outputs were non-finite; check inputs (returns, ages).");
+        if (yearsToRetire === 0) warnings.push("You are modeled as already at retirement age (years-to-retirement = 0).");
+        elWarnings.textContent = warnings.length ? ("Notes: " + warnings.join(" ")) : "Notes: —";
+
+        // Persist
+        save();
+      }
+
+      function wire(){
+        const moneyInputs = [
+          elPortfolio, elContrib, elPension, elSS, elSSEstimateIncome,
+          elSpend, elHouseholdIncome,
+          elSpendHousing, elSpendUtilities, elSpendFood, elSpendHealthcare,
+          elSpendTransport, elSpendInsurance, elSpendLeisure, elSpendOther
+        ];
+        for (const el of moneyInputs){
+          if (!el) continue;
+          el.addEventListener("focus", () => unformatMoneyInput(el));
+          el.addEventListener("blur", () => formatMoneyInput(el));
+        }
+
+        const inputs = [
+          elCurrentAge, elRetireAge, elDeathAge, elPortfolio,
+          elContrib, elInflation, elPreRet, elRetRet,
+          elPension, elSS, elSSEstimateToggle, elSSEstimateIncome, elSSEstimateYears, elSpend, elMethod, elCustom,
+          elHouseholdIncome, elReplacementRate,
+          elSpendHousing, elSpendUtilities, elSpendFood, elSpendHealthcare,
+          elSpendTransport, elSpendInsurance, elSpendLeisure, elSpendOther
+        ];
+
+        for (const el of inputs){
+          el.addEventListener("input", () => {
+            // Toggle custom field visibility if method changes
+            if (el === elMethod){
+              const isCustom = (String(elMethod.value) === "custom");
+              elCustomWrap.style.display = isCustom ? "block" : "none";
+              if (!isCustom && elCustomError) elCustomError.textContent = "";
+            }
+            if (el === elCustom && elCustomValuePill){
+              elCustomValuePill.textContent = fmtUSD0.format(Number(elCustom.value||0)) + " / yr";
+            }
+            updateUI();
+          });
+        }
+
+        if (elApplySpendingPreset){
+          elApplySpendingPreset.addEventListener("click", () => {
+            applySpendingPreset();
+            updateUI();
+          });
+        }
+
+        const spendInputs = [
+          elSpendHousing, elSpendUtilities, elSpendFood, elSpendHealthcare,
+          elSpendTransport, elSpendInsurance, elSpendLeisure, elSpendOther
+        ];
+        for (const el of spendInputs){
+          el.addEventListener("input", () => {
+            updateSpendingTotals();
+            updateUI();
+          });
+        }
+
+        if (elHouseholdIncome){
+          elHouseholdIncome.addEventListener("input", () => {
+            applySpendingPreset();
+            updateUI();
+          });
+        }
+        if (elReplacementRate){
+          elReplacementRate.addEventListener("input", () => {
+            updateReplacementRateLabel();
+            applySpendingPreset();
+            updateUI();
+          });
+        }
+
+        if (elPresetBase) elPresetBase.addEventListener("click", () => applyStressPreset("base"));
+        if (elPresetHighInfl) elPresetHighInfl.addEventListener("click", () => applyStressPreset("highInfl"));
+        if (elPresetEarlyBear) elPresetEarlyBear.addEventListener("click", () => applyStressPreset("earlyBear"));
+
+        $("printBtn").addEventListener("click", () => window.print());
+
+        $("resetBtn").addEventListener("click", () => {
+          const ok = window.confirm("Reset all saved inputs for this simplified calculator?");
+          if (!ok) return;
+          try { localStorage.removeItem(KEY); } catch(e){}
+          setDefaults();
+          elCustomWrap.style.display = (String(elMethod.value) === "custom") ? "block" : "none";
+          updateUI();
+        });
+
+        // Ensure custom visibility on load
+        elCustomWrap.style.display = (String(elMethod.value) === "custom") ? "block" : "none";
+      }
+
+      // Boot
+      const loaded = load();
+      if (!loaded) {
+        setDefaults();
+        applySpendingPreset();
+      } else if (!window.__hasSpendCats) {
+        applySpendingPreset();
+      } else {
+        updateSpendingTotals();
+      }
+      updateReplacementRateLabel();
+      if (elSSEstimateFields){
+        elSSEstimateFields.style.display = (elSSEstimateToggle && elSSEstimateToggle.checked) ? "grid" : "none";
+      }
+      wire();
+      updateUI();
+    })();
+  </script>
+</body>
+</html>

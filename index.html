@@ -1,3205 +1,431 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Retirement Toolkit</title>
-
-  <!-- Chart.js (Projection tab drawdown chart) -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Financial Dashboard - Tool Index</title>
   <style>
     :root{
-      --bg:#0b1220;
-      --muted:#8aa0c6;
-      --text:#eaf0ff;
-      --line:rgba(255,255,255,.10);
-
-      --accent: rgba(122,162,255,.22);
-      --accentBorder: rgba(122,162,255,.45);
-      --dangerBg: rgba(255,107,107,.12);
-      --dangerBorder: rgba(255,107,107,.35);
-      --okBg: rgba(88,209,167,.12);
-      --okBorder: rgba(88,209,167,.35);
-      --warnBg: rgba(255,198,87,.10);
-      --warnBorder: rgba(255,198,87,.30);
+      --bg:#0e1116;
+      --sidebar:#0b0f14;
+      --panel:#141a22;
+      --card:#121923;
+      --text:#e8edf5;
+      --muted:#a3b1c6;
+      --border:rgba(255,255,255,0.08);
+      --accent:#7fa7ff;
+      --accent-2:#8ad3a9;
     }
-    *{box-sizing:border-box}
+    *{box-sizing:border-box;}
     body{
       margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-      background: radial-gradient(1200px 700px at 20% -10%, rgba(122,162,255,.22), transparent 55%),
-                  radial-gradient(1000px 650px at 95% 10%, rgba(88,209,167,.16), transparent 50%),
-                  var(--bg);
+      font-family:"Palatino Linotype","Book Antiqua",Palatino,serif;
       color:var(--text);
-      line-height:1.35;
+      background:var(--bg);
     }
+    a{color:inherit;}
 
-    header{
-      padding:22px 18px 10px;
-      max-width:1160px;
-      margin:0 auto;
-    }
-    h1{margin:0 0 6px;font-size:22px;letter-spacing:.2px;}
-    header p{margin:0;color:var(--muted);max-width:72ch}
-
-    /* Tabs */
-    .tabsBar{
-      max-width:1160px;
-      margin:10px auto 0;
-      padding:0 18px;
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-    }
-    .tabBtn{
-      color:var(--text);
-      background: rgba(255,255,255,.05);
-      border:1px solid var(--line);
-      border-radius:12px;
-      padding:10px 12px;
-      cursor:pointer;
-      transition: transform .04s ease, background .12s ease, border-color .12s ease;
-      user-select:none;
-      font-weight:700;
-    }
-    .tabBtn:hover{background: rgba(122,162,255,.18); border-color: rgba(122,162,255,.45)}
-    .tabBtn:active{transform: translateY(1px)}
-    .tabBtn[aria-selected="true"]{
-      background: rgba(122,162,255,.22);
-      border-color: rgba(122,162,255,.55);
-      box-shadow: 0 0 0 3px rgba(122,162,255,.14);
-    }
-
-    .wrap{
-      max-width:1160px;
-      margin:0 auto;
-      padding:14px 18px 26px;
-    }
-
-    .spendingMain{
+    .layout{
       display:grid;
-      grid-template-columns: 1.1fr .9fr;
-      gap:14px;
-    }
-    @media (max-width: 980px){ .spendingMain{grid-template-columns:1fr} }
-
-    .projMain{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap:14px;
+      grid-template-columns: 260px 1fr;
+      min-height:100vh;
     }
 
-    .card{
-      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:14px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    .sidebar{
+      background:var(--sidebar);
+      border-right:1px solid var(--border);
+      padding:16px 12px;
+      position:sticky;
+      top:0;
+      height:100vh;
+      overflow:auto;
     }
-
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    .row.space{justify-content:space-between}
-
-    label{font-size:12px;color:var(--muted)}
-    select,input,button{font:inherit}
-
-    input[type="number"], input[type="text"]{
-      color:var(--text);
-      background: rgba(255,255,255,.04);
-      border:1px solid var(--line);
-      border-radius:10px;
-      padding:10px 10px;
-      outline:none;
-      min-width:140px;
-    }
-
-    input[type="range"]{
-      width: 100%;
-      max-width: 520px;
-      accent-color: rgba(122,162,255,.85);
-    }
-
-    select{
-      color:#eaf0ff;
-      background: rgba(255,255,255,.08);
-      border:1px solid var(--line);
-      border-radius:10px;
-      padding:10px 10px;
-      outline:none;
-      min-width: 280px;
-    }
-    select option{
-      color:#0b1220;
-      background:#ffffff;
-    }
-
-    input:focus,select:focus{
-      border-color: rgba(122,162,255,.65);
-      box-shadow: 0 0 0 3px rgba(122,162,255,.18);
-    }
-
-    .btn{
-      color:var(--text);
-      background: rgba(122,162,255,.16);
-      border:1px solid rgba(122,162,255,.35);
-      border-radius:12px;
-      padding:10px 12px;
-      cursor:pointer;
-      transition: transform .04s ease, background .12s ease, border-color .12s ease;
-      user-select:none;
-      font-weight:700;
-    }
-    .btn:hover{background: rgba(122,162,255,.22); border-color: rgba(122,162,255,.55)}
-    .btn:active{transform: translateY(1px)}
-    .btn.secondary{ background: rgba(255,255,255,.05); border-color: var(--line); }
-    .btn.danger{
-      background: var(--dangerBg);
-      border-color: var(--dangerBorder);
-    }
-    .btn.danger:hover{
-      background: rgba(255,107,107,.16);
-      border-color: rgba(255,107,107,.50);
-    }
-    .btn.ok{
-      background: var(--okBg);
-      border-color: var(--okBorder);
-    }
-    .btn.ok:hover{
-      background: rgba(88,209,167,.16);
-      border-color: rgba(88,209,167,.50);
-    }
-
-    .pill{
-      font-size:12px;
-      color: var(--muted);
-      border:1px solid var(--line);
-      border-radius:999px;
-      padding:6px 10px;
-      background: rgba(255,255,255,.03);
-      white-space:nowrap;
-    }
-    .pill.warn{
-      border-color: rgba(255,198,87,.35);
-      background: rgba(255,198,87,.10);
-      color: rgba(255,230,175,.92);
-    }
-    .pill.ok{
-      border-color: rgba(88,209,167,.35);
-      background: rgba(88,209,167,.10);
-      color: rgba(191,255,232,.92);
-    }
-    .pill.bad{
-      border-color: rgba(255,107,107,.35);
-      background: rgba(255,107,107,.10);
-      color: rgba(255,200,200,.92);
-    }
-
-    .grid2{display:grid;grid-template-columns: 1fr 1fr;gap:10px;}
-    @media (max-width: 520px){
-      .grid2{grid-template-columns:1fr}
-      select,input[type="number"], input[type="text"]{min-width: 100%}
-    }
-
-    .hr{height:1px;background:var(--line);margin:12px 0}
-
-    table{
-      width:100%;
-      border-collapse:separate;
-      border-spacing:0;
-      overflow:hidden;
-      border:1px solid var(--line);
-      border-radius:12px;
-    }
-    thead th{
-      text-align:left;
-      font-size:12px;
+    .brand{
+      font-size:14px;
+      letter-spacing:0.8px;
+      text-transform:uppercase;
       color:var(--muted);
-      background: rgba(255,255,255,.03);
-      padding:10px 10px;
-      border-bottom:1px solid var(--line);
+      margin:6px 8px 14px;
     }
-    tbody td{
-      padding:10px 10px;
-      border-bottom:1px solid var(--line);
-      vertical-align:middle;
-    }
-    tbody tr:last-child td{border-bottom:none}
-    tbody tr.selected{ background: rgba(255,255,255,.05); }
-
-    .muted{color:var(--muted)}
-    .right{text-align:right}
-    .toggle{display:flex; gap:8px; align-items:center; font-size:12px; color:var(--muted);}
-    .toggle input{width:16px;height:16px}
-
-    .kpi{display:grid;grid-template-columns: 1fr 1fr;gap:10px;}
-    .kpi .box{
-      background: rgba(255,255,255,.03);
-      border:1px solid var(--line);
-      border-radius:12px;
-      padding:12px;
-    }
-    .kpi .value{font-size:20px;margin-top:6px;letter-spacing:.2px;}
-    .small{font-size:12px}
-    .canvasWrap{
-      border:1px solid var(--line);
-      border-radius:12px;
-      padding:10px;
-      background: rgba(255,255,255,.02);
-    }
-    .note{margin:10px 0 0;color:var(--muted);font-size:12px;}
-    .badge{
-      display:inline-block;
-      padding:5px 8px;
-      border-radius:999px;
-      font-size:12px;
-      border:1px solid var(--line);
-      background: rgba(255,255,255,.03);
-      color: var(--muted);
-    }
-
-    .sectionRow td{
-      background: rgba(255,255,255,.03);
-      color: var(--muted);
-      font-size: 12px;
-      letter-spacing: .2px;
-      font-weight: 700;
-      padding: 10px 10px;
-    }
-    .sectionRow .hint{
-      font-weight: 500;
-      opacity: .9;
-    }
-
-    .hintBox{
-      margin-top: 8px;
-      padding: 10px;
-      border: 1px dashed rgba(255,255,255,0.18);
-      border-radius: 10px;
-      background: rgba(255,255,255,0.03);
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.35;
-    }
-    .collapse{
-      overflow: hidden;
-      transition: max-height 180ms ease, opacity 180ms ease, margin-top 180ms ease;
-      max-height: 2000px;
-      opacity: 1;
-      margin-top: 8px;
-    }
-    .collapse.is-collapsed{
-      max-height: 0;
-      opacity: 0;
-      margin-top: 0;
-    }
-    .chartWrap{
-      border:1px solid var(--line);
-      border-radius:12px;
-      padding:10px;
-      background: rgba(255,255,255,.02);
-    }
-
-    .modalOverlay{
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.55);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-      z-index: 1000;
-    }
-    .modalOverlay.show{ display:flex; }
-    .modal{
-      width: min(720px, 100%);
-      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:14px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.35);
-    }
-    .modalHeader{
+    .navlist{list-style:none; padding:0; margin:0; display:grid; gap:8px;}
+    .navitem{
       display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin-bottom:10px;
-    }
-    .modalTitle{ font-weight:800; font-size:16px; }
-    .modalGrid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:12px;
-    }
-    @media (max-width: 640px){ .modalGrid{grid-template-columns:1fr} }
-    .modalFooter{
-      display:flex;
-      justify-content:flex-end;
-      gap:10px;
-      margin-top:12px;
-    }
-
-    .tabPanel{ display:none; }
-    .tabPanel.active{ display:block; }
-
-    .metricGrid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px;
-    }
-    @media (max-width: 980px){ .metricGrid{ grid-template-columns: 1fr; } }
-    .metricBox{
-      background: rgba(255,255,255,.03);
-      border:1px solid var(--line);
+      flex-direction:column;
+      gap:4px;
+      padding:10px 10px;
       border-radius:12px;
-      padding:12px;
+      text-decoration:none;
+      background:transparent;
+      border:1px solid transparent;
+      transition:background 120ms ease, border-color 120ms ease, transform 120ms ease;
     }
-    .metricTitle{ font-size:12px; color:var(--muted); }
-    .metricValue{ font-size:20px; margin-top:6px; letter-spacing:.2px; }
-    .sliderRow{
-      display:grid;
-      grid-template-columns: 220px 1fr 220px;
-      gap:10px;
-      align-items:center;
+    .navitem:hover{
+      background:rgba(255,255,255,0.04);
+      border-color:var(--border);
+      transform:translateY(-1px);
     }
-    @media (max-width: 980px){
-      .sliderRow{ grid-template-columns: 1fr; }
-    }
+    .navtitle{font-weight:700;}
+    .navsub{font-size:12px; color:var(--muted);}
 
-    .rangeWrap{ width: 100%; max-width: 520px; }
-    .rangeWrap input[type="range"]{ width: 100%; max-width: none; }
-    .rangeTicks{
-      display: flex;
-      justify-content: space-between;
-      width: 100%;
-      padding: 0 10px;
-      margin-top: 4px;
+    .main{
+      padding:24px 24px 32px;
+      background:
+        radial-gradient(900px 500px at 12% -10%, rgba(138,211,169,0.14), transparent 60%),
+        radial-gradient(1000px 700px at 95% 10%, rgba(127,167,255,0.14), transparent 55%),
+        var(--bg);
     }
+    header{
+      max-width:980px;
+      margin:0 auto 18px;
+    }
+    h1{margin:0 0 6px; font-size:28px; letter-spacing:0.4px;}
+    header p{margin:0; color:var(--muted); max-width:70ch;}
 
-    /* Executive summary mini layout */
-    .execGrid{
-      display:grid;
-      grid-template-columns: 1.2fr .8fr;
-      gap:10px;
-    }
-    @media (max-width: 980px){ .execGrid{ grid-template-columns: 1fr; } }
-
-    .bar{
-      height: 10px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.06);
-      border: 1px solid var(--line);
-      overflow: hidden;
-    }
-    .bar > span{
-      display:block;
-      height:100%;
-      width:0%;
-      background: rgba(88,209,167,.55);
-    }
-
-    .footer{
-      max-width:1160px;
+    .content{
+      max-width:980px;
       margin:0 auto;
-      padding: 0 18px 18px;
-      color: var(--muted);
-      font-size: 12px;
+      display:grid;
+      gap:16px;
+    }
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:16px;
+    }
+    .card h2{margin:0 0 6px; font-size:18px;}
+    .card p{margin:0 0 10px; color:var(--muted);}
+
+    .summary{
+      background:linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:16px;
+    }
+    .summary h2{margin:0 0 8px; font-size:20px;}
+    .summary p{margin:0; color:var(--muted);}
+
+    .slideshow{
+      background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:16px;
+    }
+    .slides{
+      position:relative;
+      overflow:hidden;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:var(--card);
+    }
+    .slide{
+      display:none;
+      padding:14px;
+    }
+    .slide.active{
+      display:block;
+    }
+    .slideHeader{
       display:flex;
+      align-items:center;
       justify-content:space-between;
+      margin-bottom:10px;
       gap:10px;
       flex-wrap:wrap;
-      opacity:.9;
+    }
+    .slideTitle{
+      font-weight:700;
+    }
+    .slideNote{
+      color:var(--muted);
+      font-size:12px;
+    }
+    .shot{
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      padding:10px;
+    }
+    .shot svg{
+      width:100%;
+      height:auto;
+      display:block;
+    }
+    .slideCaption{
+      margin-top:10px;
+      color:var(--muted);
+      font-size:12px;
+    }
+    .slideControls{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-top:10px;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .dots{
+      display:flex;
+      gap:6px;
+    }
+    .dot{
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      background:rgba(255,255,255,0.2);
+      border:1px solid var(--border);
+    }
+    .dot.active{
+      background:var(--accent);
+    }
+    .controlBtn{
+      border:1px solid var(--border);
+      background:rgba(255,255,255,0.04);
+      color:var(--text);
+      padding:6px 10px;
+      border-radius:10px;
+      cursor:pointer;
+      font-family:inherit;
+    }
+    .controlBtn:hover{
+      border-color:rgba(255,255,255,0.25);
     }
 
-    /* Print / PDF */
-    @media print{
-      body{ background:#fff !important; color:#111 !important; }
-      header, .tabsBar, #panelSpending, .btn, .tabBtn, .toggle, .note, .pill, .chartWrap, #chartWrap, #drawdownSelector, #viewDrawdownBtn { display:none !important; }
-      .wrap{ max-width:none; padding:0; }
-      .card{ box-shadow:none; border:1px solid #ddd; background:#fff; }
-      .metricBox{ border:1px solid #ddd; background:#fff; }
-      .muted{ color:#444 !important; }
-      .metricTitle{ color:#444 !important; }
-      .metricValue{ color:#111 !important; }
-      .footer{ color:#444 !important; }
+    .actions{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
+    .btn{
+      text-decoration:none;
+      color:#0b131a;
+      background:linear-gradient(135deg, var(--accent), var(--accent-2));
+      padding:8px 12px;
+      border-radius:10px;
+      font-weight:700;
+      letter-spacing:0.2px;
+    }
+    .pill{
+      display:inline-block;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      color:var(--muted);
+      font-size:12px;
+      background:rgba(255,255,255,0.03);
+    }
+
+    footer{
+      max-width:980px;
+      margin:16px auto 0;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    @media (max-width: 900px){
+      .layout{grid-template-columns:1fr;}
+      .sidebar{
+        position:static;
+        height:auto;
+        border-right:none;
+        border-bottom:1px solid var(--border);
+      }
     }
   </style>
 </head>
-
 <body>
-  <header>
-      <!-- Add this block to link to the mobile folder -->
-  <div style="margin-top:10px;">
-    <a href="./mobile/index.html" class="pill" title="Open simplified mobile version (mobile)">Open simplified mobile version</a>
-  </div>
-    <h1>Retirement Toolkit</h1>
-    <p>
-      Two tools in one page: a retirement spending estimator and a retirement projection dashboard. Your settings persist locally in your browser.
-    </p>
-  </header>
-
-  <nav class="tabsBar" role="tablist" aria-label="Retirement toolkit tabs">
-    <button class="tabBtn" id="tabSpending" role="tab" aria-selected="false" aria-controls="panelSpending" type="button">
-      Spending Estimator
-    </button>
-    <button class="tabBtn" id="tabProjection" role="tab" aria-selected="true" aria-controls="panelProjection" type="button">
-      Projection Dashboard
-    </button>
-  </nav>
-
-  <div class="wrap">
-    <!-- TAB 1: Spending Estimator -->
-    <section id="panelSpending" class="tabPanel" role="tabpanel" aria-labelledby="tabSpending">
-      <div class="spendingMain">
-        <section class="card" aria-label="Inputs">
-          <div class="row space">
-            <div>
-              <label for="location">Retirement location</label><br/>
-              <select id="location" aria-label="Retirement location"></select>
-            </div>
-
-            <div class="row">
-              <button class="btn" id="applyDefaults" type="button">Apply defaults</button>
-              <button class="btn secondary" id="resetNational" type="button">Reset (no location factor)</button>
-            </div>
-          </div>
-
-          <div class="hr"></div>
-
-          <div class="grid2" role="group" aria-label="Household assumptions">
-            <div>
-              <label for="household">Household size</label><br/>
-              <input id="household" type="number" min="1" max="6" step="1" value="2" />
-              <div class="note">Scales variable categories (food, transport, leisure, gifts, other).</div>
-            </div>
-
-            <div>
-              <label for="householdIncome">Household Annual Income ($)</label><br/>
-              <input id="householdIncome" type="number" min="0" step="1000" value="80000" />
-              <div class="note">Used as the base for “Replacement Rate” planning.</div>
-            </div>
-
-            <div>
-              <label for="replacementRate">Replacement rate (% of income)</label><br/>
-              <input id="replacementRate" type="range" min="50" max="100" step="1" value="75" />
-              <div class="small muted" id="replacementRateLabel">75% target</div>
-            </div>
-
-            <div>
-              <label for="housingMode">Housing situation</label><br/>
-              <select id="housingMode">
-                <option value="ownMortgage">Own (with mortgage/loan)</option>
-                <option value="ownNoMortgage">Own (no mortgage)</option>
-                <option value="rent">Rent</option>
-              </select>
-              <div class="note">Affects housing default (fixed cost).</div>
-            </div>
-          </div>
-
-          <div class="hr"></div>
-
-          <div class="row space">
-            <div class="pill" id="locationMeta">Location factor: —</div>
-            <div class="row">
-              <span class="badge" id="lastApplied">Defaults: not applied</span>
-            </div>
-          </div>
-
-          <div class="hr"></div>
-
-          <div class="row space" style="margin-bottom:8px">
-            <div class="toggle">
-              <input id="showAdvanced" type="checkbox" />
-              <label for="showAdvanced">Show advanced categories (Insurance / Taxes / Other)</label>
-            </div>
-
-            <div class="toggle">
-              <input id="annualize" type="checkbox" checked />
-              <label for="annualize">Show annual totals</label>
-            </div>
-          </div>
-
-          <table aria-label="Spending categories table">
-            <thead>
-              <tr>
-                <th style="width:40%">Category</th>
-                <th style="width:20%">Include</th>
-                <th class="right" style="width:20%">Monthly</th>
-                <th class="right" style="width:20%">Annual</th>
-              </tr>
-            </thead>
-            <tbody id="rows"></tbody>
-          </table>
-
-          <p class="note">
-            Defaults are heuristics: replacement-rate envelope → location factor → household scaling for variable categories →
-            housing adjustments → advanced categories optional. Adjust line items for realism.
-          </p>
-        </section>
-
-        <aside class="card" aria-label="Summary">
-          <div class="kpi" aria-label="Key totals">
-            <div class="box">
-              <div class="small muted">Estimated monthly total</div>
-              <div class="value" id="totalMonthly">$0</div>
-              <div class="small muted" id="perPerson">—</div>
-            </div>
-            <div class="box">
-              <div class="small muted">Estimated annual total</div>
-              <div class="value" id="totalAnnual">$0</div>
-              <div class="small muted" id="avgDaily">—</div>
-            </div>
-          </div>
-
-          <div class="hr"></div>
-
-          <div class="row space">
-            <div>
-              <div class="small muted">Spending mix</div>
-              <div class="small muted" id="modeSummary">—</div>
-            </div>
-            <div class="row" style="gap:10px;">
-              <span class="pill" id="advancedSubtotalPill">Advanced subtotal: $0</span>
-              <button class="btn secondary" id="downloadJson" type="button" title="Export your settings as JSON">Export JSON</button>
-            </div>
-          </div>
-
-          <div style="height:10px"></div>
-
-          <div class="canvasWrap">
-            <canvas id="chart" width="520" height="320" aria-label="Spending pie chart" role="img"></canvas>
-          </div>
-
-          <div class="hr"></div>
-
-          <div class="grid2">
-            <div>
-              <label for="inflation">Optional: inflation (simple “future $” preview)</label><br/>
-              <input id="inflation" type="number" min="0" max="12" step="0.1" value="2.5" />
-              <div class="note">Used only for the “future $” preview below.</div>
-            </div>
-            <div>
-              <label for="years">Years until retirement</label><br/>
-              <input id="years" type="number" min="0" max="50" step="1" value="0" />
-              <div class="note">Set to 0 if already retired.</div>
-            </div>
-          </div>
-
-          <div style="height:10px"></div>
-
-          <div class="box" style="border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.03);padding:12px">
-            <div class="small muted">Future-dollar preview (same lifestyle, inflated)</div>
-            <div class="value" id="futureMonthly">$0</div>
-            <div class="small muted" id="futureAnnual">—</div>
-          </div>
-
-          <p class="note">Export JSON stores your selection, assumptions, and category values.</p>
-        </aside>
-      </div>
-    </section>
-
-    <!-- TAB 2: Projection Dashboard -->
-    <section id="panelProjection" class="tabPanel active" role="tabpanel" aria-labelledby="tabProjection">
-      <div class="projMain">
-
-        <!-- Professional controls: view mode + scenarios + report -->
-        <section class="card" aria-label="Professional controls">
-          <div class="row space">
-            <div>
-              <div style="font-weight:800; font-size:16px;">Professional Controls</div>
-              <div class="small muted">Progressive disclosure, scenario snapshots, and client-ready report output.</div>
-            </div>
-            <div class="row">
-              <button class="btn secondary" id="printReportBtn" type="button">Print / Save PDF</button>
-              <button class="btn danger" id="resetBtn" type="button">Reset Saved Data</button>
-            </div>
-          </div>
-
-          <div class="hr"></div>
-
-          <div class="row space">
-            <div class="toggle">
-              <input id="clientMode" type="checkbox" />
-              <label for="clientMode">Client View (hide advanced inputs)</label>
-            </div>
-
-            <div class="row" style="gap:10px;">
-              <div>
-                <label>Saved scenarios</label><br/>
-                <select id="scenarioLoadSelect" style="min-width:320px;">
-                  <option value="">— None saved —</option>
-                </select>
-              </div>
-              <div style="min-width:140px; margin-top:18px;">
-                <button class="btn" id="loadScenarioBtn" type="button" style="width:100%;">Load</button>
-              </div>
-              <div style="min-width:140px; margin-top:18px;">
-                <button class="btn ok" id="saveScenarioBtn" type="button" style="width:100%;">Save Snapshot</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="hintBox" style="margin-top:10px;">
-            Snapshotting is high-ROI professionalism: it creates an audit-friendly baseline, supports “before/after” conversations, and prevents accidental drift.
-          </div>
-
-          <div class="hr"></div>
-
-          <div class="grid2" aria-label="Scenario compare">
-            <div>
-              <label>Compare: baseline</label><br/>
-              <select id="compareA" style="min-width:100%;">
-                <option value="">— Select baseline —</option>
-              </select>
-            </div>
-            <div>
-              <label>Compare: alternative</label><br/>
-              <select id="compareB" style="min-width:100%;">
-                <option value="">— Select alternative —</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="row" style="justify-content:flex-end; margin-top:10px;">
-            <button class="btn secondary" id="runCompareBtn" type="button">Update Comparison</button>
-          </div>
-        </section>
-
-        <!-- Accounts -->
-        <section class="card">
-          <div class="row space">
-            <div>
-              <div style="font-weight:800; font-size:16px;">Retirement Projection Dashboard</div>
-              <div class="small muted">Accounts + settings persist locally in your browser (localStorage).</div>
-            </div>
-            <div class="pill" id="scenarioPill">Scenario: —</div>
-          </div>
-
-          <div class="hr"></div>
-
-          <div class="row space" style="align-items:flex-end;">
-            <div style="flex:1; min-width:220px;">
-              <label>Account Name</label>
-              <input id="acctName" type="text" placeholder="e.g., 401(k) - Fidelity" style="width:100%;" />
-            </div>
-            <div style="flex:1; min-width:220px;">
-              <label>Balance ($)</label>
-              <input id="acctAmount" type="number" min="0" step="1" placeholder="e.g., 125000" style="width:100%;" />
-            </div>
-            <div style="min-width: 160px;">
-              <button class="btn" id="addAcctBtn" type="button" style="width:100%;">Add</button>
-            </div>
-          </div>
-
-          <div style="height:10px;"></div>
-
-          <div class="row space">
-            <div class="pill">Total included balance</div>
-            <div class="pill" id="accountsTotalPill">$0</div>
-          </div>
-
-          <div style="height:10px;"></div>
-
-          <table aria-label="Retirement accounts table">
-            <thead>
-                <tr>
-                <th style="width:70px;">Use</th>
-                <th style="width:44px;"></th>
-                <th>Account</th>
-                <th style="width:190px;">Balance</th>
-                <th style="width:220px; text-align:right;">Actions</th>
-                </tr>
-            </thead>
-            <tbody id="accountsTbody"></tbody>
-          </table>
-
-          <div class="row" style="justify-content:flex-end; margin-top:10px;">
-            <button class="btn secondary" id="deleteSelectedBtn" type="button">Delete Selected</button>
-          </div>
-        </section>
-
-        <!-- Settings -->
-        <section class="card" aria-label="Projection settings" id="settingsCard">
-          <div class="row space">
-            <div>
-              <div style="font-weight:800; font-size:16px;">Projection Settings</div>
-              <div class="small muted">In Client View, only the core ages remain visible.</div>
-            </div>
-
-            <div class="row">
-              <button class="btn secondary" id="presetBaseBtn" type="button">Preset: Base</button>
-              <button class="btn secondary" id="presetHighInflBtn" type="button">Preset: High Inflation</button>
-              <button class="btn secondary" id="presetLowReturnBtn" type="button">Preset: Low Returns</button>
-              <button class="btn secondary" id="presetBearEarlyBtn" type="button">Preset: Early Bear</button>
-            </div>
-          </div>
-
-          <div class="hr"></div>
-
-          <div class="grid2">
-            <div>
-              <label>Current Age</label><br/>
-              <input id="currentAge" type="number" min="18" max="100" step="1" />
-
-              <div style="height:10px;"></div>
-
-              <label>Retirement Age</label><br/>
-              <input id="retirementAge" type="number" min="20" max="100" step="1" />
-
-              <div style="height:10px;"></div>
-
-              <label>Age at Death</label><br/>
-              <input id="deathAge" type="number" min="62" max="120" step="1" />
-
-              <div style="height:12px;"></div>
-
-              <div class="toggle advancedOnly">
-                <input id="enablePension" type="checkbox" />
-                <label for="enablePension">Enable Pension</label>
-              </div>
-
-              <div class="collapse advancedOnly" id="pensionCollapse">
-                <label>Pension (Annual, $)</label><br/>
-                <input id="pension" type="number" min="0" max="500000" step="1" />
-              </div>
-            </div>
-
-            <div class="advancedOnly">
-              <label>Assumed Growth Rate (% pre-retirement)</label><br/>
-              <input id="growthRate" type="number" min="0" max="20" step="0.1" />
-
-              <div style="height:10px;"></div>
-
-              <label>Annual Contribution ($)</label><br/>
-              <input id="annualContribution" type="number" min="0" max="1000000" step="1" />
-
-              <div style="height:10px;"></div>
-
-              <label>Retirement Growth Rate (% during retirement)</label><br/>
-              <input id="retirementGrowth" type="number" min="0" max="20" step="0.1" />
-
-              <div style="height:10px;"></div>
-
-              <label>Inflation (% for “Today $”)</label><br/>
-              <input id="inflationProj" type="number" min="0" max="10" step="0.1" />
-
-              <div class="hintBox">
-                These are planning assumptions. Professional tools hide them; professional communication discloses them.
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Social Security -->
-        <section class="card advancedOnly" aria-label="Social Security" id="ssCard">
-          <div style="font-weight:800; font-size:16px;">Social Security (Simple Estimate)</div>
-          <div class="hr"></div>
-
-          <div class="toggle">
-            <input id="enableSS" type="checkbox" />
-            <label for="enableSS">Enable Social Security</label>
-          </div>
-
-          <div class="collapse" id="ssCollapse">
-            <div class="grid2" style="margin-top:8px;">
-              <div>
-                <label>Current Annual Income While Working ($)</label><br/>
-                <input id="workIncome" type="number" min="0" step="1" placeholder="e.g., 120000" />
-
-                <div style="height:10px;"></div>
-
-                <label>Years Worked (used for scaling up to 35 years)</label><br/>
-                <input id="yearsWorked" type="number" min="0" max="45" step="1" />
-
-                <div style="height:12px;"></div>
-
-                <div class="toggle">
-                  <input id="useSSOverride" type="checkbox" />
-                  <label for="useSSOverride">Override estimated benefit</label>
-                </div>
-
-                <div style="height:8px;"></div>
-
-                <label>Override Annual Social Security Benefit ($)</label><br/>
-                <input id="ssOverride" type="number" min="0" step="1" placeholder="e.g., 30000" />
-
-                <div class="hintBox">
-                  Annual SS ≈ 40% × Working Income × min(1, YearsWorked / 35), capped at $50,000.
-                  This is intentionally simplified for planning purposes.
-                </div>
-              </div>
-
-              <div>
-                <div class="pill" id="ssEstimatedPill">$0 / year (est.)</div>
-                <div class="note" style="margin-top:8px;">
-                  When enabled, Social Security is added to “other income” alongside pension.
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="pill" id="ssDisabledPill" style="display:none;">$0 / year (disabled)</div>
-        </section>
-
-        <!-- Projection Output -->
-        <section class="card" aria-label="Projection output" id="outputCard">
-          <div class="row space">
-            <div>
-              <div style="font-weight:800; font-size:16px;">Projection Output</div>
-              <div class="small muted">Use the sliders to select scenario and distribution method.</div>
-            </div>
-            <div class="pill warn" id="projWarnings" style="display:none;">—</div>
-          </div>
-
-          <div class="hr"></div>
-
-          <!-- Executive Summary (ROI #1) -->
-          <div class="execGrid" aria-label="Executive summary">
-            <div class="metricBox">
-              <div class="metricTitle">Executive Summary</div>
-              <div style="height:8px;"></div>
-              <div class="row space">
-                <div class="pill" id="planStatusPill">—</div>
-                <div class="small muted" id="planStatusNote">—</div>
-              </div>
-
-              <div style="height:10px;"></div>
-
-              <div class="small muted">Coverage (income ÷ spending, today’s $)</div>
-              <div class="bar" aria-label="Coverage bar">
-                <span id="coverageBarFill"></span>
-              </div>
-              <div class="small muted" id="coverageBarLabel" style="margin-top:6px;">—</div>
-
-              <div class="hr" style="margin:10px 0;"></div>
-
-              <div class="small muted">Comparison (optional)</div>
-              <div class="small muted" id="compareSummary">No comparison selected.</div>
-            </div>
-
-            <div class="metricBox">
-              <div class="metricTitle">Key Assumptions (current)</div>
-              <div class="small muted" id="assumptionSummary" style="margin-top:8px;">—</div>
-              <div class="hintBox">
-                This section is intentionally simple. More assumptions and limitations are listed below under “Disclosures”.
-              </div>
-            </div>
-          </div>
-
-          <div class="hr"></div>
-
-          <!-- Scenario slider -->
-          <div class="sliderRow">
-            <div>
-              <label for="scenarioSlider">Projection scenario</label><br/>
-              <div class="small muted" id="scenarioLabel">—</div>
-            </div>
-            <div class="rangeWrap">
-              <input id="scenarioSlider" type="range" min="0" max="2" step="1" value="1" aria-label="Projection scenario slider" />
-              <div class="rangeTicks small muted">
-                <span>Minimum</span><span>Medium</span><span>Maximum</span>
-              </div>
-            </div>
-
-            <div class="pill" id="scenarioRatesPill">Growth: —</div>
-          </div>
-
-          <div class="hr"></div>
-
-          <div class="metricGrid" aria-label="Key projection metrics">
-            <div class="metricBox">
-              <div class="metricTitle">Current Portfolio Total</div>
-              <div class="metricValue" id="outCurrentPortfolio">$0</div>
-              <div class="small muted">Sum of included account balances</div>
-            </div>
-            <div class="metricBox">
-              <div class="metricTitle">Portfolio Growth at Retirement</div>
-              <div class="metricValue" id="outFVNominal">$0</div>
-              <div class="small muted">Nominal future value at retirement</div>
-            </div>
-          </div>
-
-          <div class="hr"></div>
-
-          <!-- Distribution method slider -->
-          <div class="sliderRow">
-            <div>
-              <label for="withdrawalSlider">Distribution method</label><br/>
-              <div class="small muted" id="withdrawalLabel">—</div>
-            </div>
-            <div class="rangeWrap">
-              <input id="withdrawalSlider" type="range" min="0" max="3" step="1" value="0" aria-label="Distribution method slider" />
-              <div class="rangeTicks small muted">
-                <span>RMD</span><span>4%</span><span>Max</span><span>Custom</span>
-              </div>
-            </div>
-
-            <div class="pill" id="otherIncomePill">Other income: $0/yr</div>
-          </div>
-
-          <div style="height:10px;"></div>
-
-          <div class="collapse is-collapsed" id="customWithdrawCollapse" style="margin-top:8px;">
-            <div class="grid2">
-              <div>
-                <label for="customWithdraw">Custom Distribution Amount (Annual, $)</label><br/>
-                <input id="customWithdraw" type="number" min="0" step="100" placeholder="e.g., 60000" />
-                <div class="note">Portfolio-only (before adding pension/SS). Use to stress test spending coverage.</div>
-              </div>
-              <div>
-                <div class="pill" id="customWithdrawPill">$0 / yr</div>
-                <div class="note">Tip: pick Custom, then raise/lower until coverage becomes comfortable.</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="metricGrid" aria-label="Distribution outputs">
-            <div class="metricBox">
-              <div class="metricTitle">Distribution Amount (Portfolio only)</div>
-              <div class="metricValue" id="outDistributionNominal">$0</div>
-
-              <div class="hr" style="margin:10px 0;"></div>
-
-              <div class="metricTitle">Distribution Amount (Today’s Dollars)</div>
-              <div class="metricValue" id="outDistributionToday">$0</div>
-            </div>
-
-            <div class="metricBox">
-              <div class="metricTitle">Total Retirement Income (Distribution + Pension + Social Security)</div>
-              <div class="metricValue" id="outTotalIncomeNominal">$0</div>
-
-              <div class="hr" style="margin:10px 0;"></div>
-
-              <div class="metricTitle">Total Retirement Income (Today’s Dollars)</div>
-              <div class="metricValue" id="outTotalIncomeToday">$0</div>
-            </div>
-          </div>
-
-          <div style="height:10px;"></div>
-
-          <div class="metricGrid" aria-label="Spending coverage and remaining portfolio">
-            <div class="metricBox">
-              <div class="metricTitle">Spending Coverage (vs Spending Estimator)</div>
-
-              <div style="height:8px;"></div>
-              <div class="pill" id="spendCoverageStatus">—</div>
-
-              <div class="note" style="margin-top:8px;">
-                For more information, expand this section.
-                <button class="btn secondary" id="toggleCoverageDetails" type="button" style="margin-left:8px; padding:6px 10px;">
-                  Expand
-                </button>
-              </div>
-
-              <div class="collapse is-collapsed" id="coverageDetails">
-                <div class="hr" style="margin:10px 0;"></div>
-
-                <div class="small muted">Estimated spending (annual)</div>
-                <div class="metricValue" id="spendAnnual">$—</div>
-
-                <div style="height:8px;"></div>
-
-                <div class="small muted">Total retirement income (annual, today’s $)</div>
-                <div class="metricValue" id="incomeAnnualToday">$—</div>
-
-                <div class="hr" style="margin:10px 0;"></div>
-
-                <div class="small muted">Surplus / Shortfall (annual, today’s $)</div>
-                <div class="metricValue" id="surplusShortfall">$—</div>
-
-                <div style="height:6px;"></div>
-                <div class="small muted" id="coveragePct">—</div>
-              </div>
-            </div>
-
-            <div class="metricBox">
-              <div class="metricTitle">Remaining Portfolio at Death (if applicable)</div>
-              <div class="metricValue" id="outRemaining">$—</div>
-              <div class="small muted">Shown for RMD, 4%, and Custom (simplified).</div>
-            </div>
-          </div>
-
-          <div class="hr"></div>
-
-          <!-- Disclosures / Assumptions panel (ROI #6) -->
-          <div class="row space">
-            <div>
-              <div style="font-weight:800; font-size:14px;">Disclosures & Assumptions</div>
-              <div class="small muted">Client-ready framing. Keep this in any PDF/report.</div>
-            </div>
-            <button class="btn secondary" id="toggleDisclosuresBtn" type="button">Expand</button>
-          </div>
-
-          <div class="collapse is-collapsed" id="disclosuresPanel">
-            <div class="hintBox" style="margin-top:10px;">
-              <div style="font-weight:800; margin-bottom:6px;">Important:</div>
-              <div>
-                This tool provides educational projections based on user inputs. It does not provide investment, tax, or legal advice,
-                does not recommend specific securities, and does not model individualized tax law, portfolio composition, or fees.
-              </div>
-            </div>
-
-            <div class="grid2" style="margin-top:10px;">
-              <div class="hintBox">
-                <div style="font-weight:800; margin-bottom:6px;">Modeling conventions</div>
-                <ul style="margin:0; padding-left:18px;">
-                  <li>Annual time steps (end-of-year contributions; retirement withdrawals after growth).</li>
-                  <li>“Today’s dollars” uses inflation discount over years-to-retirement.</li>
-                  <li>RMD uses a simplified factor table starting at max(retirement age, 72).</li>
-                </ul>
-              </div>
-
-              <div class="hintBox">
-                <div style="font-weight:800; margin-bottom:6px;">Limitations</div>
-                <ul style="margin:0; padding-left:18px;">
-                  <li>No Monte Carlo / sequence-of-returns modeling (deterministic scenarios only).</li>
-                  <li>No tax modeling beyond optional spending estimator tax line item.</li>
-                  <li>No portfolio fees, glidepaths, or asset allocation effects.</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Drawdown Chart -->
-        <section class="card">
-          <div class="row space" style="align-items:center;">
-            <div>
-              <div style="font-weight:800; font-size:16px;">Portfolio Growth & Drawdown</div>
-              <div class="small muted">Accumulation then retirement drawdown (withdrawals reduced by pension/SS).</div>
-            </div>
-          </div>
-
-          <div class="hr"></div>
-
-          <div class="row" style="justify-content:center;">
-            <select id="drawdownSelector" style="width: 740px; max-width: 100%;">
-              <option value="0">Minimum Projection - Required Minimum Distribution (RMD)</option>
-              <option value="1">Minimum Projection - 4% Withdrawal Rule</option>
-              <option value="2">Minimum Projection - Maximum Distribution</option>
-              <option value="3">Minimum Projection - Custom Distribution</option>
-
-              <option value="4">Medium Projection - Required Minimum Distribution (RMD)</option>
-              <option value="5">Medium Projection - 4% Withdrawal Rule</option>
-              <option value="6">Medium Projection - Maximum Distribution</option>
-              <option value="7">Medium Projection - Custom Distribution</option>
-
-              <option value="8">Maximum Projection - Required Minimum Distribution (RMD)</option>
-              <option value="9">Maximum Projection - 4% Withdrawal Rule</option>
-              <option value="10">Maximum Projection - Maximum Distribution</option>
-              <option value="11">Maximum Projection - Custom Distribution</option>
-            </select>
-
-            <button class="btn" id="viewDrawdownBtn" type="button">View Drawdown Chart</button>
-          </div>
-
-          <div style="height:10px;"></div>
-
-          <div class="chartWrap" id="chartWrap" style="display:none;">
-            <div class="small muted" id="chartTitle" style="margin-bottom:8px;"></div>
-            <canvas id="drawdownCanvas" height="140"></canvas>
-          </div>
-        </section>
-      </div>
-    </section>
-  </div>
-
-  <div class="footer">
-    <div><strong>Retirement Toolkit</strong> • Version <span id="toolVersion">3.0</span></div>
-    <div>Local-only storage • No data is transmitted • Educational use only</div>
-  </div>
-
-  <!-- Edit Modal (Projection) -->
-  <div class="modalOverlay" id="editModalOverlay">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
-      <div class="modalHeader">
-        <div class="modalTitle" id="editModalTitle">Edit Account</div>
-        <button class="btn secondary" id="editModalCloseBtn" type="button">Close</button>
-      </div>
-
-      <div class="modalGrid">
-        <div>
-          <label>Account Name</label><br/>
-          <input id="editAcctName" type="text" />
+  <div class="layout">
+    <aside class="sidebar" aria-label="Site navigation">
+      <div class="brand">Tools</div>
+      <ul class="navlist">
+        <li>
+          <a class="navitem" href="./Mobile/">
+            <span class="navtitle">Mobile</span>
+            <span class="navsub">Streamlined UI for small screens</span>
+          </a>
+        </li>
+        <li>
+          <a class="navitem" href="./Complete Retirement Tool/">
+            <span class="navtitle">Complete Retirement Tool</span>
+            <span class="navsub">Full dashboard with scenarios and reports</span>
+          </a>
+        </li>
+      </ul>
+    </aside>
+
+    <main class="main">
+      <header>
+        <h1>Financial Dashboard</h1>
+        <p>Quick entry points for the tools in this site. Choose the experience you want, then jump straight into the workflow.</p>
+      </header>
+
+      <section class="content" aria-label="Tool overview">
+        <div class="summary">
+          <h2>What this page does</h2>
+          <p>This hub is a simple front door to the retirement tools. It helps you choose the right experience, understand what each tool covers, and preview how outputs look using sample data before you dive in.</p>
         </div>
-        <div>
-          <label>Balance ($)</label><br/>
-          <input id="editAcctAmount" type="number" min="0" step="1" />
+
+        <div class="slideshow" aria-label="Tool previews">
+          <div class="slideHeader">
+            <div class="slideTitle">Tool Preview Slideshow</div>
+            <div class="slideNote">Sample data only. Click through to see features.</div>
+          </div>
+          <div class="slides" id="slides">
+            <div class="slide active" data-slide="0">
+              <div class="shot">
+                <svg viewBox="0 0 860 460" role="img" aria-label="Mobile tool preview">
+                  <rect x="0" y="0" width="860" height="460" fill="#0f151c"/>
+                  <rect x="20" y="20" width="260" height="420" rx="20" fill="#111a24" stroke="#2a3544"/>
+                  <rect x="40" y="50" width="220" height="30" rx="8" fill="#1b2634"/>
+                  <rect x="40" y="95" width="220" height="60" rx="10" fill="#131d28" stroke="#273244"/>
+                  <rect x="40" y="170" width="220" height="60" rx="10" fill="#131d28" stroke="#273244"/>
+                  <rect x="40" y="245" width="220" height="60" rx="10" fill="#131d28" stroke="#273244"/>
+                  <rect x="40" y="330" width="220" height="80" rx="12" fill="#182434" stroke="#2f3e55"/>
+                  <text x="60" y="120" fill="#9fb2c9" font-size="12">Age 42</text>
+                  <text x="60" y="195" fill="#9fb2c9" font-size="12">Retire 65</text>
+                  <text x="60" y="270" fill="#9fb2c9" font-size="12">Growth 6.5%</text>
+                  <text x="60" y="370" fill="#e8edf5" font-size="16">Income: $68,400</text>
+                  <text x="60" y="395" fill="#9fb2c9" font-size="12">Coverage: 92%</text>
+                  <rect x="320" y="60" width="520" height="340" rx="16" fill="#111a24" stroke="#253247"/>
+                  <text x="350" y="95" fill="#e8edf5" font-size="18">Mobile Snapshot</text>
+                  <text x="350" y="125" fill="#9fb2c9" font-size="12">Lightweight inputs, instant outputs</text>
+                  <rect x="350" y="150" width="460" height="18" rx="9" fill="#1a2432"/>
+                  <rect x="350" y="190" width="460" height="18" rx="9" fill="#1a2432"/>
+                  <rect x="350" y="230" width="460" height="18" rx="9" fill="#1a2432"/>
+                  <rect x="350" y="270" width="300" height="18" rx="9" fill="#1a2432"/>
+                  <rect x="350" y="310" width="200" height="26" rx="13" fill="#2c3e55"/>
+                  <text x="362" y="328" fill="#9fb2c9" font-size="12">Tap to adjust sliders</text>
+                </svg>
+              </div>
+              <div class="slideCaption">Mobile tool view showing core inputs, coverage, and summary output.</div>
+            </div>
+
+            <div class="slide" data-slide="1">
+              <div class="shot">
+                <svg viewBox="0 0 860 460" role="img" aria-label="Complete tool preview">
+                  <rect x="0" y="0" width="860" height="460" fill="#0f151c"/>
+                  <rect x="20" y="20" width="820" height="60" rx="12" fill="#121c27" stroke="#253247"/>
+                  <text x="40" y="55" fill="#e8edf5" font-size="18">Complete Retirement Tool</text>
+                  <rect x="20" y="100" width="520" height="320" rx="14" fill="#111a24" stroke="#253247"/>
+                  <rect x="560" y="100" width="280" height="140" rx="14" fill="#111a24" stroke="#253247"/>
+                  <rect x="560" y="260" width="280" height="160" rx="14" fill="#111a24" stroke="#253247"/>
+                  <text x="40" y="135" fill="#9fb2c9" font-size="12">Scenario: Medium</text>
+                  <text x="40" y="160" fill="#9fb2c9" font-size="12">Distribution: 4% Rule</text>
+                  <rect x="40" y="190" width="480" height="10" rx="5" fill="#1a2432"/>
+                  <rect x="40" y="210" width="420" height="10" rx="5" fill="#1a2432"/>
+                  <rect x="40" y="230" width="360" height="10" rx="5" fill="#1a2432"/>
+                  <text x="580" y="135" fill="#9fb2c9" font-size="12">Portfolio at retirement</text>
+                  <text x="580" y="165" fill="#e8edf5" font-size="16">$1,420,000</text>
+                  <text x="580" y="210" fill="#9fb2c9" font-size="12">Income (today)</text>
+                  <text x="580" y="240" fill="#e8edf5" font-size="16">$74,800 / yr</text>
+                  <text x="580" y="300" fill="#9fb2c9" font-size="12">Remaining at death</text>
+                  <text x="580" y="330" fill="#e8edf5" font-size="16">$380,000</text>
+                </svg>
+              </div>
+              <div class="slideCaption">Complete tool view showing scenarios, distribution method, and portfolio outcomes.</div>
+            </div>
+
+            <div class="slide" data-slide="2">
+              <div class="shot">
+                <svg viewBox="0 0 860 460" role="img" aria-label="Scenario comparison preview">
+                  <rect x="0" y="0" width="860" height="460" fill="#0f151c"/>
+                  <rect x="20" y="20" width="820" height="420" rx="14" fill="#111a24" stroke="#253247"/>
+                  <text x="40" y="60" fill="#e8edf5" font-size="18">Scenario Comparison</text>
+                  <text x="40" y="90" fill="#9fb2c9" font-size="12">Base vs Stress Test (sample data)</text>
+                  <rect x="40" y="120" width="360" height="40" rx="10" fill="#141f2c"/>
+                  <rect x="40" y="180" width="360" height="40" rx="10" fill="#141f2c"/>
+                  <rect x="40" y="240" width="360" height="40" rx="10" fill="#141f2c"/>
+                  <text x="60" y="145" fill="#9fb2c9" font-size="12">FV at retirement: +$210,000</text>
+                  <text x="60" y="205" fill="#9fb2c9" font-size="12">Income today: +$6,400 / yr</text>
+                  <text x="60" y="265" fill="#9fb2c9" font-size="12">Remaining at death: -$85,000</text>
+                  <rect x="430" y="120" width="390" height="200" rx="12" fill="#141f2c"/>
+                  <rect x="450" y="150" width="350" height="12" rx="6" fill="#1a2432"/>
+                  <rect x="450" y="180" width="300" height="12" rx="6" fill="#1a2432"/>
+                  <rect x="450" y="210" width="250" height="12" rx="6" fill="#1a2432"/>
+                  <rect x="450" y="240" width="200" height="12" rx="6" fill="#1a2432"/>
+                  <text x="450" y="275" fill="#9fb2c9" font-size="12">Snapshot report preview</text>
+                </svg>
+              </div>
+              <div class="slideCaption">Scenario comparison sample showing deltas between snapshots.</div>
+            </div>
+          </div>
+
+          <div class="slideControls">
+            <div class="dots" id="slideDots" aria-label="Slide dots"></div>
+            <div>
+              <button class="controlBtn" type="button" id="prevSlide">Prev</button>
+              <button class="controlBtn" type="button" id="nextSlide">Next</button>
+            </div>
+          </div>
         </div>
-      </div>
+        <article class="card">
+          <h2>Mobile</h2>
+          <p>Focuses on the essentials with a lighter, faster experience tailored for phones and tablets.</p>
+          <div class="actions">
+            <a class="btn" href="./Mobile/">Open Mobile Tool</a>
+            <span class="pill">Best for quick checks</span>
+          </div>
+        </article>
 
-      <div class="modalFooter">
-        <button class="btn secondary" id="editCancelBtn" type="button">Cancel</button>
-        <button class="btn" id="editSaveBtn" type="button">Save</button>
-      </div>
-    </div>
+        <article class="card">
+          <h2>Complete Retirement Tool</h2>
+          <p>Full planner with scenario comparisons, distributions, and reporting options.</p>
+          <div class="actions">
+            <a class="btn" href="./Complete Retirement Tool/">Open Complete Tool</a>
+            <span class="pill">Best for deep planning</span>
+          </div>
+        </article>
+      </section>
+
+      <footer>
+        Tip: Save this page as your home screen for quick navigation to all tools.
+      </footer>
+    </main>
   </div>
-
   <script>
-    // ============================================================
-    // Tabs (Default to Projection Dashboard)
-    // ============================================================
     (function(){
-      const tabSpending = document.getElementById("tabSpending");
-      const tabProjection = document.getElementById("tabProjection");
-      const panelSpending = document.getElementById("panelSpending");
-      const panelProjection = document.getElementById("panelProjection");
-
-      function setTab(which){
-        const spendingOn = which === "spending";
-        tabSpending.setAttribute("aria-selected", spendingOn ? "true" : "false");
-        tabProjection.setAttribute("aria-selected", spendingOn ? "false" : "true");
-        panelSpending.classList.toggle("active", spendingOn);
-        panelProjection.classList.toggle("active", !spendingOn);
-
-        if (!spendingOn && window.__proj) {
-          try { window.__proj.resizeCharts(); } catch(e) {}
-        }
-      }
-
-      tabSpending.addEventListener("click", () => setTab("spending"));
-      tabProjection.addEventListener("click", () => setTab("projection"));
-
-      function applyHash(){
-        if (location.hash === "#spending") { setTab("spending"); return; }
-        if (location.hash === "#projection") { setTab("projection"); return; }
-        setTab("projection");
-      }
-      window.addEventListener("hashchange", applyHash);
-      applyHash();
-    })();
-
-    // ============================================================
-    // TAB 1: Spending Estimator (unchanged logic; kept intact)
-    // ============================================================
-    const LOCATIONS = [
-      { id:"portland_me", name:"Portland, ME", factor:1.12, region:"Northeast" },
-      { id:"portsmouth_nh", name:"Portsmouth, NH", factor:1.22, region:"Northeast" },
-      { id:"burlington_vt", name:"Burlington, VT", factor:1.15, region:"Northeast" },
-      { id:"concord_nh", name:"Concord, NH", factor:1.10, region:"Northeast" },
-      { id:"berkshires_ma", name:"Berkshires (Pittsfield), MA", factor:1.12, region:"Northeast" },
-      { id:"worcester_ma", name:"Worcester, MA", factor:1.15, region:"Northeast" },
-      { id:"providence_ri", name:"Providence, RI", factor:1.12, region:"Northeast" },
-      { id:"mystic_ct", name:"Mystic / SE Connecticut, CT", factor:1.18, region:"Northeast" },
-
-      { id:"albany_ny", name:"Albany / Capital Region, NY", factor:1.06, region:"Mid-Atlantic" },
-      { id:"hudson_valley_ny", name:"Hudson Valley, NY", factor:1.18, region:"Mid-Atlantic" },
-      { id:"buffalo_ny", name:"Buffalo / Amherst, NY", factor:0.93, region:"Mid-Atlantic" },
-      { id:"philadelphia_pa", name:"Philadelphia suburbs, PA", factor:1.08, region:"Mid-Atlantic" },
-      { id:"lancaster_pa", name:"Lancaster, PA", factor:0.98, region:"Mid-Atlantic" },
-      { id:"virginia_beach_va", name:"Virginia Beach, VA", factor:1.02, region:"Mid-Atlantic" },
-
-      { id:"asheville_nc", name:"Asheville, NC", factor:1.02, region:"Southeast" },
-      { id:"wilmington_nc", name:"Wilmington, NC", factor:1.06, region:"Southeast" },
-      { id:"charleston_sc", name:"Charleston, SC", factor:1.10, region:"Southeast" },
-      { id:"greenville_sc", name:"Greenville, SC", factor:0.98, region:"Southeast" },
-      { id:"savannah_ga", name:"Savannah, GA", factor:1.01, region:"Southeast" },
-      { id:"atlanta_suburbs_ga", name:"North Atlanta suburbs, GA", factor:1.08, region:"Southeast" },
-      { id:"st_petersburg_fl", name:"St. Petersburg, FL", factor:1.10, region:"Southeast" },
-      { id:"sarasota_fl", name:"Sarasota, FL", factor:1.12, region:"Southeast" },
-      { id:"naples_fl", name:"Naples, FL", factor:1.30, region:"Southeast" },
-      { id:"the_villages_fl", name:"The Villages, FL", factor:1.06, region:"Southeast" },
-
-      { id:"madison_wi", name:"Madison, WI", factor:1.03, region:"Midwest" },
-      { id:"milwaukee_wi", name:"Milwaukee, WI", factor:0.98, region:"Midwest" },
-      { id:"grand_rapids_mi", name:"Grand Rapids, MI", factor:0.96, region:"Midwest" },
-      { id:"ann_arbor_mi", name:"Ann Arbor, MI", factor:1.10, region:"Midwest" },
-      { id:"columbus_oh", name:"Columbus, OH", factor:0.98, region:"Midwest" },
-      { id:"cincinnati_oh", name:"Cincinnati, OH", factor:0.95, region:"Midwest" },
-      { id:"indianapolis_in", name:"Indianapolis, IN", factor:0.93, region:"Midwest" },
-      { id:"kansas_city_mo", name:"Kansas City, MO", factor:0.92, region:"Midwest" },
-
-      { id:"scottsdale_az", name:"Scottsdale, AZ", factor:1.18, region:"Southwest" },
-      { id:"tucson_az", name:"Tucson, AZ", factor:0.92, region:"Southwest" },
-      { id:"albuquerque_nm", name:"Albuquerque, NM", factor:0.92, region:"Southwest" },
-      { id:"santa_fe_nm", name:"Santa Fe, NM", factor:1.12, region:"Southwest" },
-      { id:"el_paso_tx", name:"El Paso, TX", factor:0.90, region:"Southwest" },
-      { id:"las_cruces_nm", name:"Las Cruces, NM", factor:0.88, region:"Southwest" },
-
-      { id:"palm_springs_ca", name:"Palm Springs, CA", factor:1.24, region:"West" },
-      { id:"san_diego_ca", name:"San Diego, CA", factor:1.42, region:"West" },
-      { id:"sacramento_ca", name:"Sacramento, CA", factor:1.18, region:"West" },
-      { id:"las_vegas_nv", name:"Las Vegas / Henderson, NV", factor:1.03, region:"West" },
-      { id:"reno_nv", name:"Reno, NV", factor:1.10, region:"West" },
-      { id:"phoenix_az", name:"Phoenix, AZ", factor:1.05, region:"West" },
-
-      { id:"portland_or", name:"Portland, OR", factor:1.16, region:"Northwest" },
-      { id:"eugene_or", name:"Eugene, OR", factor:1.05, region:"Northwest" },
-      { id:"spokane_wa", name:"Spokane, WA", factor:1.02, region:"Northwest" },
-
-      { id:"denver_co", name:"Denver / Front Range, CO", factor:1.18, region:"Mountains" },
-      { id:"boise_id", name:"Boise, ID", factor:1.05, region:"Mountains" },
-      { id:"salt_lake_ut", name:"Salt Lake City, UT", factor:1.08, region:"Mountains" }
-    ];
-
-    const CATEGORIES = [
-      { key:"housing",      label:"Housing (rent/mortgage/HOA)", color:"#7aa2ff", advanced:false, fixed:true },
-      { key:"utilities",    label:"Utilities (electric, water, internet)", color:"#58d1a7", advanced:false, fixed:true },
-      { key:"food",         label:"Food (groceries + dining)", color:"#ffcc66", advanced:false, fixed:false },
-      { key:"transport",    label:"Transportation (fuel, maintenance, transit)", color:"#c792ea", advanced:false, fixed:false },
-      { key:"healthcare",   label:"Healthcare (premiums + out-of-pocket)", color:"#ff6b6b", advanced:false, fixed:true },
-      { key:"leisure",      label:"Leisure & Travel", color:"#4fd1c5", advanced:false, fixed:false },
-      { key:"insurance",    label:"Insurance (home/auto/umbrella)", color:"#a0aec0", advanced:true, fixed:true },
-      { key:"incomeTax",    label:"Income Tax (federal/state/local)", color:"#e2e8f0", advanced:true, fixed:true },
-      { key:"gifts",        label:"Gifts & Charity", color:"#f687b3", advanced:false, fixed:false },
-      { key:"other",        label:"Other / Cushion", color:"#fbd38d", advanced:true, fixed:false }
-    ];
-
-    const FACTOR_WEIGHTS = {
-      housing:1.25, utilities:0.70, food:0.85, transport:0.80, healthcare:0.60, leisure:0.85,
-      insurance:0.55, incomeTax:0.65, gifts:0.55, other:0.60
-    };
-
-    const ALLOC_BANDS = [
-      {
-        name: "Under $60k",
-        min: 0,
-        max: 60000,
-        pcts: {
-          housing:0.30, utilities:0.05, food:0.13, transport:0.09, healthcare:0.11, leisure:0.05,
-          insurance:0.03, incomeTax:0.05, gifts:0.01, other:0.15
-        }
-      },
-      {
-        name: "$60k–$150k",
-        min: 60000,
-        max: 150000,
-        pcts: {
-          housing:0.27, utilities:0.04, food:0.11, transport:0.08, healthcare:0.10, leisure:0.09,
-          insurance:0.03, incomeTax:0.08, gifts:0.02, other:0.14
-        }
-      },
-      {
-        name: "$150k+",
-        min: 150000,
-        max: Infinity,
-        pcts: {
-          housing:0.23, utilities:0.035, food:0.09, transport:0.07, healthcare:0.09, leisure:0.13,
-          insurance:0.03, incomeTax:0.10, gifts:0.03, other:0.155
-        }
-      }
-    ];
-
-    function clamp(n, min, max){
-      n = Number(n);
-      if (Number.isNaN(n)) return min;
-      return Math.max(min, Math.min(max, n));
-    }
-    function money(n){
-      const v = Number(n || 0);
-      return v.toLocaleString(undefined, { style:"currency", currency:"USD", maximumFractionDigits:0 });
-    }
-    function householdScalar(n){
-      n = Math.max(1, Math.min(6, Number(n || 2)));
-      const map = {1:0.80,2:1.00,3:1.18,4:1.34,5:1.48,6:1.60};
-      return map[n] ?? 1.00;
-    }
-
-    function pickBand(incomeAnnual){
-      const inc = Math.max(0, Number(incomeAnnual || 0));
-      for (const b of ALLOC_BANDS){
-        if (inc >= b.min && inc < b.max) return b;
-      }
-      return ALLOC_BANDS[1];
-    }
-
-    function estimateTaxesAnnualSimple(targetAnnual, locFactor){
-      const x = Math.max(0, Number(targetAnnual || 0));
-      let rate = 0.10;
-      if (x < 50000) rate = 0.08;
-      else if (x < 100000) rate = 0.10;
-      else if (x < 200000) rate = 0.12;
-      else rate = 0.14;
-
-      const lf = Number(locFactor || 1);
-      const adj = clamp((lf - 1) * 0.02, -0.03, 0.03);
-      rate = clamp(rate + adj, 0.05, 0.20);
-
-      return x * rate;
-    }
-
-    function getLocationById(id){ return LOCATIONS.find(l => l.id === id) || LOCATIONS[0]; }
-
-    function computeDefaultsMonthly({
-      incomeAnnual,
-      mode,
-      replacementRatePct,
-      householdSize,
-      housingMode,
-      healthcareMode,
-      taxMode,
-      locationFactor
-    }){
-      const inc = clamp(incomeAnnual, 0, 100_000_000);
-      const rr = clamp(replacementRatePct, 0, 200) / 100;
-      const loc = Number(locationFactor || 1);
-
-      const targetAnnual = (mode === "replacement") ? (inc * rr) : inc;
-      const targetMonthly = targetAnnual / 12;
-
-      const band = pickBand(inc);
-      const p = band.pcts;
-
-      const v = {};
-      for (const cat of CATEGORIES){
-        const pct = p[cat.key] ?? 0;
-        v[cat.key] = targetMonthly * pct;
-      }
-
-      for (const cat of CATEGORIES){
-        const w = FACTOR_WEIGHTS[cat.key] ?? 0.7;
-        const factor = 1 + (loc - 1) * w;
-        v[cat.key] = v[cat.key] * factor;
-      }
-
-      if (housingMode === "ownNoMortgage") v.housing *= 0.62;
-      if (housingMode === "rent") v.housing *= 1.05;
-
-      if (healthcareMode === "medicareLean") v.healthcare *= 0.82;
-      if (healthcareMode === "medicareRich") v.healthcare *= 1.20;
-
-      const h = householdScalar(householdSize);
-      for (const cat of CATEGORIES){
-        if (cat.fixed) continue;
-        if (cat.key === "food") v[cat.key] *= h;
-        else if (cat.key === "transport") v[cat.key] *= (1 + (h - 1) * 0.55);
-        else if (cat.key === "leisure") v[cat.key] *= (1 + (h - 1) * 0.45);
-        else if (cat.key === "gifts") v[cat.key] *= (1 + (h - 1) * 0.40);
-        else if (cat.key === "other") v[cat.key] *= (1 + (h - 1) * 0.35);
-        else v[cat.key] *= (1 + (h - 1) * 0.30);
-      }
-
-      if (taxMode === "estimate"){
-        const totalTaxA = estimateTaxesAnnualSimple(targetAnnual, loc);
-        v.incomeTax = totalTaxA/12;
-      }
-
-      for (const k of Object.keys(v)) v[k] = Math.round(v[k]);
-
-      return { valuesMonthly: v, bandName: band.name, targetAnnual };
-    }
-
-    const state = {
-      locationId: LOCATIONS[0].id,
-      incomeAnnual: 80000,
-
-      spendMode: "replacement",
-      healthcareMode: "medicareStandard",
-      taxMode: "manual",
-
-      replacementRatePct: 75,
-      values: {},
-      include: Object.fromEntries(CATEGORIES.map(c => [c.key, true])),
-      household: 2,
-      housingMode: "ownMortgage",
-      showAdvanced: false,
-      annualize: true
-    };
-
-    const SPENDING_KEY = "retirement_spending_estimator_v1";
-
-    function safeParseJSON(raw){
-      try { return JSON.parse(raw); } catch(e){ return null; }
-    }
-
-    function normalizeSpendingState(){
-      if (!state.include || typeof state.include !== "object") state.include = {};
-      for (const cat of CATEGORIES){
-        if (state.include[cat.key] === undefined) state.include[cat.key] = true;
-        else state.include[cat.key] = !!state.include[cat.key];
-      }
-
-      if (!state.values || typeof state.values !== "object") state.values = {};
-      for (const cat of CATEGORIES){
-        const n = Number(state.values[cat.key] ?? 0);
-        state.values[cat.key] = (isFinite(n) && n >= 0) ? n : 0;
-      }
-
-      const allowed = new Set(CATEGORIES.map(c => c.key));
-      for (const k of Object.keys(state.values)) if (!allowed.has(k)) delete state.values[k];
-      for (const k of Object.keys(state.include)) if (!allowed.has(k)) delete state.include[k];
-
-      state.spendMode = "replacement";
-      state.healthcareMode = "medicareStandard";
-      state.taxMode = "manual";
-    }
-
-    function saveSpendingState(){
-      const payload = {
-        version: 1,
-        state: {
-          locationId: state.locationId,
-          incomeAnnual: state.incomeAnnual,
-          spendMode: state.spendMode,
-          replacementRatePct: state.replacementRatePct,
-          values: state.values,
-          include: state.include,
-          household: state.household,
-          housingMode: state.housingMode,
-          healthcareMode: state.healthcareMode,
-          taxMode: state.taxMode,
-          showAdvanced: state.showAdvanced,
-          annualize: state.annualize
-        },
-        ui: {
-          inflationPreview: Number(elInflation?.value || 2.5),
-          yearsToRetire: Number(elYears?.value || 0),
-          lastAppliedText: elLastApplied?.textContent || ""
-        },
-        savedAt: new Date().toISOString()
-      };
-
-      try { localStorage.setItem(SPENDING_KEY, JSON.stringify(payload)); } catch(e){}
-
-      try { window.dispatchEvent(new CustomEvent("rtk:spending-updated")); } catch(e){}
-    }
-
-    function loadSpendingState(){
-      const raw = localStorage.getItem(SPENDING_KEY);
-      if (!raw) return false;
-
-      const payload = safeParseJSON(raw);
-      if (!payload || !payload.state) return false;
-
-      const s = payload.state;
-      state.locationId = s.locationId || state.locationId;
-      state.incomeAnnual = Number(s.incomeAnnual ?? state.incomeAnnual);
-      state.replacementRatePct = Number(s.replacementRatePct ?? state.replacementRatePct);
-      state.values = (s.values && typeof s.values === "object") ? s.values : state.values;
-      state.include = (s.include && typeof s.include === "object") ? s.include : state.include;
-      state.household = Number(s.household ?? state.household);
-      state.housingMode = s.housingMode || state.housingMode;
-      state.showAdvanced = !!s.showAdvanced;
-      state.annualize = !!s.annualize;
-
-      normalizeSpendingState();
-
-      if (payload.ui){
-        if (elInflation) elInflation.value = String(payload.ui.inflationPreview ?? elInflation.value);
-        if (elYears) elYears.value = String(payload.ui.yearsToRetire ?? elYears.value);
-        if (elLastApplied && payload.ui.lastAppliedText) elLastApplied.textContent = payload.ui.lastAppliedText;
-      }
-      return true;
-    }
-
-    let __saveTimer = null;
-    function saveSpendingStateDebounced(){
-      clearTimeout(__saveTimer);
-      __saveTimer = setTimeout(saveSpendingState, 140);
-    }
-
-    // Elements
-    const elLocation = document.getElementById("location");
-    const elRows = document.getElementById("rows");
-    const elMeta = document.getElementById("locationMeta");
-    const elLastApplied = document.getElementById("lastApplied");
-    const elHousehold = document.getElementById("household");
-    const elIncome = document.getElementById("householdIncome");
-    const elReplacementRate = document.getElementById("replacementRate");
-    const elReplacementRateLabel = document.getElementById("replacementRateLabel");
-    const elHousingMode = document.getElementById("housingMode");
-    const elShowAdvanced = document.getElementById("showAdvanced");
-    const elAnnualize = document.getElementById("annualize");
-    const elModeSummary = document.getElementById("modeSummary");
-
-    const elTotalMonthly = document.getElementById("totalMonthly");
-    const elTotalAnnual = document.getElementById("totalAnnual");
-    const elPerPerson = document.getElementById("perPerson");
-    const elAvgDaily = document.getElementById("avgDaily");
-
-    const elInflation = document.getElementById("inflation");
-    const elYears = document.getElementById("years");
-    const elFutureMonthly = document.getElementById("futureMonthly");
-    const elFutureAnnual = document.getElementById("futureAnnual");
-
-    const elDownloadJson = document.getElementById("downloadJson");
-    const elAdvancedSubtotalPill = document.getElementById("advancedSubtotalPill");
-
-    const canvas = document.getElementById("chart");
-    const ctx = canvas.getContext("2d");
-
-    function initLocations(){
-      elLocation.innerHTML = "";
-      const regionOrder = ["Northeast","Mid-Atlantic","Southeast","Midwest","Southwest","West","Northwest","Mountains"];
-      const orderIndex = Object.fromEntries(regionOrder.map((r,i)=>[r,i]));
-      const sorted = [...LOCATIONS].sort((a,b)=>{
-        const ra = orderIndex[a.region] ?? 999;
-        const rb = orderIndex[b.region] ?? 999;
-        if (ra !== rb) return ra - rb;
-        return a.name.localeCompare(b.name);
-      });
-
-      let currentRegion = null;
-      let currentOptGroup = null;
-
-      for (const loc of sorted){
-        if (loc.region !== currentRegion){
-          currentRegion = loc.region;
-          currentOptGroup = document.createElement("optgroup");
-          currentOptGroup.label = currentRegion;
-          elLocation.appendChild(currentOptGroup);
-        }
-        const opt = document.createElement("option");
-        opt.value = loc.id;
-        opt.textContent = loc.name;
-        currentOptGroup.appendChild(opt);
-      }
-
-      elLocation.value = state.locationId;
-      refreshMeta();
-    }
-
-    function refreshMeta(){
-      const loc = getLocationById(state.locationId);
-      elMeta.textContent = `Location factor: ${loc.factor.toFixed(2)} • Region: ${loc.region}`;
-    }
-
-    function computeTotals(){
-      let monthly = 0;
-      for (const cat of CATEGORIES){
-        if (!state.include[cat.key]) continue;
-        monthly += Number(state.values[cat.key] || 0);
-      }
-      return { monthly, annual: monthly * 12 };
-    }
-
-    function computeAdvancedSubtotal(){
-      let monthly = 0;
-      for (const cat of CATEGORIES){
-        if (!cat.advanced) continue;
-        if (!state.include[cat.key]) continue;
-        monthly += Number(state.values[cat.key] || 0);
-      }
-      return { monthly, annual: monthly * 12 };
-    }
-
-    function applyDefaults(useLocationFactor){
-      normalizeSpendingState();
-      const loc = getLocationById(state.locationId);
-      const locFactor = useLocationFactor ? loc.factor : 1;
-
-      const out = computeDefaultsMonthly({
-        incomeAnnual: state.incomeAnnual,
-        mode: state.spendMode,
-        replacementRatePct: state.replacementRatePct,
-        householdSize: state.household,
-        housingMode: state.housingMode,
-        healthcareMode: state.healthcareMode,
-        taxMode: state.taxMode,
-        locationFactor: locFactor
-      });
-
-      state.values = out.valuesMonthly;
-      normalizeSpendingState();
-
-      const modeText = `Replacement-rate mode: ${state.replacementRatePct}% of income`;
-      elModeSummary.textContent = `${modeText} • Band: ${out.bandName} • Target: ${money(out.targetAnnual)} / yr`;
-
-      elLastApplied.textContent = useLocationFactor
-        ? `Defaults: applied (${loc.name})`
-        : `Defaults: applied (no location factor)`;
-
-      render();
-      saveSpendingStateDebounced();
-    }
-
-    function renderRows(){
-      elRows.innerHTML = "";
-      const showAdv = state.showAdvanced;
-
-      function addSection(title, hintText){
-        const tr = document.createElement("tr");
-        tr.className = "sectionRow";
-        const td = document.createElement("td");
-        td.colSpan = 4;
-        td.innerHTML = `${title} <span class="hint">— ${hintText}</span>`;
-        tr.appendChild(td);
-        elRows.appendChild(tr);
-      }
-
-      function addCategoryRow(cat){
-        const tr = document.createElement("tr");
-
-        const tdCat = document.createElement("td");
-        tdCat.style.display = "flex";
-        tdCat.style.gap = "10px";
-        tdCat.style.alignItems = "center";
-
-        const dot = document.createElement("span");
-        dot.style.width = "10px";
-        dot.style.height = "10px";
-        dot.style.borderRadius = "999px";
-        dot.style.boxShadow = "0 0 0 3px rgba(255,255,255,.10)";
-        dot.style.flex = "none";
-        dot.style.background = cat.color;
-
-        const label = document.createElement("div");
-        const fixedTag = cat.fixed ? "fixed" : "variable";
-        label.innerHTML = `<div>${cat.label}</div><div class="small muted">${cat.key} • ${fixedTag}</div>`;
-        tdCat.appendChild(dot);
-        tdCat.appendChild(label);
-
-        const tdInc = document.createElement("td");
-        const incWrap = document.createElement("div");
-        incWrap.className = "toggle";
-        const cb = document.createElement("input");
-        cb.type = "checkbox";
-        cb.checked = !!state.include[cat.key];
-        cb.addEventListener("change", () => {
-          state.include[cat.key] = cb.checked;
-          render();
-          saveSpendingStateDebounced();
-        });
-
-        const cbl = document.createElement("label");
-        cbl.textContent = "Include";
-        incWrap.appendChild(cb);
-        incWrap.appendChild(cbl);
-        tdInc.appendChild(incWrap);
-
-        const tdMon = document.createElement("td");
-        tdMon.className = "right";
-        const inp = document.createElement("input");
-        inp.type = "number";
-        inp.min = "0";
-        inp.step = "10";
-        inp.value = Math.round(state.values[cat.key] || 0);
-        inp.style.width = "130px";
-
-        const tdAnn = document.createElement("td");
-        tdAnn.className = "right";
-        tdAnn.textContent = state.annualize ? money((Number(state.values[cat.key] || 0) * 12)) : "—";
-
-        inp.addEventListener("input", () => {
-          const val = clamp(inp.value, 0, 1_000_000);
-          state.values[cat.key] = val;
-
-          tdAnn.textContent = state.annualize ? money(val * 12) : "—";
-          renderTotals();
-          drawChart();
-          renderFuture();
-
-          saveSpendingStateDebounced();
-        });
-
-        tdMon.appendChild(inp);
-
-        tr.appendChild(tdCat);
-        tr.appendChild(tdInc);
-        tr.appendChild(tdMon);
-        tr.appendChild(tdAnn);
-        elRows.appendChild(tr);
-      }
-
-      const fixedCats = CATEGORIES.filter(c => c.fixed);
-      const varCats = CATEGORIES.filter(c => !c.fixed);
-
-      addSection("Fixed-ish costs", "Generally less sensitive to household size; validate housing/healthcare/taxes");
-      for (const cat of fixedCats){
-        if (!cat.advanced || showAdv) addCategoryRow(cat);
-      }
-
-      addSection("Variable costs", "More sensitive to household size and lifestyle choices");
-      for (const cat of varCats){
-        if (!cat.advanced || showAdv) addCategoryRow(cat);
-      }
-
-      if (!showAdv){
-        addSection("Advanced categories", "Hidden — totals still include them. Enable “Show advanced categories” to edit.");
-      }
-    }
-
-    function renderTotals(){
-      const { monthly, annual } = computeTotals();
-      elTotalMonthly.textContent = money(monthly);
-      elTotalAnnual.textContent = money(annual);
-
-      const perPerson = monthly / Math.max(1, Number(state.household || 1));
-      elPerPerson.textContent = `~ ${money(perPerson)} per person / month`;
-
-      const daily = annual / 365;
-      elAvgDaily.textContent = `~ ${money(daily)} per day`;
-
-      const adv = computeAdvancedSubtotal();
-      elAdvancedSubtotalPill.textContent = state.annualize
-        ? `Advanced subtotal: ${money(adv.monthly)} / mo • ${money(adv.annual)} / yr`
-        : `Advanced subtotal: ${money(adv.monthly)} / mo`;
-    }
-
-    function renderFuture(){
-      const { monthly, annual } = computeTotals();
-      const r = clamp(elInflation.value, 0, 12) / 100;
-      const y = clamp(elYears.value, 0, 50);
-      const factor = Math.pow(1 + r, y);
-      const futM = Math.round(monthly * factor);
-      const futA = Math.round(annual * factor);
-      elFutureMonthly.textContent = money(futM);
-      elFutureAnnual.textContent = state.annualize ? `${money(futA)} per year` : "—";
-    }
-
-    function drawChart(){
-      const { monthly } = computeTotals();
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      ctx.font = "14px system-ui, -apple-system, Segoe UI, Roboto, Arial";
-      ctx.fillStyle = "rgba(234,240,255,.92)";
-      ctx.fillText("Monthly Spending Breakdown", 12, 22);
-
-      if (monthly <= 0){
-        ctx.fillStyle = "rgba(138,160,198,.9)";
-        ctx.fillText("No categories included.", 12, 48);
-        return;
-      }
-
-      const segments = [];
-      for (const cat of CATEGORIES){
-        if (!state.include[cat.key]) continue;
-        const v = Number(state.values[cat.key] || 0);
-        if (v <= 0) continue;
-        segments.push({ label: cat.label, value: v, color: cat.color });
-      }
-      segments.sort((a,b)=>b.value-a.value);
-
-      const cx = 165, cy = 185, radius = 110;
-      let start = -Math.PI / 2;
-      for (const seg of segments){
-        const angle = (seg.value / monthly) * Math.PI * 2;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.arc(cx, cy, radius, start, start + angle);
-        ctx.closePath();
-        ctx.fillStyle = seg.color;
-        ctx.fill();
-        start += angle;
-      }
-
-      const lx = 320, ly = 60;
-      ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
-      let y = ly;
-      for (const seg of segments.slice(0, 8)){
-        const pct = (seg.value / monthly) * 100;
-        ctx.fillStyle = seg.color;
-        ctx.fillRect(lx, y - 9, 10, 10);
-        ctx.fillStyle = "rgba(234,240,255,.92)";
-        ctx.fillText(`${seg.label.split(" (")[0]}: ${money(seg.value)} (${pct.toFixed(0)}%)`, lx + 16, y);
-        y += 18;
-      }
-      if (segments.length > 8){
-        ctx.fillStyle = "rgba(138,160,198,.9)";
-        ctx.fillText(`+ ${segments.length - 8} more`, lx + 16, y);
-      }
-    }
-
-    function exportJson(){
-      const loc = getLocationById(state.locationId);
-      const payload = {
-        version: "3.0",
-        timestamp: new Date().toISOString(),
-        location: loc,
-        assumptions: {
-          household: state.household,
-          householdIncomeAnnual: state.incomeAnnual,
-          spendMode: state.spendMode,
-          replacementRatePct: state.replacementRatePct,
-          housingMode: state.housingMode,
-          healthcareMode: state.healthcareMode,
-          taxMode: state.taxMode
-        },
-        include: state.include,
-        valuesMonthly: state.values
-      };
-
-      const text = JSON.stringify(payload, null, 2);
-      const blob = new Blob([text], { type:"application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "retirement-spending-estimate.json";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    }
-
-    function render(){
-      refreshMeta();
-      normalizeSpendingState();
-      renderRows();
-      renderTotals();
-      drawChart();
-      renderFuture();
-
-      elReplacementRateLabel.textContent = `${state.replacementRatePct}% target`;
-
-      const band = pickBand(state.incomeAnnual);
-      const targetAnnual = state.incomeAnnual * (state.replacementRatePct/100);
-      elModeSummary.textContent = `Replacement-rate mode: ${state.replacementRatePct}% of income • Band: ${band.name} • Target: ${money(targetAnnual)} / yr`;
-    }
-
-    document.getElementById("applyDefaults").addEventListener("click", () => applyDefaults(true));
-    document.getElementById("resetNational").addEventListener("click", () => applyDefaults(false));
-
-    elLocation.addEventListener("change", () => {
-      state.locationId = elLocation.value;
-      refreshMeta();
-      saveSpendingStateDebounced();
-    });
-
-    elHousehold.addEventListener("input", () => {
-      state.household = clamp(elHousehold.value, 1, 6);
-      saveSpendingStateDebounced();
-    });
-
-    elIncome.addEventListener("input", () => {
-      state.incomeAnnual = clamp(elIncome.value, 0, 100_000_000);
-      saveSpendingStateDebounced();
-    });
-
-    elReplacementRate.addEventListener("input", () => {
-      state.replacementRatePct = clamp(elReplacementRate.value, 0, 200);
-      elReplacementRateLabel.textContent = `${state.replacementRatePct}% target`;
-      saveSpendingStateDebounced();
-    });
-
-    elHousingMode.addEventListener("change", () => {
-      state.housingMode = elHousingMode.value;
-      saveSpendingStateDebounced();
-    });
-
-    elShowAdvanced.addEventListener("change", () => {
-      state.showAdvanced = elShowAdvanced.checked;
-      render();
-      saveSpendingStateDebounced();
-    });
-
-    elAnnualize.addEventListener("change", () => {
-      state.annualize = elAnnualize.checked;
-      render();
-      saveSpendingStateDebounced();
-    });
-
-    elInflation.addEventListener("input", () => {
-      renderFuture();
-      saveSpendingStateDebounced();
-    });
-
-    elYears.addEventListener("input", () => {
-      renderFuture();
-      saveSpendingStateDebounced();
-    });
-
-    elDownloadJson.addEventListener("click", exportJson);
-
-    (function boot(){
-      initLocations();
-      const loaded = loadSpendingState();
-
-      if (!loaded){
-        state.locationId = LOCATIONS[0].id;
-        state.household = 2;
-        state.incomeAnnual = 80000;
-        state.replacementRatePct = 75;
-        state.housingMode = "ownMortgage";
-        state.showAdvanced = false;
-        state.annualize = true;
-
-        const out = computeDefaultsMonthly({
-          incomeAnnual: state.incomeAnnual,
-          mode: state.spendMode,
-          replacementRatePct: state.replacementRatePct,
-          householdSize: state.household,
-          housingMode: state.housingMode,
-          healthcareMode: state.healthcareMode,
-          taxMode: state.taxMode,
-          locationFactor: 1
-        });
-        state.values = out.valuesMonthly;
-        normalizeSpendingState();
-        elLastApplied.textContent = "Defaults: applied (no location factor)";
-      } else {
-        normalizeSpendingState();
-      }
-
-      elShowAdvanced.checked = !!state.showAdvanced;
-      elAnnualize.checked = !!state.annualize;
-
-      elHousehold.value = state.household;
-      elIncome.value = state.incomeAnnual;
-      elReplacementRate.value = state.replacementRatePct;
-      elReplacementRateLabel.textContent = `${state.replacementRatePct}% target`;
-      elHousingMode.value = state.housingMode;
-
-      elLocation.value = state.locationId;
-      refreshMeta();
-
-      render();
-      if (!loaded) saveSpendingStateDebounced();
-    })();
-
-    // ============================================================
-    // TAB 2: Projection Dashboard (Professionalized)
-    // ============================================================
-    window.__proj = (function(){
-      var RMD_LIFE_EXPECTANCY = {
-        70:27.4,71:26.5,72:25.6,73:24.7,74:23.8,75:22.9,76:22.0,77:21.2,78:20.3,79:19.5,
-        80:18.7,81:17.9,82:17.1,83:16.3,84:15.5,85:14.8,86:14.1,87:13.4,88:12.7,89:12.0,
-        90:11.4,91:10.8,92:10.2,93:9.6,94:9.1,95:8.6,96:8.1,97:7.6,98:7.1,99:6.7,
-        100:6.3,101:5.9,102:5.5,103:5.2,104:4.9,105:4.5,106:4.2,107:3.9,108:3.7,109:3.4,
-        110:3.1,111:2.9,112:2.6,113:2.4,114:2.1,115:1.9
-      };
-
-      var dollarsFmt = new Intl.NumberFormat("en-US", { style:"currency", currency:"USD" });
-      function formatDollars(amount){ return dollarsFmt.format(Number(amount||0)); }
-
-      var SETTINGS_KEY = "retirement_dashboard_settings_v10";
-      var ACCOUNTS_KEY = "retirement_dashboard_accounts_v1";
-      var SAVED_SCENARIOS_KEY = "rtk_saved_scenarios_v1";
-
-      function loadJson(key){
-        try{ var raw = localStorage.getItem(key); if(!raw) return null; return JSON.parse(raw); }
-        catch(e){ return null; }
-      }
-      function saveJson(key,obj){ try{ localStorage.setItem(key, JSON.stringify(obj)); } catch(e){} }
-      function clearAllSaved(){
-        try{ localStorage.removeItem(SETTINGS_KEY); } catch(e){}
-        try{ localStorage.removeItem(ACCOUNTS_KEY); } catch(e){}
-        try{ localStorage.removeItem(SAVED_SCENARIOS_KEY); } catch(e){}
-      }
-
-      function byId(id){ return document.getElementById(id); }
-      function num(id){ return Number(byId(id).value || 0); }
-
-      var accounts = [];
-      var selectedIds = {};
-      var editId = null;
-
-      function newId(){ return String(Date.now()) + "_" + String(Math.floor(Math.random()*1000000)); }
-
-      function loadAccounts(){
-        var a = loadJson(ACCOUNTS_KEY);
-        accounts = Array.isArray(a) ? a : [];
-        selectedIds = {};
-        for (var i = 0; i < accounts.length; i++){
-          if (accounts[i].included === undefined) accounts[i].included = true;
-          accounts[i].included = !!accounts[i].included;
-        }
-        saveAccounts();
-      }
-      function saveAccounts(){ saveJson(ACCOUNTS_KEY, accounts); }
-
-      function safeParse(raw){
-        try { return JSON.parse(raw); } catch(e){ return null; }
-      }
-
-      function getSpendingEstimatorAnnual(){
-        var key = "retirement_spending_estimator_v1";
-        var raw = null;
-        try { raw = localStorage.getItem(key); } catch(e){ raw = null; }
-        if (!raw) return null;
-
-        var payload = safeParse(raw);
-        if (!payload || !payload.state) return null;
-
-        var st = payload.state;
-        var values = (st.values && typeof st.values === "object") ? st.values : null;
-        var include = (st.include && typeof st.include === "object") ? st.include : null;
-        if (!values || !include) return null;
-
-        var monthly = 0;
-        for (var k in values){
-          if (!values.hasOwnProperty(k)) continue;
-          if (!include[k]) continue;
-          var v = Number(values[k] || 0);
-          if (isFinite(v) && v > 0) monthly += v;
-        }
-        return monthly * 12;
-      }
-
-      function updateSpendingCoverageUI(totalIncomeTodayAnnual){
-        var spendAnnual = getSpendingEstimatorAnnual();
-
-        var elStatus = byId("spendCoverageStatus");
-        var elSpend  = byId("spendAnnual");
-        var elIncome = byId("incomeAnnualToday");
-        var elDelta  = byId("surplusShortfall");
-        var elPct    = byId("coveragePct");
-
-        if (!elStatus || !elSpend || !elIncome || !elDelta || !elPct) return;
-
-        var income = Number(totalIncomeTodayAnnual || 0);
-        if (!isFinite(income) || income < 0) income = 0;
-
-        if (spendAnnual === null){
-          elStatus.textContent = "No spending estimate found (use the Spending Estimator tab first).";
-          elSpend.textContent  = "$—";
-          elIncome.textContent = formatDollars(income) + " / yr";
-          elDelta.textContent  = "$—";
-          elPct.textContent    = "—";
-          return { spendAnnual:null, income:income, delta:null, pct:null, covered:null };
-        }
-
-        spendAnnual = Math.max(0, Number(spendAnnual || 0));
-
-        elSpend.textContent  = formatDollars(spendAnnual) + " / yr";
-        elIncome.textContent = formatDollars(income) + " / yr";
-
-        var delta = income - spendAnnual;
-        var covered = (income >= spendAnnual);
-
-        elDelta.textContent = formatDollars(Math.abs(delta)) + (covered ? " surplus" : " shortfall");
-
-        var pct = (spendAnnual > 0) ? (income / spendAnnual) * 100 : 0;
-        elPct.textContent = (spendAnnual > 0)
-          ? ("Coverage: " + pct.toFixed(0) + "% of estimated spending")
-          : "Coverage: —";
-
-        if (covered){
-          elStatus.textContent = "Covered. Income exceeds spending by: " + formatDollars(delta) + " / yr";
-        } else {
-          elStatus.textContent = "Shortfall. Income is below spending by: " + formatDollars(Math.abs(delta)) + " / yr";
-        }
-        return { spendAnnual:spendAnnual, income:income, delta:delta, pct:pct, covered:covered };
-      }
-
-      function totalAccounts(){
-        var sum = 0;
-        for (var i=0;i<accounts.length;i++){
-          if (!accounts[i].included) continue;
-          sum += Number(accounts[i].amount||0);
-        }
-        return sum;
-      }
-
-      function setAccountsTotalPill(){ byId("accountsTotalPill").textContent = formatDollars(totalAccounts()); }
-
-      function setDeleteSelectedEnabled(){
-        var hasAny = false;
-        for (var k in selectedIds){ if (selectedIds.hasOwnProperty(k) && selectedIds[k]) { hasAny = true; break; } }
-        byId("deleteSelectedBtn").disabled = !hasAny;
-        byId("deleteSelectedBtn").style.opacity = hasAny ? "1" : "0.6";
-      }
-
-      function renderAccountsTable(){
-        var tbody = byId("accountsTbody");
-        tbody.innerHTML = "";
-
-        if (accounts.length === 0){
-          var tr0=document.createElement("tr");
-          var td0=document.createElement("td");
-          td0.colSpan=5;
-          td0.className="small muted";
-          td0.textContent="No accounts yet. Add one above.";
-          tr0.appendChild(td0);
-          tbody.appendChild(tr0);
-          setAccountsTotalPill();
-          setDeleteSelectedEnabled();
-          return;
-        }
-
-        for (var i=0;i<accounts.length;i++){
-          (function(acct){
-            var tr=document.createElement("tr");
-            if (selectedIds[acct.id]) tr.className="selected";
-
-            var tdUse = document.createElement("td");
-            var useCb = document.createElement("input");
-            useCb.type = "checkbox";
-            useCb.checked = (acct.included === undefined) ? true : !!acct.included;
-            useCb.addEventListener("change", function(){
-              acct.included = !!useCb.checked;
-              saveAccounts();
-              setAccountsTotalPill();
-              renderProjection();
+      var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+      var dotsWrap = document.getElementById('slideDots');
+      var index = 0;
+      var timer = null;
+
+      function renderDots(){
+        if (!dotsWrap) return;
+        dotsWrap.innerHTML = '';
+        for (var i=0;i<slides.length;i++){
+          var dot = document.createElement('span');
+          dot.className = 'dot' + (i === index ? ' active' : '');
+          dot.setAttribute('role','button');
+          dot.setAttribute('aria-label','Go to slide ' + (i+1));
+          (function(i){
+            dot.addEventListener('click', function(){
+              setSlide(i);
+              restart();
             });
-            tdUse.appendChild(useCb);
-
-            var tdSel = document.createElement("td");
-            var cb = document.createElement("input");
-            cb.type="checkbox";
-            cb.checked=!!selectedIds[acct.id];
-            cb.addEventListener("change", function(){
-              selectedIds[acct.id] = !!cb.checked;
-              tr.classList.toggle("selected", !!cb.checked);
-              setDeleteSelectedEnabled();
-            });
-            tdSel.appendChild(cb);
-
-            var tdName=document.createElement("td");
-            tdName.textContent=acct.name;
-            tdName.addEventListener("dblclick", function(){ openEditModal(acct.id); });
-
-            var tdAmt=document.createElement("td");
-            tdAmt.textContent=formatDollars(acct.amount);
-            tdAmt.addEventListener("dblclick", function(){ openEditModal(acct.id); });
-
-            var tdActions=document.createElement("td");
-            tdActions.style.textAlign="right";
-
-            var editBtn=document.createElement("button");
-            editBtn.className="btn secondary";
-            editBtn.type="button";
-            editBtn.textContent="Edit";
-            editBtn.addEventListener("click", function(){ openEditModal(acct.id); });
-
-            var delBtn=document.createElement("button");
-            delBtn.className="btn danger";
-            delBtn.type="button";
-            delBtn.textContent="Delete";
-            delBtn.style.marginLeft="8px";
-            delBtn.addEventListener("click", function(){
-              var ok=window.confirm("Delete this account?");
-              if(!ok) return;
-              deleteAccount(acct.id);
-            });
-
-            tdActions.appendChild(editBtn);
-            tdActions.appendChild(delBtn);
-
-            tr.appendChild(tdUse);
-            tr.appendChild(tdSel);
-            tr.appendChild(tdName);
-            tr.appendChild(tdAmt);
-            tr.appendChild(tdActions);
-            tbody.appendChild(tr);
-          })(accounts[i]);
+          })(i);
+          dotsWrap.appendChild(dot);
         }
-        setAccountsTotalPill();
-        setDeleteSelectedEnabled();
       }
 
-      function addAccount(){
-        var name=String(byId("acctName").value||"").trim();
-        var amount=Number(byId("acctAmount").value||0);
-        if(!name) return;
-        if(!isFinite(amount) || amount < 0) return;
-
-        accounts.push({ id:newId(), name:name, amount:amount, included:true });
-
-        saveAccounts();
-        byId("acctName").value="";
-        byId("acctAmount").value="";
-        renderAccountsTable();
-        renderProjection();
+      function setSlide(i){
+        index = (i + slides.length) % slides.length;
+        for (var s=0;s<slides.length;s++) slides[s].classList.toggle('active', s === index);
+        renderDots();
       }
 
-      function deleteAccount(id){
-        var out=[];
-        for(var i=0;i<accounts.length;i++) if(accounts[i].id!==id) out.push(accounts[i]);
-        accounts=out;
-        delete selectedIds[id];
-        saveAccounts();
-        renderAccountsTable();
-        renderProjection();
+      function next(){ setSlide(index + 1); }
+      function prev(){ setSlide(index - 1); }
+
+      function restart(){
+        if (timer) clearInterval(timer);
+        timer = setInterval(next, 5000);
       }
 
-      function deleteSelectedAccounts(){
-        var ids=[];
-        for(var k in selectedIds) if(selectedIds.hasOwnProperty(k) && selectedIds[k]) ids.push(k);
-        if(ids.length===0) return;
+      var nextBtn = document.getElementById('nextSlide');
+      var prevBtn = document.getElementById('prevSlide');
+      if (nextBtn) nextBtn.addEventListener('click', function(){ next(); restart(); });
+      if (prevBtn) prevBtn.addEventListener('click', function(){ prev(); restart(); });
 
-        var ok=window.confirm("Delete " + ids.length + " selected account(s)?");
-        if(!ok) return;
-
-        var toDelete={};
-        for(var i=0;i<ids.length;i++) toDelete[ids[i]]=true;
-
-        var keep=[];
-        for(var j=0;j<accounts.length;j++) if(!toDelete[accounts[j].id]) keep.push(accounts[j]);
-
-        accounts=keep;
-        selectedIds={};
-        saveAccounts();
-        renderAccountsTable();
-        renderProjection();
+      if (slides.length){
+        setSlide(0);
+        restart();
       }
-
-      function openEditModal(id){
-        editId=id;
-        var acct=null;
-        for(var i=0;i<accounts.length;i++){ if(accounts[i].id===id){ acct=accounts[i]; break; } }
-        if(!acct) return;
-
-        byId("editAcctName").value=acct.name;
-        byId("editAcctAmount").value=acct.amount;
-        byId("editModalOverlay").classList.add("show");
-      }
-      function closeEditModal(){
-        editId=null;
-        byId("editModalOverlay").classList.remove("show");
-      }
-      function saveEditModal(){
-        if(!editId) return;
-
-        var name=String(byId("editAcctName").value||"").trim();
-        var amount=Number(byId("editAcctAmount").value||0);
-        if(!name) return;
-        if(!isFinite(amount) || amount < 0) return;
-
-        for(var i=0;i<accounts.length;i++){
-          if(accounts[i].id===editId){
-            accounts[i].name=name;
-            accounts[i].amount=amount;
-            break;
-          }
-        }
-        saveAccounts();
-        closeEditModal();
-        renderAccountsTable();
-        renderProjection();
-      }
-
-      function setCollapsed(el, collapsed){
-        if(!el) return;
-        if(collapsed) el.classList.add("is-collapsed");
-        else el.classList.remove("is-collapsed");
-      }
-
-      function estimateSocialSecurityAnnual(workIncome, yearsWorked){
-        var income=Math.max(0, Number(workIncome||0));
-        var yw=Math.max(0, Number(yearsWorked||0));
-        var factor=Math.min(1, yw/35);
-        var est=0.40*income*factor;
-        if(est>50000) est=50000;
-        if(!isFinite(est)) est=0;
-        return est;
-      }
-
-      function getCustomWithdrawAnnual(){
-        var v = Number(byId("customWithdraw").value || 0);
-        if (!isFinite(v) || v < 0) v = 0;
-        return v;
-      }
-
-      function getSocialSecurityAnnualIfEnabled(){
-        var enabled=!!byId("enableSS").checked;
-        if(!enabled) return 0;
-        var useOverride=!!byId("useSSOverride").checked;
-        var overrideVal=Number(byId("ssOverride").value||0);
-        if(useOverride && isFinite(overrideVal) && overrideVal>0) return overrideVal;
-        return estimateSocialSecurityAnnual(num("workIncome"), num("yearsWorked"));
-      }
-
-      function updateCustomWithdrawUI(){
-        var wIdx = getWithdrawalIndex();
-        var show = (wIdx === 3);
-        setCollapsed(byId("customWithdrawCollapse"), !show);
-        byId("customWithdrawPill").textContent = formatDollars(getCustomWithdrawAnnual()) + " / yr";
-      }
-
-      function updateToggleUI(){
-        var clientMode = !!byId("clientMode").checked;
-
-        var advEls = document.querySelectorAll(".advancedOnly");
-        for (var i=0;i<advEls.length;i++){
-          advEls[i].style.display = clientMode ? "none" : "";
-        }
-
-        setCollapsed(byId("pensionCollapse"), !byId("enablePension").checked);
-        var ssEnabled=!!byId("enableSS").checked;
-        setCollapsed(byId("ssCollapse"), !ssEnabled);
-        byId("ssDisabledPill").style.display = ssEnabled ? "none" : "inline-block";
-
-        updateCustomWithdrawUI();
-      }
-
-      function updateSocialSecurityPill(){
-        var ssEnabled=!!byId("enableSS").checked;
-        var ss=getSocialSecurityAnnualIfEnabled();
-        byId("ssEstimatedPill").textContent = formatDollars(ssEnabled ? ss : 0) + " / year (est.)";
-        byId("ssDisabledPill").textContent = formatDollars(0) + " / year (disabled)";
-      }
-
-      function sanitizeAges(currentAge, retirementAge, deathAge){
-        var warnings = [];
-        var ca = Number(currentAge||0), ra = Number(retirementAge||0), da = Number(deathAge||0);
-
-        if(!isFinite(ca) || ca <= 0) { ca = 30; warnings.push("Current age was invalid; using 30."); }
-        if(!isFinite(ra) || ra <= 0) { ra = 62; warnings.push("Retirement age was invalid; using 62."); }
-        if(!isFinite(da) || da <= 0) { da = 85; warnings.push("Death age was invalid; using 85."); }
-
-        if(ra < ca){
-          warnings.push("Retirement age is below current age; treating years-to-retirement as 0.");
-          ra = ca;
-        }
-        if(da <= ra){
-          warnings.push("Death age must be greater than retirement age to model drawdown; drawdown will be unavailable.");
-        }
-
-        return { currentAge: ca, retirementAge: ra, deathAge: da, warnings: warnings };
-      }
-
-      function safeAnnuitizeMaxWithdrawal(fv, retGrowth, yearsInRetirement){
-        var n = Math.max(0, Number(yearsInRetirement||0));
-        if(n <= 0) return 0;
-
-        var g = Number(retGrowth||0);
-        if(!isFinite(g)) g = 0;
-
-        if(Math.abs(g) < 1e-9){
-          return fv / n;
-        }
-
-        var denom = (1 - Math.pow(1+g, -(n+1)));
-        if(!isFinite(denom) || Math.abs(denom) < 1e-9){
-          return fv / n;
-        }
-
-        return fv*g/denom;
-      }
-
-      function runProjection(currentFunds, currentAge, retirementAge, deathAge,
-                             otherIncomeAnnual, annualContrib, inflation,
-                             nominalBaseRate, retirementGrowthRate){
-
-        var ages = sanitizeAges(currentAge, retirementAge, deathAge);
-        currentAge = ages.currentAge;
-        retirementAge = ages.retirementAge;
-        deathAge = ages.deathAge;
-
-        var yearsToRetire = Math.max(0, retirementAge-currentAge);
-        var yearsInRetirement = Math.max(0, deathAge-retirementAge);
-
-        var nominalRates=[nominalBaseRate-0.03, nominalBaseRate, nominalBaseRate+0.03];
-        var realRates=[];
-        for(var i=0;i<nominalRates.length;i++){
-          var r=nominalRates[i];
-          realRates.push((1+r)/(1+inflation)-1);
-        }
-
-        var nominalRetGrowth=retirementGrowthRate;
-
-        function projectForRates(rates, retGrowth){
-          var results=[];
-          for(var i=0;i<rates.length;i++){
-            var r=rates[i];
-            var fv;
-
-            if (yearsToRetire === 0){
-              fv = currentFunds;
-            } else if (r!==0){
-              fv = currentFunds*Math.pow(1+r, yearsToRetire) +
-                   annualContrib*((Math.pow(1+r, yearsToRetire)-1)/r);
-            } else {
-              fv = currentFunds + annualContrib*yearsToRetire;
-            }
-
-            var rmdAge=Math.max(retirementAge, 72);
-            var factor=(RMD_LIFE_EXPECTANCY[rmdAge]!==undefined) ? RMD_LIFE_EXPECTANCY[rmdAge] : 25;
-
-            var minDisb = (factor > 0) ? (fv/factor) : 0;
-            var midDisb = fv*0.04;
-            var maxDisb = safeAnnuitizeMaxWithdrawal(fv, retGrowth, yearsInRetirement);
-
-            results.push({
-              fv:fv,
-              growth_rate:r,
-              min_disb:minDisb,
-              mid_disb:midDisb,
-              max_disb:maxDisb,
-              other_income:otherIncomeAnnual
-            });
-          }
-          return results;
-        }
-
-        return {
-          nominalProj: projectForRates(nominalRates, nominalRetGrowth),
-          realProj: projectForRates(realRates, nominalRetGrowth),
-          retirementAge: retirementAge,
-          deathAge: deathAge,
-          nominalRetGrowth: nominalRetGrowth,
-          inflation: inflation,
-          warnings: ages.warnings,
-          yearsToRetire: yearsToRetire
-        };
-      }
-
-      function computePortfolioPath(currentFunds, annualContrib, preRetGrowth, retirementGrowth,
-                                    annualWithdrawalNeed, otherIncomeAnnual,
-                                    currentAge, retirementAge, deathAge){
-
-        var balances = [];
-        var balance = Number(currentFunds || 0);
-        if (!isFinite(balance) || balance < 0) balance = 0;
-
-        var contrib = Number(annualContrib || 0);
-        if (!isFinite(contrib) || contrib < 0) contrib = 0;
-
-        var rPre = Number(preRetGrowth || 0);
-        if (!isFinite(rPre)) rPre = 0;
-
-        var rRet = Number(retirementGrowth || 0);
-        if (!isFinite(rRet)) rRet = 0;
-
-        var need = Number(annualWithdrawalNeed || 0);
-        if (!isFinite(need) || need < 0) need = 0;
-
-        var other = Number(otherIncomeAnnual || 0);
-        if (!isFinite(other) || other < 0) other = 0;
-
-        var effectiveWithdrawal = Math.max(0, need - other);
-
-        for (var age = currentAge; age <= deathAge; age++){
-          if (age < retirementAge){
-            balance = balance * (1 + rPre) + contrib;
-          } else {
-            balance = balance * (1 + rRet) - effectiveWithdrawal;
-          }
-          balances.push(balance);
-        }
-        return balances;
-      }
-
-      var drawdownState={ years:[], map:{}, remainingMap:{} };
-      var chartInstance=null;
-
-      function getDrawdownTitle(index){
-        var titles=[
-          "Minimum Projection - Required Minimum Distribution (RMD)",
-          "Minimum Projection - 4% Withdrawal Rule",
-          "Minimum Projection - Maximum Distribution",
-          "Minimum Projection - Custom Distribution",
-
-          "Medium Projection - Required Minimum Distribution (RMD)",
-          "Medium Projection - 4% Withdrawal Rule",
-          "Medium Projection - Maximum Distribution",
-          "Medium Projection - Custom Distribution",
-
-          "Maximum Projection - Required Minimum Distribution (RMD)",
-          "Maximum Projection - 4% Withdrawal Rule",
-          "Maximum Projection - Maximum Distribution",
-          "Maximum Projection - Custom Distribution"
-        ];
-        return titles[index] || "Drawdown Chart";
-      }
-
-      function renderDrawdownChart(){
-        var sel=Number(byId("drawdownSelector").value||0);
-        var years=drawdownState.years||[];
-        var balances=(drawdownState.map && drawdownState.map[sel]) ? drawdownState.map[sel] : [];
-
-        byId("chartTitle").textContent=getDrawdownTitle(sel);
-
-        if (typeof Chart === "undefined") {
-          byId("chartWrap").style.display = "block";
-          byId("chartTitle").textContent = getDrawdownTitle(sel) + " — Chart unavailable (Chart.js blocked).";
-          return;
-        }
-
-        var ctx=byId("drawdownCanvas").getContext("2d");
-        if(chartInstance){ chartInstance.destroy(); chartInstance=null; }
-
-        chartInstance=new Chart(ctx,{
-          type:"line",
-          data:{
-            labels: years,
-            datasets:[{ label:"Portfolio Balance", data:balances, pointRadius:2, tension:0.2 }]
-          },
-          options:{
-            responsive:true,
-            plugins:{ legend:{ display:true, labels:{ color:"rgba(234,240,255,.85)" } } },
-            scales:{
-              y:{
-                title:{ display:true, text:"USD (Millions)", color:"rgba(234,240,255,.75)" },
-                ticks:{ color:"rgba(234,240,255,.75)", callback:function(v){ return (Number(v)/1000000).toFixed(1); } },
-                grid:{ color:"rgba(255,255,255,.08)" }
-              },
-              x:{
-                title:{ display:true, text:"Age", color:"rgba(234,240,255,.75)" },
-                ticks:{ color:"rgba(234,240,255,.75)" },
-                grid:{ color:"rgba(255,255,255,.08)" }
-              }
-            }
-          }
-        });
-      }
-
-      var scenarioNames = ["Minimum", "Medium", "Maximum"];
-      var withdrawalNames = ["Required Minimum Distribution (RMD)", "4% Withdrawal Rule", "Maximum Distribution", "Custom Distribution"];
-
-      var last = { result:null, currentFunds:0, otherIncomeAnnual:0, inflation:0, yearsToRetire:0 };
-
-      function getScenarioIndex(){ return Math.max(0, Math.min(2, Number(byId("scenarioSlider").value || 0))); }
-      function getWithdrawalIndex(){ return Math.max(0, Math.min(3, Number(byId("withdrawalSlider").value || 0))); }
-
-      function distributionFor(obj, idx){
-        if (idx === 0) return obj.min_disb;
-        if (idx === 1) return obj.mid_disb;
-        if (idx === 2) return obj.max_disb;
-        return getCustomWithdrawAnnual();
-      }
-
-      function remainingForScenarioAndMethod(sIdx, wIdx){
-        var drawdownIndex = (sIdx * 4) + wIdx;
-        if (!drawdownState.remainingMap) return null;
-        var rem = drawdownState.remainingMap[drawdownIndex];
-        return (rem === undefined) ? null : rem;
-      }
-
-      function toTodaysDollars(nominalAnnual){
-        var infl = Number(last.inflation || 0);
-        var y = Number(last.yearsToRetire || 0);
-        if (!isFinite(infl) || infl < 0) infl = 0;
-        if (!isFinite(y) || y < 0) y = 0;
-        var denom = Math.pow(1 + infl, y);
-        if (!isFinite(denom) || denom <= 0) denom = 1;
-        return Number(nominalAnnual || 0) / denom;
-      }
-
-      function updateWarnings(warnings){
-        var el = byId("projWarnings");
-        if (!warnings || !warnings.length){
-          el.style.display = "none";
-          el.textContent = "";
-          return;
-        }
-        el.style.display = "inline-block";
-        el.textContent = warnings.join(" ");
-      }
-
-      // Executive summary + coverage bar
-      function updateExecutiveSummary(coverageInfo, totalTodayIncome){
-        var spendAnnual = coverageInfo ? coverageInfo.spendAnnual : null;
-        var pct = (coverageInfo && coverageInfo.pct) ? coverageInfo.pct : null;
-
-        var statusPill = byId("planStatusPill");
-        var note = byId("planStatusNote");
-        var barFill = byId("coverageBarFill");
-        var barLabel = byId("coverageBarLabel");
-
-        if (spendAnnual === null || pct === null){
-          statusPill.className = "pill warn";
-          statusPill.textContent = "Plan status: Unknown";
-          note.textContent = "Add a Spending Estimate to evaluate coverage.";
-          barFill.style.width = "0%";
-          barLabel.textContent = "Coverage: —";
-          return;
-        }
-
-        // Simple tiering (professional feel; easy logic)
-        // Funded >= 105%; Marginal 95-105%; Shortfall < 95%
-        var tier = "Funded";
-        var pillClass = "pill ok";
-        var msg = "Comfortably covered under current assumptions.";
-
-        if (pct < 95){
-          tier = "Shortfall";
-          pillClass = "pill bad";
-          msg = "Income likely insufficient; adjust spending, retirement age, or withdrawal policy.";
-        } else if (pct < 105){
-          tier = "Marginal";
-          pillClass = "pill warn";
-          msg = "Close to breakeven; small changes could flip outcome.";
-        }
-
-        statusPill.className = pillClass;
-        statusPill.textContent = "Plan status: " + tier;
-        note.textContent = msg;
-
-        var width = Math.max(0, Math.min(200, pct)); // allow up to 200%
-        barFill.style.width = (width/200*100).toFixed(1) + "%";
-
-        if (tier === "Shortfall") barFill.style.background = "rgba(255,107,107,.55)";
-        else if (tier === "Marginal") barFill.style.background = "rgba(255,198,87,.55)";
-        else barFill.style.background = "rgba(88,209,167,.55)";
-
-        barLabel.textContent = "Coverage: " + pct.toFixed(0) + "%  •  Income (today): " + formatDollars(totalTodayIncome) + " / yr";
-      }
-
-      function updateAssumptionSummary(){
-        var s = loadJson(SETTINGS_KEY) || {};
-        var txt = "Pre-ret return: " + Number(s.growthRate||8).toFixed(1) + "% • " +
-                  "Ret return: " + Number(s.retirementGrowth||3).toFixed(1) + "% • " +
-                  "Inflation: " + Number(s.inflation||2.5).toFixed(1) + "% • " +
-                  "Contribution: " + formatDollars(Number(s.annualContribution||0)) + "/yr";
-        byId("assumptionSummary").textContent = txt;
-      }
-
-      // Scenario compare (ROI #2/#7)
-      function scenarioMetricSnapshot(){
-        if (!last.result) return null;
-        var sIdx = getScenarioIndex();
-        var wIdx = getWithdrawalIndex();
-        var nominal = last.result.nominalProj[sIdx];
-        var distNom = distributionFor(nominal, wIdx);
-        var totalNom = distNom + last.otherIncomeAnnual;
-        var totalToday = toTodaysDollars(totalNom);
-        var rem = remainingForScenarioAndMethod(sIdx, wIdx);
-        return {
-          scenarioIdx: sIdx, withdrawalIdx: wIdx,
-          fv: nominal.fv,
-          distNom: distNom,
-          totalNom: totalNom,
-          totalToday: totalToday,
-          remaining: rem
-        };
-      }
-
-      function fmtDelta(a,b){
-        if (a === null || b === null || a === undefined || b === undefined) return "—";
-        var d = Number(b) - Number(a);
-        var sign = d >= 0 ? "+" : "−";
-        return sign + formatDollars(Math.abs(d));
-      }
-
-      function updateProjectionOutputUI(){
-        if (!last.result) return;
-
-        var sIdx = getScenarioIndex();
-        var wIdx = getWithdrawalIndex();
-
-        var nominal = last.result.nominalProj[sIdx];
-
-        var distNom = distributionFor(nominal, wIdx);
-        var totalNom = distNom + last.otherIncomeAnnual;
-
-        var distToday = toTodaysDollars(distNom);
-        var totalToday = toTodaysDollars(totalNom);
-
-        byId("scenarioLabel").textContent = scenarioNames[sIdx];
-        byId("scenarioPill").textContent = "Scenario: " + scenarioNames[sIdx];
-        byId("withdrawalLabel").textContent = withdrawalNames[wIdx];
-
-        byId("scenarioRatesPill").textContent = "Growth: " + (nominal.growth_rate * 100).toFixed(1) + "%";
-
-        byId("outCurrentPortfolio").textContent = formatDollars(last.currentFunds);
-        byId("outFVNominal").textContent = formatDollars(nominal.fv);
-
-        byId("otherIncomePill").textContent = "Other income: " + formatDollars(last.otherIncomeAnnual) + "/yr";
-
-        byId("outDistributionNominal").textContent = formatDollars(distNom) + " / yr";
-        byId("outDistributionToday").textContent = formatDollars(distToday) + " / yr";
-
-        byId("outTotalIncomeNominal").textContent = formatDollars(totalNom) + " / yr";
-        byId("outTotalIncomeToday").textContent = formatDollars(totalToday) + " / yr";
-
-        var covInfo = updateSpendingCoverageUI(totalToday);
-
-        // Executive summary / coverage bar update
-        updateExecutiveSummary(covInfo, totalToday);
-        updateAssumptionSummary();
-
-        var rem = remainingForScenarioAndMethod(sIdx, wIdx);
-        byId("outRemaining").textContent = (rem === null) ? "—" : formatDollars(rem);
-
-        // Keep drawdown selector aligned
-        var drawdownIndex = (sIdx * 4) + wIdx;
-        byId("drawdownSelector").value = String(drawdownIndex);
-
-        if (byId("chartWrap").style.display !== "none") renderDrawdownChart();
-
-        // Persist slider UI positions
-        var s = loadJson(SETTINGS_KEY) || {};
-        s.uiScenarioIndex = sIdx;
-        s.uiWithdrawalIndex = wIdx;
-        saveJson(SETTINGS_KEY, s);
-      }
-
-      function renderProjection(){
-        updateToggleUI();
-
-        var currentFunds=totalAccounts();
-
-        var currentAge=num("currentAge");
-        var retirementAge=num("retirementAge");
-        var deathAge=num("deathAge");
-
-        var pensionAnnual = (!!byId("enablePension").checked) ? num("pension") : 0;
-        var ssAnnual = getSocialSecurityAnnualIfEnabled();
-        var otherIncomeAnnual = pensionAnnual + ssAnnual;
-
-        var annualContribution=num("annualContribution");
-        var inflation=num("inflationProj")/100;
-        var growthRate=num("growthRate")/100;
-        var retirementGrowth=num("retirementGrowth")/100;
-
-        updateSocialSecurityPill();
-
-        var result=runProjection(
-          currentFunds, currentAge, retirementAge, deathAge,
-          otherIncomeAnnual, annualContribution, inflation, growthRate, retirementGrowth
-        );
-
-        last.result = result;
-        last.currentFunds = currentFunds;
-        last.otherIncomeAnnual = otherIncomeAnnual;
-        last.inflation = inflation;
-        last.yearsToRetire = Number(result.yearsToRetire || 0);
-
-        updateWarnings(result.warnings);
-
-        saveJson(SETTINGS_KEY, {
-          currentAge: result ? sanitizeAges(currentAge, retirementAge, deathAge).currentAge : currentAge,
-          retirementAge: result ? sanitizeAges(currentAge, retirementAge, deathAge).retirementAge : retirementAge,
-          deathAge: result ? sanitizeAges(currentAge, retirementAge, deathAge).deathAge : deathAge,
-          enablePension: !!byId("enablePension").checked,
-          pension: num("pension"),
-          enableSS: !!byId("enableSS").checked,
-          workIncome: num("workIncome"),
-          yearsWorked: num("yearsWorked"),
-          useSSOverride: !!byId("useSSOverride").checked,
-          ssOverride: num("ssOverride"),
-          annualContribution: annualContribution,
-          inflation: num("inflationProj"),
-          growthRate: num("growthRate"),
-          retirementGrowth: num("retirementGrowth"),
-          uiScenarioIndex: getScenarioIndex(),
-          uiWithdrawalIndex: getWithdrawalIndex(),
-          customWithdraw: getCustomWithdrawAnnual(),
-          clientMode: !!byId("clientMode").checked
-        });
-
-        // Build portfolio paths for drawdown chart (0..11)
-        var ages = sanitizeAges(currentAge, retirementAge, deathAge);
-        var years = [];
-        if (ages.deathAge >= ages.currentAge){
-          for (var age = ages.currentAge; age <= ages.deathAge; age++) years.push(age);
-        }
-
-        var dd = [];
-        if (years.length){
-          var currentFundsForPath = currentFunds;
-          var contrib = annualContribution;
-          var rRet = retirementGrowth;
-
-          for (var si = 0; si < 3; si++){
-            var rPre = result.nominalProj[si].growth_rate;
-            var distRMD = result.nominalProj[si].min_disb;
-            var dist4   = result.nominalProj[si].mid_disb;
-            var distMax = result.nominalProj[si].max_disb;
-            var customW = getCustomWithdrawAnnual();
-
-            dd.push(computePortfolioPath(currentFundsForPath, contrib, rPre, rRet, distRMD, otherIncomeAnnual, ages.currentAge, ages.retirementAge, ages.deathAge));
-            dd.push(computePortfolioPath(currentFundsForPath, contrib, rPre, rRet, dist4,   otherIncomeAnnual, ages.currentAge, ages.retirementAge, ages.deathAge));
-            dd.push(computePortfolioPath(currentFundsForPath, contrib, rPre, rRet, distMax, otherIncomeAnnual, ages.currentAge, ages.retirementAge, ages.deathAge));
-            dd.push(computePortfolioPath(currentFundsForPath, contrib, rPre, rRet, customW, otherIncomeAnnual, ages.currentAge, ages.retirementAge, ages.deathAge));
-          }
-        }
-
-        function lastVal(arr){ return (arr && arr.length) ? arr[arr.length - 1] : null; }
-
-        drawdownState.remainingMap = {
-          0:lastVal(dd[0]),  1:lastVal(dd[1]),  2:lastVal(dd[2]),  3:lastVal(dd[3]),
-          4:lastVal(dd[4]),  5:lastVal(dd[5]),  6:lastVal(dd[6]),  7:lastVal(dd[7]),
-          8:lastVal(dd[8]),  9:lastVal(dd[9]), 10:lastVal(dd[10]), 11:lastVal(dd[11])
-        };
-
-        drawdownState.map = {
-          0:dd[0], 1:dd[1], 2:dd[2], 3:dd[3],
-          4:dd[4], 5:dd[5], 6:dd[6], 7:dd[7],
-          8:dd[8], 9:dd[9], 10:dd[10], 11:dd[11]
-        };
-
-        drawdownState.years = years;
-
-        setAccountsTotalPill();
-        updateProjectionOutputUI();
-      }
-
-      function setDefaultsIfEmpty(){
-        var defaults = {
-          currentAge:30, retirementAge:62, deathAge:85,
-          enablePension:false, pension:0,
-          enableSS:false, workIncome:0, yearsWorked:0, useSSOverride:false, ssOverride:0,
-          growthRate:8, annualContribution:0, retirementGrowth:3, inflation:2.5,
-          uiScenarioIndex: 1,
-          uiWithdrawalIndex: 0,
-          customWithdraw: 60000,
-          clientMode: false
-        };
-
-        var s=loadJson(SETTINGS_KEY);
-        var v=s || defaults;
-
-        byId("currentAge").value = (v.currentAge!==undefined) ? v.currentAge : defaults.currentAge;
-        byId("retirementAge").value = (v.retirementAge!==undefined) ? v.retirementAge : defaults.retirementAge;
-        byId("deathAge").value = (v.deathAge!==undefined) ? v.deathAge : defaults.deathAge;
-
-        byId("enablePension").checked = (v.enablePension!==undefined) ? !!v.enablePension : defaults.enablePension;
-        byId("pension").value = (v.pension!==undefined) ? v.pension : defaults.pension;
-
-        byId("growthRate").value = (v.growthRate!==undefined) ? v.growthRate : defaults.growthRate;
-        byId("annualContribution").value = (v.annualContribution!==undefined) ? v.annualContribution : defaults.annualContribution;
-        byId("retirementGrowth").value = (v.retirementGrowth!==undefined) ? v.retirementGrowth : defaults.retirementGrowth;
-        byId("inflationProj").value = (v.inflation!==undefined) ? v.inflation : defaults.inflation;
-
-        byId("enableSS").checked = (v.enableSS!==undefined) ? !!v.enableSS : defaults.enableSS;
-        byId("workIncome").value = (v.workIncome!==undefined) ? v.workIncome : defaults.workIncome;
-        byId("yearsWorked").value = (v.yearsWorked!==undefined) ? v.yearsWorked : defaults.yearsWorked;
-        byId("useSSOverride").checked = (v.useSSOverride!==undefined) ? !!v.useSSOverride : defaults.useSSOverride;
-        byId("ssOverride").value = (v.ssOverride!==undefined) ? v.ssOverride : defaults.ssOverride;
-
-        byId("scenarioSlider").value = (v.uiScenarioIndex !== undefined) ? String(v.uiScenarioIndex) : String(defaults.uiScenarioIndex);
-        byId("withdrawalSlider").value = (v.uiWithdrawalIndex !== undefined) ? String(v.uiWithdrawalIndex) : String(defaults.uiWithdrawalIndex);
-        byId("customWithdraw").value = (v.customWithdraw!==undefined) ? v.customWithdraw : defaults.customWithdraw;
-
-        byId("clientMode").checked = !!(v.clientMode);
-
-        loadAccounts();
-        renderAccountsTable();
-        setAccountsTotalPill();
-
-        updateToggleUI();
-        updateSocialSecurityPill();
-      }
-
-      // Stress-test presets (ROI #3)
-      function applyPreset(kind){
-        if (kind === "base"){
-          byId("growthRate").value = 8;
-          byId("retirementGrowth").value = 3;
-          byId("inflationProj").value = 2.5;
-        } else if (kind === "highInfl"){
-          byId("growthRate").value = 8;
-          byId("retirementGrowth").value = 2.5;
-          byId("inflationProj").value = 5.0;
-        } else if (kind === "lowReturn"){
-          byId("growthRate").value = 5;
-          byId("retirementGrowth").value = 2;
-          byId("inflationProj").value = 2.5;
-        } else if (kind === "bearEarly"){
-          // crude but useful: lower pre-ret and retirement returns
-          byId("growthRate").value = 4.5;
-          byId("retirementGrowth").value = 1.5;
-          byId("inflationProj").value = 3.0;
-        }
-        renderProjection();
-      }
-
-      // Scenario save/load/versioning (ROI #2)
-      function getSavedScenarios(){
-        var s = loadJson(SAVED_SCENARIOS_KEY);
-        return Array.isArray(s) ? s : [];
-      }
-      function setSavedScenarios(list){
-        saveJson(SAVED_SCENARIOS_KEY, list);
-      }
-      function refreshScenarioDropdowns(){
-        var list = getSavedScenarios();
-
-        var loadSel = byId("scenarioLoadSelect");
-        var aSel = byId("compareA");
-        var bSel = byId("compareB");
-
-        function fill(sel, includeBlank){
-          sel.innerHTML = "";
-          if (includeBlank){
-            var opt0 = document.createElement("option");
-            opt0.value = "";
-            opt0.textContent = "— Select —";
-            sel.appendChild(opt0);
-          }
-          if (!list.length){
-            var opt = document.createElement("option");
-            opt.value = "";
-            opt.textContent = "— None saved —";
-            sel.appendChild(opt);
-            return;
-          }
-          for (var i=0;i<list.length;i++){
-            var it = list[i];
-            var opt = document.createElement("option");
-            opt.value = it.id;
-            opt.textContent = it.name + " • " + (new Date(it.savedAt)).toLocaleString();
-            sel.appendChild(opt);
-          }
-        }
-
-        fill(loadSel, false);
-        fill(aSel, true);
-        fill(bSel, true);
-      }
-
-      function captureSnapshot(){
-        var settings = loadJson(SETTINGS_KEY) || {};
-        return {
-          id: newId(),
-          name: "",
-          savedAt: new Date().toISOString(),
-          settings: settings,
-          accounts: accounts
-        };
-      }
-
-      function saveSnapshot(){
-        var snap = captureSnapshot();
-        var name = prompt("Name this scenario snapshot:", "Scenario " + (getSavedScenarios().length + 1));
-        if (!name) return;
-        snap.name = name;
-
-        var list = getSavedScenarios();
-        list.unshift(snap);
-        // cap list size to keep localStorage tidy
-        if (list.length > 20) list = list.slice(0, 20);
-        setSavedScenarios(list);
-        refreshScenarioDropdowns();
-      }
-
-      function loadSnapshotById(id){
-        var list = getSavedScenarios();
-        var found = null;
-        for (var i=0;i<list.length;i++){ if (list[i].id === id){ found = list[i]; break; } }
-        if (!found) return false;
-
-        // restore accounts + settings
-        accounts = Array.isArray(found.accounts) ? found.accounts : [];
-        saveAccounts();
-        renderAccountsTable();
-
-        // restore settings
-        var v = found.settings || {};
-        saveJson(SETTINGS_KEY, v);
-
-        // apply to inputs
-        byId("currentAge").value = v.currentAge ?? byId("currentAge").value;
-        byId("retirementAge").value = v.retirementAge ?? byId("retirementAge").value;
-        byId("deathAge").value = v.deathAge ?? byId("deathAge").value;
-
-        byId("enablePension").checked = !!v.enablePension;
-        byId("pension").value = v.pension ?? 0;
-
-        byId("growthRate").value = v.growthRate ?? 8;
-        byId("annualContribution").value = v.annualContribution ?? 0;
-        byId("retirementGrowth").value = v.retirementGrowth ?? 3;
-        byId("inflationProj").value = v.inflation ?? 2.5;
-
-        byId("enableSS").checked = !!v.enableSS;
-        byId("workIncome").value = v.workIncome ?? 0;
-        byId("yearsWorked").value = v.yearsWorked ?? 0;
-        byId("useSSOverride").checked = !!v.useSSOverride;
-        byId("ssOverride").value = v.ssOverride ?? 0;
-
-        byId("scenarioSlider").value = String(v.uiScenarioIndex ?? 1);
-        byId("withdrawalSlider").value = String(v.uiWithdrawalIndex ?? 0);
-        byId("customWithdraw").value = v.customWithdraw ?? 60000;
-
-        byId("clientMode").checked = !!v.clientMode;
-
-        renderProjection();
-        return true;
-      }
-
-      function runComparison(){
-        var aId = String(byId("compareA").value || "");
-        var bId = String(byId("compareB").value || "");
-        var el = byId("compareSummary");
-
-        if (!aId || !bId || aId === bId){
-          el.textContent = "No comparison selected.";
-          return;
-        }
-
-        var list = getSavedScenarios();
-        var A=null, B=null;
-        for (var i=0;i<list.length;i++){
-          if (list[i].id === aId) A=list[i];
-          if (list[i].id === bId) B=list[i];
-        }
-        if (!A || !B){
-          el.textContent = "Comparison selection not found.";
-          return;
-        }
-
-        // Build lightweight metrics from saved settings: run projection for each (deterministic)
-        function metricsFor(snap){
-          var v = snap.settings || {};
-          var accts = Array.isArray(snap.accounts) ? snap.accounts : [];
-          var funds = 0;
-          for (var i=0;i<accts.length;i++){
-            if (accts[i].included === false) continue;
-            funds += Number(accts[i].amount||0);
-          }
-
-          var ages = sanitizeAges(v.currentAge, v.retirementAge, v.deathAge);
-          var pension = v.enablePension ? Number(v.pension||0) : 0;
-          var ss = v.enableSS ? (v.useSSOverride ? Number(v.ssOverride||0) : estimateSocialSecurityAnnual(v.workIncome||0, v.yearsWorked||0)) : 0;
-          var other = pension + ss;
-
-          var annualContrib = Number(v.annualContribution||0);
-          var infl = Number(v.inflation||2.5)/100;
-          var gr = Number(v.growthRate||8)/100;
-          var retgr = Number(v.retirementGrowth||3)/100;
-
-          var res = runProjection(funds, ages.currentAge, ages.retirementAge, ages.deathAge, other, annualContrib, infl, gr, retgr);
-
-          var sIdx = Number(v.uiScenarioIndex ?? 1);
-          var wIdx = Number(v.uiWithdrawalIndex ?? 0);
-          sIdx = Math.max(0, Math.min(2, sIdx));
-          wIdx = Math.max(0, Math.min(3, wIdx));
-
-          var nom = res.nominalProj[sIdx];
-          var dist = (wIdx===0)?nom.min_disb : (wIdx===1)?nom.mid_disb : (wIdx===2)?nom.max_disb : Number(v.customWithdraw||0);
-          var totalNom = dist + other;
-          var yearsToRet = Math.max(0, (ages.retirementAge - ages.currentAge));
-          var totalToday = totalNom / Math.pow(1+infl, yearsToRet);
-
-          return { fv: nom.fv, totalToday: totalToday, distNom: dist, other: other, scenarioIdx:sIdx, withdrawalIdx:wIdx };
-        }
-
-        var mA = metricsFor(A);
-        var mB = metricsFor(B);
-
-        el.textContent =
-          "FV at retirement: " + fmtDelta(mA.fv, mB.fv) +
-          " • Total income (today): " + fmtDelta(mA.totalToday, mB.totalToday) +
-          " • Portfolio distribution: " + fmtDelta(mA.distNom, mB.distNom);
-      }
-
-      function wireEvents(){
-        var ids=["currentAge","retirementAge","deathAge","pension","growthRate","annualContribution","retirementGrowth","inflationProj","workIncome","yearsWorked","ssOverride","customWithdraw"];
-        for(var i=0;i<ids.length;i++) byId(ids[i]).addEventListener("input", renderProjection);
-
-        byId("enablePension").addEventListener("change", renderProjection);
-        byId("enableSS").addEventListener("change", renderProjection);
-        byId("useSSOverride").addEventListener("change", renderProjection);
-
-        byId("addAcctBtn").addEventListener("click", addAccount);
-        byId("acctAmount").addEventListener("keydown", function(e){ if(e.key==="Enter") addAccount(); });
-        byId("acctName").addEventListener("keydown", function(e){ if(e.key==="Enter") addAccount(); });
-
-        byId("deleteSelectedBtn").addEventListener("click", deleteSelectedAccounts);
-
-        byId("scenarioSlider").addEventListener("input", updateProjectionOutputUI);
-        byId("withdrawalSlider").addEventListener("input", function(){
-          updateCustomWithdrawUI();
-          updateProjectionOutputUI();
-        });
-
-        byId("viewDrawdownBtn").addEventListener("click", function(){
-          byId("chartWrap").style.display="block";
-          renderDrawdownChart();
-        });
-
-        byId("drawdownSelector").addEventListener("change", function(){
-          var idx = Number(byId("drawdownSelector").value || 0);
-          var sIdx = Math.floor(idx / 4);
-          var wIdx = idx % 4;
-
-          byId("scenarioSlider").value = String(sIdx);
-          byId("withdrawalSlider").value = String(wIdx);
-          updateCustomWithdrawUI();
-          updateProjectionOutputUI();
-          if(byId("chartWrap").style.display!=="none") renderDrawdownChart();
-        });
-
-        byId("resetBtn").addEventListener("click", function(){
-          var ok=window.confirm("Reset ALL saved accounts, settings, and snapshots?");
-          if(!ok) return;
-
-          clearAllSaved();
-          accounts=[]; selectedIds={};
-          byId("chartWrap").style.display="none";
-          if(chartInstance){ chartInstance.destroy(); chartInstance=null; }
-
-          setDefaultsIfEmpty();
-          refreshScenarioDropdowns();
-          renderProjection();
-          updateCustomWithdrawUI();
-        });
-
-        byId("editModalCloseBtn").addEventListener("click", closeEditModal);
-        byId("editCancelBtn").addEventListener("click", closeEditModal);
-        byId("editSaveBtn").addEventListener("click", saveEditModal);
-
-        byId("editModalOverlay").addEventListener("mousedown", function(e){
-          if(e.target && e.target.id==="editModalOverlay") closeEditModal();
-        });
-
-        // Coverage details toggle
-        (function(){
-          var btn = byId("toggleCoverageDetails");
-          var panel = byId("coverageDetails");
-          if (!btn || !panel) return;
-
-          function setExpanded(expanded){
-            panel.classList.toggle("is-collapsed", !expanded);
-            btn.textContent = expanded ? "Collapse" : "Expand";
-          }
-          setExpanded(false);
-
-          btn.addEventListener("click", function(){
-            var isCollapsed = panel.classList.contains("is-collapsed");
-            setExpanded(isCollapsed);
-          });
-        })();
-
-        // Disclosures toggle
-        (function(){
-          var btn = byId("toggleDisclosuresBtn");
-          var panel = byId("disclosuresPanel");
-          if (!btn || !panel) return;
-
-          function setExpanded(expanded){
-            panel.classList.toggle("is-collapsed", !expanded);
-            btn.textContent = expanded ? "Collapse" : "Expand";
-          }
-          setExpanded(false);
-
-          btn.addEventListener("click", function(){
-            var isCollapsed = panel.classList.contains("is-collapsed");
-            setExpanded(isCollapsed);
-          });
-        })();
-
-        // Client view toggle
-        byId("clientMode").addEventListener("change", function(){
-          updateToggleUI();
-          renderProjection();
-        });
-
-        // Presets
-        byId("presetBaseBtn").addEventListener("click", function(){ applyPreset("base"); });
-        byId("presetHighInflBtn").addEventListener("click", function(){ applyPreset("highInfl"); });
-        byId("presetLowReturnBtn").addEventListener("click", function(){ applyPreset("lowReturn"); });
-        byId("presetBearEarlyBtn").addEventListener("click", function(){ applyPreset("bearEarly"); });
-
-        // Scenarios
-        byId("saveScenarioBtn").addEventListener("click", function(){
-          saveSnapshot();
-        });
-        byId("loadScenarioBtn").addEventListener("click", function(){
-          var id = String(byId("scenarioLoadSelect").value || "");
-          if (!id) return;
-          loadSnapshotById(id);
-        });
-        byId("runCompareBtn").addEventListener("click", function(){
-          runComparison();
-        });
-
-        // Print/PDF
-        byId("printReportBtn").addEventListener("click", function(){
-          // Ensure executive summary is current before print
-          updateProjectionOutputUI();
-          window.print();
-        });
-
-        // Update coverage block when Spending Estimator changes
-        window.addEventListener("rtk:spending-updated", function(){
-          updateProjectionOutputUI();
-        });
-
-        window.addEventListener("storage", function(e){
-          if (e && e.key === "retirement_spending_estimator_v1"){
-            updateProjectionOutputUI();
-          }
-        });
-      }
-
-      function resizeCharts(){
-        try { if (chartInstance) chartInstance.resize(); } catch(e){}
-      }
-
-      // Boot
-      setDefaultsIfEmpty();
-      wireEvents();
-      refreshScenarioDropdowns();
-      renderProjection();
-
-      return {
-        renderProjection: renderProjection,
-        resizeCharts: resizeCharts
-      };
     })();
   </script>
 </body>
