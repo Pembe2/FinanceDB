@@ -127,6 +127,45 @@
       border-color: rgba(122,162,255,.55);
     }
 
+    .summarySticky{
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      margin: 0 0 12px;
+      padding-top: env(safe-area-inset-top);
+    }
+    .summaryBar{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      background: rgba(11,18,32,.85);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 8px 10px;
+      backdrop-filter: blur(10px);
+    }
+    .summaryItem{
+      min-width: 0;
+    }
+    .summaryLabel{
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .3px;
+    }
+    .summaryValue{
+      margin-top: 4px;
+      font-weight: 800;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    @media (max-width: 420px){
+      .summaryBar{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .summaryItem:last-child{ grid-column: 1 / -1; }
+    }
+
     .grid{
       display:grid;
       grid-template-columns: 1fr;
@@ -455,21 +494,27 @@
     }
     .toast.show{ display:block; }
 
-    /* Print */
-    @media print{
-      body{ background:#fff !important; color:#111 !important; }
-      .btnRow, .btn, .note, details, .footer{ display:none !important; }
-      .card{ box-shadow:none !important; border:1px solid #ddd !important; background:#fff !important; }
-      .pill{ border:1px solid #ddd !important; background:#fff !important; color:#444 !important; }
-      .kpi{ border:1px solid #ddd !important; background:#fff !important; }
-      .kpi .k, .kpi .s{ color:#444 !important; }
-      .wrap{ max-width:none !important; }
-    }
   </style>
 </head>
 
 <body>
   <div class="wrap">
+    <div class="summarySticky" aria-label="Retirement summary">
+      <div class="summaryBar">
+        <div class="summaryItem">
+          <div class="summaryLabel">Portfolio @ retire</div>
+          <div class="summaryValue" id="summaryFV">$0</div>
+        </div>
+        <div class="summaryItem">
+          <div class="summaryLabel">Retirement income</div>
+          <div class="summaryValue" id="summaryTotal">$0 / yr</div>
+        </div>
+        <div class="summaryItem">
+          <div class="summaryLabel">Total portfolio @ death</div>
+          <div class="summaryValue" id="summaryAtDeath">$0</div>
+        </div>
+      </div>
+    </div>
     <nav class="navPanel" aria-label="Site navigation">
       <div class="navCard">
         <span class="navLabel">Tools</span>
@@ -693,7 +738,6 @@
         <div class="hr"></div>
 
         <div class="btnRow">
-          <button class="btn secondary" id="printBtn" type="button">Print / Save PDF</button>
           <button class="btn danger" id="resetBtn" type="button">Reset</button>
         </div>
 
@@ -886,6 +930,10 @@
       const elPortfolioChart = $("portfolioChart");
       const elSurplusChart = $("surplusChart");
 
+      const elSummaryFV = $("summaryFV");
+      const elSummaryTotal = $("summaryTotal");
+      const elSummaryAtDeath = $("summaryAtDeath");
+
       const fmtUSD0 = new Intl.NumberFormat("en-US", { style:"currency", currency:"USD", maximumFractionDigits:0 });
 
       function parseMoneyValue(val){
@@ -1030,7 +1078,11 @@
           elSpendInsurance.value = formatMoneyValue(c.insurance ?? 0);
           elSpendLeisure.value = formatMoneyValue(c.leisure ?? 0);
           elSpendOther.value = formatMoneyValue(c.other ?? 0);
-          window.__hasSpendCats = true;
+          const hasSpendCats = [
+            c.housing, c.utilities, c.food, c.healthcare,
+            c.transport, c.insurance, c.leisure, c.other
+          ].some((val) => Number(val || 0) > 0);
+          window.__hasSpendCats = hasSpendCats;
         } else {
           window.__hasSpendCats = false;
         }
@@ -1234,7 +1286,7 @@
       }
 
       function applySpendingPreset(){
-        const income = Math.max(0, Number(elHouseholdIncome.value||0));
+        const income = Math.max(0, parseMoneyValue(elHouseholdIncome && elHouseholdIncome.value));
         const annualBase = income * getReplacementRate();
         const monthlyBase = annualBase / 12;
 
@@ -1452,6 +1504,9 @@
         const totalNominal = dist + otherIncome;
         const totalToday = toTodaysDollars(totalNominal, infl, yearsToRetire);
 
+        if (elSummaryFV) elSummaryFV.textContent = fmtUSD0.format(fv);
+        if (elSummaryTotal) elSummaryTotal.textContent = fmtUSD0.format(totalNominal) + " / yr";
+
         // Remaining at death (simplified)
         const remaining = (deathAge <= retireAge)
           ? 0
@@ -1522,6 +1577,7 @@
         var surplusAnnual = Math.max(0, totalNominal - spendingNominal);
         var surplusValue = computeSurplusAtDeath(surplusAnnual, retRet, yearsInRet);
         if (elOutSurplus) elOutSurplus.textContent = fmtUSD0.format(surplusValue);
+        if (elSummaryAtDeath) elSummaryAtDeath.textContent = fmtUSD0.format(remaining + surplusValue);
 
         // Charts
         var portfolioPath = buildPortfolioPath(currentAge, retireAge, deathAge, portfolio, contrib, preRet, retRet, dist);
@@ -1613,8 +1669,6 @@
         if (elPresetBase) elPresetBase.addEventListener("click", () => applyStressPreset("base"));
         if (elPresetHighInfl) elPresetHighInfl.addEventListener("click", () => applyStressPreset("highInfl"));
         if (elPresetEarlyBear) elPresetEarlyBear.addEventListener("click", () => applyStressPreset("earlyBear"));
-
-        $("printBtn").addEventListener("click", () => window.print());
 
         $("resetBtn").addEventListener("click", () => {
           const ok = window.confirm("Reset all saved inputs for this simplified calculator?");
