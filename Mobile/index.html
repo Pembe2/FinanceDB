@@ -76,7 +76,7 @@
     .wrap{
       max-width: 980px;
       margin: 0 auto;
-      padding: 18px 14px 28px;
+      padding: 18px 14px 88px;
     }
 
     header{
@@ -129,10 +129,11 @@
 
     .summarySticky{
       position: sticky;
-      top: 0;
+      bottom: 0;
       z-index: 20;
-      margin: 0 0 12px;
-      padding-top: env(safe-area-inset-top);
+      margin: 12px 0 0;
+      padding-bottom: env(safe-area-inset-bottom);
+      transition: opacity 140ms ease, transform 140ms ease;
     }
     .summaryBar{
       display:grid;
@@ -167,7 +168,7 @@
     }
     .summarySticky.is-hidden{
       opacity: 0;
-      transform: translateY(-6px);
+      transform: translateY(6px);
       pointer-events: none;
     }
 
@@ -504,26 +505,6 @@
 
 <body>
   <div class="wrap">
-    <div class="summarySticky is-hidden" aria-label="Retirement summary">
-      <div class="summaryBar">
-        <div class="summaryItem">
-          <div class="summaryLabel">Portfolio @ retire</div>
-          <div class="summaryValue" id="summaryFV">$0</div>
-        </div>
-        <div class="summaryItem">
-          <div class="summaryLabel">Retirement income</div>
-          <div class="summaryValue" id="summaryTotal">$0 / yr</div>
-        </div>
-        <div class="summaryItem">
-          <div class="summaryLabel">Total portfolio @ death</div>
-          <div class="summaryValue" id="summaryAtDeath">$0</div>
-        </div>
-        <div class="summaryItem">
-          <div class="summaryLabel">Plan status</div>
-          <div class="summaryValue" id="summaryStatus">Plan status: Unknown</div>
-        </div>
-      </div>
-    </div>
     <nav class="navPanel" aria-label="Site navigation">
       <div class="navCard">
         <span class="navLabel">Tools</span>
@@ -843,6 +824,26 @@
 
         <div class="note" id="warnings" style="margin-top:10px;">—</div>
       </section>
+    </div>
+    <div class="summarySticky is-hidden" aria-label="Retirement summary">
+      <div class="summaryBar">
+        <div class="summaryItem">
+          <div class="summaryLabel">Portfolio @ retire</div>
+          <div class="summaryValue" id="summaryFV">$0</div>
+        </div>
+        <div class="summaryItem">
+          <div class="summaryLabel">Retirement income</div>
+          <div class="summaryValue" id="summaryTotal">$0 / yr</div>
+        </div>
+        <div class="summaryItem">
+          <div class="summaryLabel">Total portfolio @ death</div>
+          <div class="summaryValue" id="summaryAtDeath">$0</div>
+        </div>
+        <div class="summaryItem">
+          <div class="summaryLabel">Plan status</div>
+          <div class="summaryValue" id="summaryStatus">Plan status: Unknown</div>
+        </div>
+      </div>
     </div>
   </div>
 
