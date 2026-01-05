@@ -136,7 +136,7 @@
     }
     .summaryBar{
       display:grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 8px;
       background: rgba(11,18,32,.85);
       border: 1px solid var(--line);
@@ -164,6 +164,11 @@
     @media (max-width: 420px){
       .summaryBar{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .summaryItem:last-child{ grid-column: 1 / -1; }
+    }
+    .summarySticky.is-hidden{
+      opacity: 0;
+      transform: translateY(-6px);
+      pointer-events: none;
     }
 
     .grid{
@@ -499,7 +504,7 @@
 
 <body>
   <div class="wrap">
-    <div class="summarySticky" aria-label="Retirement summary">
+    <div class="summarySticky is-hidden" aria-label="Retirement summary">
       <div class="summaryBar">
         <div class="summaryItem">
           <div class="summaryLabel">Portfolio @ retire</div>
@@ -512,6 +517,10 @@
         <div class="summaryItem">
           <div class="summaryLabel">Total portfolio @ death</div>
           <div class="summaryValue" id="summaryAtDeath">$0</div>
+        </div>
+        <div class="summaryItem">
+          <div class="summaryLabel">Plan status</div>
+          <div class="summaryValue" id="summaryStatus">Plan status: Unknown</div>
         </div>
       </div>
     </div>
@@ -533,7 +542,7 @@
 
     <div class="grid">
       <!-- INPUTS -->
-      <section class="card" aria-label="Inputs">
+      <section class="card" aria-label="Inputs" id="inputsSection">
         <div class="titleRow">
           <div class="title">Inputs</div>
           <div class="sub"><span class="pill" id="yearsPill">Years to retire: —</span></div>
@@ -933,6 +942,9 @@
       const elSummaryFV = $("summaryFV");
       const elSummaryTotal = $("summaryTotal");
       const elSummaryAtDeath = $("summaryAtDeath");
+      const elSummaryStatus = $("summaryStatus");
+      const elSummarySticky = document.querySelector(".summarySticky");
+      const elInputsSection = $("inputsSection");
 
       const fmtUSD0 = new Intl.NumberFormat("en-US", { style:"currency", currency:"USD", maximumFractionDigits:0 });
 
@@ -1554,6 +1566,7 @@
         // Update outputs
         elStatusPill.className = pillClass;
         elStatusPill.textContent = status;
+        if (elSummaryStatus) elSummaryStatus.textContent = status;
 
         elOutFV.textContent = fmtUSD0.format(fv);
         elOutFVToday.textContent = "Today’s $: " + fmtUSD0.format(fvToday);
@@ -1595,6 +1608,13 @@
 
         // Persist
         save();
+      }
+
+      function updateSummaryVisibility(){
+        if (!elSummarySticky || !elInputsSection) return;
+        var rect = elInputsSection.getBoundingClientRect();
+        var show = rect.top <= 8;
+        elSummarySticky.classList.toggle("is-hidden", !show);
       }
 
       function wire(){
@@ -1681,6 +1701,9 @@
 
         // Ensure custom visibility on load
         elCustomWrap.style.display = (String(elMethod.value) === "custom") ? "block" : "none";
+
+        window.addEventListener("scroll", updateSummaryVisibility, { passive: true });
+        window.addEventListener("resize", updateSummaryVisibility);
       }
 
       // Boot
@@ -1699,6 +1722,7 @@
       }
       wire();
       updateUI();
+      updateSummaryVisibility();
     })();
   </script>
 </body>
