@@ -841,7 +841,7 @@
         </div>
         <div class="summaryItem">
           <div class="summaryLabel">Plan status</div>
-          <div class="summaryValue" id="summaryStatus">Plan status: Unknown</div>
+          <div class="summaryValue" id="summaryStatus">Unknown</div>
         </div>
       </div>
     </div>
@@ -1528,6 +1528,7 @@
         // Coverage (today's dollars vs today's spending)
         let coveragePct = null;
         let status = "Plan status: Unknown";
+        let statusShort = "Unknown";
         let pillClass = "pill warn";
         let coverageText = "Coverage: —";
         let coverageNote = "Enter an annual spending estimate to evaluate coverage.";
@@ -1544,12 +1545,15 @@
           // Tiering
           if (coveragePct >= 105){
             status = "Plan status: Funded";
+            statusShort = "Funded";
             pillClass = "pill ok";
           } else if (coveragePct >= 95){
             status = "Plan status: Marginal";
+            statusShort = "Marginal";
             pillClass = "pill warn";
           } else {
             status = "Plan status: Shortfall";
+            statusShort = "Shortfall";
             pillClass = "pill bad";
           }
 
@@ -1567,7 +1571,7 @@
         // Update outputs
         elStatusPill.className = pillClass;
         elStatusPill.textContent = status;
-        if (elSummaryStatus) elSummaryStatus.textContent = status;
+        if (elSummaryStatus) elSummaryStatus.textContent = statusShort;
 
         elOutFV.textContent = fmtUSD0.format(fv);
         elOutFVToday.textContent = "Today’s $: " + fmtUSD0.format(fvToday);
