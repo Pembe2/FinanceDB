@@ -1,0 +1,881 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>In Depth Budgeting Tool</title>
+  <style>
+    :root{
+      --bg:#0b1119;
+      --panel:#141b25;
+      --panel-2:#1a2330;
+      --panel-3:#101620;
+      --text:#f1f5fb;
+      --muted:#a0b3ca;
+      --line:rgba(255,255,255,0.12);
+      --accent:#e5b35b;
+      --accent-2:#74c2a8;
+      --good:#6bd6a4;
+      --warn:#f1b563;
+      --bad:#f16b6b;
+      --shadow:0 14px 30px rgba(0,0,0,0.3);
+    }
+    *{box-sizing:border-box;}
+    body{
+      margin:0;
+      color:var(--text);
+      font-family:"Gill Sans","Trebuchet MS","Palatino Linotype",serif;
+      background:
+        radial-gradient(900px 480px at 10% -10%, rgba(229,179,91,0.18), transparent 60%),
+        radial-gradient(860px 480px at 95% -8%, rgba(116,194,168,0.2), transparent 60%),
+        linear-gradient(180deg, #0b1119, #0a0f16 45%, #0b1119 100%);
+      min-height:100vh;
+    }
+    a{color:inherit;text-decoration:none;}
+    .page{
+      max-width:1200px;
+      margin:0 auto;
+      padding:18px 16px 90px;
+    }
+    .topnav{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      background:rgba(15,20,28,0.7);
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:10px 12px;
+      backdrop-filter: blur(10px);
+    }
+    .navLabel{
+      font-size:11px;
+      letter-spacing:0.4px;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
+    .navLink{
+      font-weight:700;
+      padding:8px 12px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,0.03);
+    }
+    .navLink.active{
+      border-color:rgba(229,179,91,0.6);
+      background:rgba(229,179,91,0.18);
+      color:#fff6e4;
+    }
+    header{
+      margin-top:14px;
+    }
+    h1{
+      margin:0 0 6px;
+      font-size:28px;
+      letter-spacing:0.3px;
+    }
+    header p{
+      margin:0;
+      color:var(--muted);
+      max-width:80ch;
+      font-size:14px;
+    }
+    .toolbar{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      align-items:center;
+      margin-top:14px;
+    }
+    .toggle{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,0.03);
+      font-size:12px;
+    }
+    select, input, button{
+      font:inherit;
+    }
+    select, input[type="text"], input[type="number"]{
+      width:100%;
+      min-height:44px;
+      padding:10px 10px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,0.04);
+      color:var(--text);
+    }
+    select option{
+      color:#0b1119;
+      background:#ffffff;
+    }
+    .grid{
+      margin-top:16px;
+      display:grid;
+      gap:14px;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+      align-items:start;
+    }
+    @media (max-width: 1000px){
+      .grid{ grid-template-columns:1fr; }
+    }
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:16px;
+      box-shadow:var(--shadow);
+    }
+    .card h2{
+      margin:0 0 8px;
+      font-size:18px;
+    }
+    .card h3{
+      margin:14px 0 6px;
+      font-size:14px;
+      color:#f5f1e7;
+      letter-spacing:0.2px;
+    }
+    .subtle{
+      color:var(--muted);
+      font-size:12px;
+      margin:0;
+    }
+    .sectionHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      margin-bottom:8px;
+    }
+    .btn{
+      min-height:36px;
+      padding:6px 12px;
+      border-radius:12px;
+      border:1px solid rgba(229,179,91,0.45);
+      background:rgba(229,179,91,0.16);
+      color:var(--text);
+      font-weight:700;
+      cursor:pointer;
+    }
+    .btn.secondary{
+      border-color:var(--line);
+      background:rgba(255,255,255,0.05);
+      font-weight:600;
+    }
+    .btnRow{display:flex; gap:8px; flex-wrap:wrap;}
+    .list{
+      display:grid;
+      gap:8px;
+    }
+    .rowItem{
+      display:grid;
+      grid-template-columns: minmax(140px, 1.3fr) minmax(120px, 0.8fr) minmax(90px, 0.6fr) auto;
+      gap:8px;
+      align-items:center;
+    }
+    .rowItem.debt{
+      grid-template-columns: minmax(140px, 1.1fr) minmax(100px, 0.5fr) minmax(100px, 0.5fr) auto;
+    }
+    .rowItem.income{
+      grid-template-columns: minmax(140px, 1.4fr) minmax(120px, 0.8fr) auto;
+    }
+    .rowItem label{margin:0;}
+    .tagSelect{
+      min-height:36px;
+      padding:6px 8px;
+      border-radius:10px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,0.05);
+      color:var(--text);
+    }
+    .iconBtn{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,0.04);
+      color:var(--muted);
+      width:32px;
+      height:32px;
+      border-radius:10px;
+      cursor:pointer;
+    }
+    .note{
+      margin-top:6px;
+      font-size:12px;
+      color:var(--muted);
+    }
+    .divider{
+      height:1px;
+      background:var(--line);
+      margin:12px 0;
+    }
+    .kpiGrid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+    @media (max-width: 560px){
+      .kpiGrid{ grid-template-columns:1fr; }
+      .rowItem, .rowItem.debt, .rowItem.income{ grid-template-columns:1fr; }
+    }
+    .kpi{
+      padding:12px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,0.03);
+    }
+    .kpi .k{
+      font-size:11px;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:0.3px;
+    }
+    .kpi .v{
+      margin-top:6px;
+      font-size:20px;
+      font-weight:800;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:5px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      font-size:12px;
+      color:var(--muted);
+      background:rgba(255,255,255,0.03);
+    }
+    .badge.good{ border-color:rgba(107,214,164,0.6); color:#d6ffe9; }
+    .badge.warn{ border-color:rgba(241,181,99,0.6); color:#fff0d6; }
+    .badge.bad{ border-color:rgba(241,107,107,0.6); color:#ffe4e4; }
+    .bar{
+      height:10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,0.08);
+      overflow:hidden;
+    }
+    .bar > span{
+      display:block;
+      height:100%;
+      width:0%;
+      background:rgba(116,194,168,0.7);
+    }
+    .bar.warn > span{ background:rgba(241,181,99,0.7); }
+    .bar.bad > span{ background:rgba(241,107,107,0.7); }
+    .allocGrid{ display:grid; gap:10px; }
+    .allocRow{ display:grid; gap:6px; }
+    .allocRow .label{ display:flex; justify-content:space-between; font-size:12px; color:var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <nav class="topnav" aria-label="Site navigation">
+      <span class="navLabel">Tools</span>
+      <a class="navLink" href="../index.html">Tool Index</a>
+      <a class="navLink" href="../Mobile/">Mobile</a>
+      <a class="navLink" href="../Complete Retirement Tool/">Complete Tool</a>
+      <a class="navLink" href="../Early Retirement Evaluator/">Early Retirement</a>
+      <a class="navLink active" href="./">In Depth Budgeting Tool</a>
+    </nav>
+
+    <header>
+      <h1>In Depth Budgeting Tool</h1>
+      <p>
+        Build a realistic monthly budget by separating needs, wants, savings, and debt. Track totals,
+        compare to targets, and see your runway based on current cash reserves.
+      </p>
+    </header>
+
+    <div class="toolbar">
+      <div class="toggle">
+        <span>Period</span>
+        <select id="periodSelect" aria-label="Budget period">
+          <option value="monthly">Monthly</option>
+          <option value="annual">Annual</option>
+        </select>
+      </div>
+      <div class="toggle">
+        <span>Pay frequency</span>
+        <select id="payFrequency" aria-label="Pay frequency">
+          <option value="weekly">Weekly</option>
+          <option value="biweekly" selected>Biweekly</option>
+          <option value="semimonthly">Semi-monthly</option>
+          <option value="monthly">Monthly</option>
+        </select>
+      </div>
+      <div class="toggle">
+        <span>Cash reserves</span>
+        <input id="cashReserves" type="text" inputmode="numeric" placeholder="e.g. 12000" />
+      </div>
+      <div class="toggle">
+        <span>Target split</span>
+        <input id="targetNeeds" type="number" min="0" max="100" step="1" value="50" style="width:60px;" />
+        <span>% needs</span>
+        <input id="targetWants" type="number" min="0" max="100" step="1" value="30" style="width:60px;" />
+        <span>% wants</span>
+        <input id="targetSavings" type="number" min="0" max="100" step="1" value="20" style="width:60px;" />
+        <span>% savings</span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <section class="card" aria-label="Budget inputs">
+        <div class="sectionHeader">
+        <h2>Gross income and deductions (per paycheck)</h2>
+        </div>
+        <div class="list">
+          <div class="rowItem income">
+            <input id="grossIncome" type="text" inputmode="numeric" placeholder="Gross per paycheck" />
+            <input id="taxes" type="text" inputmode="numeric" placeholder="Taxes per paycheck" />
+            <span class="badge">Gross</span>
+          </div>
+          <div class="rowItem income">
+            <input id="benefits" type="text" inputmode="numeric" placeholder="Benefits / insurance per paycheck" />
+            <input id="retirementPretax" type="text" inputmode="numeric" placeholder="Retirement per paycheck" />
+            <span class="badge">Pre-tax</span>
+          </div>
+          <div class="rowItem income">
+            <input id="otherDeductions" type="text" inputmode="numeric" placeholder="Other deductions per paycheck" />
+            <span class="badge">Deductions</span>
+          </div>
+        </div>
+        <p class="note">Enter per-paycheck amounts. The tool converts them into monthly or annual totals.</p>
+
+        <div class="divider"></div>
+
+        <div class="sectionHeader">
+          <h2>Additional take-home income</h2>
+          <div class="btnRow">
+            <button class="btn secondary" type="button" data-add="income">Add income</button>
+          </div>
+        </div>
+        <div class="list" id="incomeList"></div>
+        <p class="note" id="incomeHint">Use this section only for extra take-home income on top of your paycheck.</p>
+
+        <div class="divider"></div>
+
+        <div class="sectionHeader">
+          <h2>Fixed expenses</h2>
+          <div class="btnRow">
+            <button class="btn secondary" type="button" data-add="fixed">Add fixed expense</button>
+          </div>
+        </div>
+        <div class="list" id="fixedList"></div>
+
+        <div class="divider"></div>
+
+        <div class="sectionHeader">
+          <h2>Variable expenses</h2>
+          <div class="btnRow">
+            <button class="btn secondary" type="button" data-add="variable">Add variable expense</button>
+          </div>
+        </div>
+        <div class="list" id="variableList"></div>
+
+        <div class="divider"></div>
+
+        <div class="sectionHeader">
+          <h2>Debt payments</h2>
+          <div class="btnRow">
+            <button class="btn secondary" type="button" data-add="debt">Add debt</button>
+          </div>
+        </div>
+        <div class="list" id="debtList"></div>
+
+        <div class="divider"></div>
+
+        <div class="sectionHeader">
+          <h2>Savings and sinking funds</h2>
+          <div class="btnRow">
+            <button class="btn secondary" type="button" data-add="savings">Add savings</button>
+          </div>
+        </div>
+        <div class="list" id="savingsList"></div>
+      </section>
+
+      <section class="card" aria-label="Budget summary">
+        <h2>Budget snapshot</h2>
+        <p class="subtle" id="summaryPeriod">Monthly overview</p>
+
+        <div class="kpiGrid" style="margin-top:12px;">
+          <div class="kpi">
+            <div class="k">Gross income</div>
+            <div class="v" id="kpiGross">$0</div>
+            <div class="note" id="grossNote">Before deductions.</div>
+          </div>
+          <div class="kpi">
+            <div class="k">Take-home pay</div>
+            <div class="v" id="kpiTakeHome">$0</div>
+            <div class="note" id="takeHomeNote">After deductions.</div>
+          </div>
+          <div class="kpi">
+            <div class="k">Retirement savings</div>
+            <div class="v" id="kpiRetirement">$0</div>
+            <div class="note" id="retirementNote">Pre-tax contributions.</div>
+          </div>
+          <div class="kpi">
+            <div class="k">Total outflow</div>
+            <div class="v" id="kpiOutflow">$0</div>
+            <div class="note" id="outflowNote">Spending, debt, and savings.</div>
+          </div>
+          <div class="kpi">
+            <div class="k">Net surplus</div>
+            <div class="v" id="kpiNet">$0</div>
+            <div class="note" id="netNote">Ready to allocate.</div>
+          </div>
+          <div class="kpi">
+            <div class="k">Runway</div>
+            <div class="v" id="kpiRunway">0 months</div>
+            <div class="note" id="runwayNote">Based on cash reserves and total outflow.</div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="sectionHeader">
+          <h3>Needs / Wants / Savings</h3>
+          <span class="badge" id="targetBadge">Targets OK</span>
+        </div>
+        <div class="allocGrid">
+          <div class="allocRow">
+            <div class="label"><span>Needs</span><span id="needsPct">0%</span></div>
+            <div class="bar" id="needsBar"><span></span></div>
+          </div>
+          <div class="allocRow">
+            <div class="label"><span>Wants</span><span id="wantsPct">0%</span></div>
+            <div class="bar" id="wantsBar"><span></span></div>
+          </div>
+          <div class="allocRow">
+            <div class="label"><span>Savings</span><span id="savingsPct">0%</span></div>
+            <div class="bar" id="savingsBar"><span></span></div>
+          </div>
+        </div>
+        <p class="note" id="allocationNote">Percentages are based on income in the selected period.</p>
+
+        <div class="divider"></div>
+
+        <h3>Category totals</h3>
+        <div class="kpiGrid">
+          <div class="kpi">
+            <div class="k">Needs</div>
+            <div class="v" id="totalNeeds">$0</div>
+          </div>
+          <div class="kpi">
+            <div class="k">Wants</div>
+            <div class="v" id="totalWants">$0</div>
+          </div>
+          <div class="kpi">
+            <div class="k">Savings</div>
+            <div class="v" id="totalSavings">$0</div>
+          </div>
+          <div class="kpi">
+            <div class="k">Debt</div>
+            <div class="v" id="totalDebt">$0</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      var KEY = "budgetTool.v1";
+      var fmtUSD0 = new Intl.NumberFormat("en-US", { style:"currency", currency:"USD", maximumFractionDigits:0 });
+
+      function $(id){ return document.getElementById(id); }
+      function parseMoney(v){
+        if (v === null || v === undefined) return 0;
+        var n = Number(String(v).replace(/[^0-9.-]/g, ""));
+        return isFinite(n) ? n : 0;
+      }
+      function formatMoneyInput(el){
+        if (!el) return;
+        var v = parseMoney(el.value);
+        el.value = v ? fmtUSD0.format(Math.round(v)) : "";
+      }
+      function unformatMoneyInput(el){
+        if (!el) return;
+        el.value = String(parseMoney(el.value) || "");
+      }
+
+      var elPeriod = $("periodSelect");
+      var elCash = $("cashReserves");
+      var elTargetNeeds = $("targetNeeds");
+      var elTargetWants = $("targetWants");
+      var elTargetSavings = $("targetSavings");
+      var elPayFrequency = $("payFrequency");
+      var elGross = $("grossIncome");
+      var elTaxes = $("taxes");
+      var elBenefits = $("benefits");
+      var elRetirementPretax = $("retirementPretax");
+      var elOtherDeductions = $("otherDeductions");
+
+      var lists = {
+        income: $("incomeList"),
+        fixed: $("fixedList"),
+        variable: $("variableList"),
+        debt: $("debtList"),
+        savings: $("savingsList")
+      };
+
+      var tagOptions = ["Needs", "Wants", "Savings", "Debt", "Giving", "Other"];
+
+      function makeTagSelect(value){
+        var sel = document.createElement("select");
+        sel.className = "tagSelect";
+        tagOptions.forEach(function(tag){
+          var opt = document.createElement("option");
+          opt.value = tag;
+          opt.textContent = tag;
+          if (tag === value) opt.selected = true;
+          sel.appendChild(opt);
+        });
+        return sel;
+      }
+
+      function buildRow(type, data){
+        var row = document.createElement("div");
+        row.className = "rowItem " + type;
+        row.dataset.type = type;
+
+        var name = document.createElement("input");
+        name.type = "text";
+        name.className = "name";
+        name.placeholder = type === "income" ? "Source" : "Category";
+        name.value = data && data.name ? data.name : "";
+
+        var amount = document.createElement("input");
+        amount.type = "text";
+        amount.inputMode = "numeric";
+        amount.className = "amount";
+        amount.placeholder = "0";
+        amount.value = data && data.amount ? data.amount : "";
+
+        var removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "iconBtn";
+        removeBtn.textContent = "x";
+
+        if (type === "income"){
+          row.appendChild(name);
+          row.appendChild(amount);
+          var badge = document.createElement("span");
+          badge.className = "badge";
+          badge.textContent = "Income";
+          row.appendChild(badge);
+          row.appendChild(removeBtn);
+        } else if (type === "debt"){
+          var minPay = document.createElement("input");
+          minPay.type = "text";
+          minPay.inputMode = "numeric";
+          minPay.className = "amount";
+          minPay.placeholder = "Min";
+          minPay.value = data && data.min ? data.min : "";
+
+          var extraPay = document.createElement("input");
+          extraPay.type = "text";
+          extraPay.inputMode = "numeric";
+          extraPay.className = "amount";
+          extraPay.placeholder = "Extra";
+          extraPay.value = data && data.extra ? data.extra : "";
+
+          row.appendChild(name);
+          row.appendChild(minPay);
+          row.appendChild(extraPay);
+          row.appendChild(removeBtn);
+        } else {
+          var tagValue = data && data.tag ? data.tag : (type === "fixed" ? "Needs" : type === "variable" ? "Wants" : "Savings");
+          var tagSelect = makeTagSelect(tagValue);
+          row.appendChild(name);
+          row.appendChild(amount);
+          row.appendChild(tagSelect);
+          row.appendChild(removeBtn);
+        }
+
+        row.querySelectorAll("input").forEach(function(input){
+          if (input.classList.contains("amount")){
+            input.addEventListener("focus", function(){ unformatMoneyInput(input); });
+            input.addEventListener("blur", function(){ formatMoneyInput(input); });
+          }
+          input.addEventListener("input", updateUI);
+        });
+        row.querySelectorAll("select").forEach(function(select){
+          select.addEventListener("input", updateUI);
+        });
+        removeBtn.addEventListener("click", function(){
+          row.remove();
+          updateUI();
+        });
+
+        return row;
+      }
+
+      function addRow(type, data){
+        var list = lists[type];
+        if (!list) return;
+        list.appendChild(buildRow(type, data || {}));
+      }
+
+      function collectRows(type){
+        var list = lists[type];
+        if (!list) return [];
+        return Array.prototype.slice.call(list.querySelectorAll(".rowItem"));
+      }
+
+      function readRowData(row){
+        var type = row.dataset.type;
+        var name = row.querySelector(".name") ? row.querySelector(".name").value : "";
+        if (type === "debt"){
+          var fields = row.querySelectorAll(".amount");
+          return {
+            type: type,
+            name: name,
+            min: fields[0] ? fields[0].value : "",
+            extra: fields[1] ? fields[1].value : ""
+          };
+        }
+        var amount = row.querySelector(".amount") ? row.querySelector(".amount").value : "";
+        var tag = row.querySelector("select") ? row.querySelector("select").value : "";
+        return { type: type, name: name, amount: amount, tag: tag };
+      }
+
+      function sumRows(type){
+        var factor = elPeriod.value === "annual" ? 1 / 12 : 1;
+        var total = 0;
+        collectRows(type).forEach(function(row){
+          if (type === "debt"){
+            var fields = row.querySelectorAll(".amount");
+            var min = parseMoney(fields[0] ? fields[0].value : 0);
+            var extra = parseMoney(fields[1] ? fields[1].value : 0);
+            total += (min + extra) * factor;
+          } else {
+            var amount = parseMoney(row.querySelector(".amount") ? row.querySelector(".amount").value : 0);
+            total += amount * factor;
+          }
+        });
+        return total;
+      }
+
+      function collectTagTotals(){
+        var factor = elPeriod.value === "annual" ? 1 / 12 : 1;
+        var totals = { Needs:0, Wants:0, Savings:0, Debt:0, Giving:0, Other:0 };
+        ["fixed", "variable", "savings"].forEach(function(type){
+          collectRows(type).forEach(function(row){
+            var amount = parseMoney(row.querySelector(".amount").value) * factor;
+            var tag = row.querySelector("select") ? row.querySelector("select").value : "Other";
+            if (!totals.hasOwnProperty(tag)) totals[tag] = 0;
+            totals[tag] += amount;
+          });
+        });
+        collectRows("debt").forEach(function(row){
+          var fields = row.querySelectorAll(".amount");
+          var min = parseMoney(fields[0] ? fields[0].value : 0);
+          var extra = parseMoney(fields[1] ? fields[1].value : 0);
+          totals.Debt += (min + extra) * factor;
+        });
+        return totals;
+      }
+
+      function updateAllocationBar(elBar, pct, limit){
+        var span = elBar.querySelector("span");
+        var pctClamped = Math.max(0, Math.min(100, pct));
+        span.style.width = pctClamped.toFixed(1) + "%";
+        elBar.classList.remove("warn", "bad");
+        if (pct > limit + 5) elBar.classList.add("bad");
+        else if (pct > limit) elBar.classList.add("warn");
+      }
+
+      function paychecksPerYear(){
+        var freq = elPayFrequency ? elPayFrequency.value : "biweekly";
+        if (freq === "weekly") return 52;
+        if (freq === "semimonthly") return 24;
+        if (freq === "monthly") return 12;
+        return 26;
+      }
+
+      function updateUI(){
+        var factor = elPeriod.value === "annual" ? 1 / 12 : 1;
+        var perYear = paychecksPerYear();
+        var paycheckFactor = elPeriod.value === "annual" ? perYear : (perYear / 12);
+        var gross = parseMoney(elGross.value) * paycheckFactor;
+        var taxes = parseMoney(elTaxes.value) * paycheckFactor;
+        var benefits = parseMoney(elBenefits.value) * paycheckFactor;
+        var retirementPretax = parseMoney(elRetirementPretax.value) * paycheckFactor;
+        var otherDeductions = parseMoney(elOtherDeductions.value) * paycheckFactor;
+        var takeHome = Math.max(0, gross - taxes - benefits - retirementPretax - otherDeductions);
+        var extraIncome = sumRows("income");
+        var income = takeHome + extraIncome;
+        var fixed = sumRows("fixed");
+        var variable = sumRows("variable");
+        var debt = sumRows("debt");
+        var savings = sumRows("savings");
+
+        var outflow = fixed + variable + debt + savings;
+        var net = income - outflow;
+        var runway = 0;
+        if (outflow > 0){
+          runway = parseMoney(elCash.value) / outflow;
+        }
+
+        var totals = collectTagTotals();
+        var needs = totals.Needs;
+        var wants = totals.Wants;
+        var savingsTag = totals.Savings + totals.Debt;
+
+        var needsPct = income > 0 ? (needs / income) * 100 : 0;
+        var wantsPct = income > 0 ? (wants / income) * 100 : 0;
+        var savingsPct = income > 0 ? (savingsTag / income) * 100 : 0;
+
+        $("summaryPeriod").textContent = elPeriod.value === "annual" ? "Annual overview" : "Monthly overview";
+        $("kpiGross").textContent = fmtUSD0.format(Math.round(gross));
+        $("kpiTakeHome").textContent = fmtUSD0.format(Math.round(income));
+        $("kpiRetirement").textContent = fmtUSD0.format(Math.round(retirementPretax));
+        $("kpiOutflow").textContent = fmtUSD0.format(Math.round(outflow));
+        $("kpiNet").textContent = fmtUSD0.format(Math.round(net));
+        $("kpiRunway").textContent = runway ? runway.toFixed(1) + " months" : "0 months";
+        $("runwayNote").textContent = outflow > 0
+          ? "Based on cash reserves and total outflow."
+          : "Enter expenses to calculate runway.";
+
+        var netNote = $("netNote");
+        if (net > 0){
+          netNote.textContent = "Surplus available to allocate.";
+        } else if (net < 0){
+          netNote.textContent = "Deficit. Reduce costs or add income.";
+        } else {
+          netNote.textContent = "Break-even budget.";
+        }
+
+        $("totalNeeds").textContent = fmtUSD0.format(Math.round(needs));
+        $("totalWants").textContent = fmtUSD0.format(Math.round(wants));
+        $("totalSavings").textContent = fmtUSD0.format(Math.round(totals.Savings));
+        $("totalDebt").textContent = fmtUSD0.format(Math.round(totals.Debt));
+
+        $("needsPct").textContent = needsPct.toFixed(0) + "%";
+        $("wantsPct").textContent = wantsPct.toFixed(0) + "%";
+        $("savingsPct").textContent = savingsPct.toFixed(0) + "%";
+
+        updateAllocationBar($("needsBar"), needsPct, Number(elTargetNeeds.value || 0));
+        updateAllocationBar($("wantsBar"), wantsPct, Number(elTargetWants.value || 0));
+        updateAllocationBar($("savingsBar"), savingsPct, Number(elTargetSavings.value || 0));
+
+        var targetSum = Number(elTargetNeeds.value || 0) + Number(elTargetWants.value || 0) + Number(elTargetSavings.value || 0);
+        var targetBadge = $("targetBadge");
+        if (Math.abs(targetSum - 100) > 1){
+          targetBadge.textContent = "Targets sum to " + targetSum + "%";
+          targetBadge.className = "badge warn";
+        } else {
+          targetBadge.textContent = "Targets OK";
+          targetBadge.className = "badge good";
+        }
+
+        save();
+      }
+
+      function save(){
+        var data = {
+          period: elPeriod.value,
+          payFrequency: elPayFrequency.value,
+          cashReserves: elCash.value,
+          grossIncome: elGross.value,
+          taxes: elTaxes.value,
+          benefits: elBenefits.value,
+          retirementPretax: elRetirementPretax.value,
+          otherDeductions: elOtherDeductions.value,
+          targets: {
+            needs: elTargetNeeds.value,
+            wants: elTargetWants.value,
+            savings: elTargetSavings.value
+          },
+          rows: []
+        };
+        Object.keys(lists).forEach(function(type){
+          collectRows(type).forEach(function(row){
+            data.rows.push(readRowData(row));
+          });
+        });
+        try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(e){}
+      }
+
+      function load(){
+        try{
+          var raw = localStorage.getItem(KEY);
+          if (!raw) return false;
+          var data = JSON.parse(raw);
+          if (!data) return false;
+          elPeriod.value = data.period || "monthly";
+          elPayFrequency.value = data.payFrequency || "biweekly";
+          elCash.value = data.cashReserves || "";
+          elGross.value = data.grossIncome || "";
+          elTaxes.value = data.taxes || "";
+          elBenefits.value = data.benefits || "";
+          elRetirementPretax.value = data.retirementPretax || "";
+          elOtherDeductions.value = data.otherDeductions || "";
+          if (data.targets){
+            elTargetNeeds.value = data.targets.needs || 50;
+            elTargetWants.value = data.targets.wants || 30;
+            elTargetSavings.value = data.targets.savings || 20;
+          }
+          if (Array.isArray(data.rows)){
+            data.rows.forEach(function(row){
+              addRow(row.type, row);
+            });
+          }
+          return true;
+        }catch(e){
+          return false;
+        }
+      }
+
+      function seedDefaults(){
+        addRow("income", { name:"Primary income", amount:"4800" });
+        addRow("fixed", { name:"Rent or mortgage", amount:"1600", tag:"Needs" });
+        addRow("fixed", { name:"Utilities", amount:"240", tag:"Needs" });
+        addRow("variable", { name:"Groceries", amount:"520", tag:"Needs" });
+        addRow("variable", { name:"Dining out", amount:"220", tag:"Wants" });
+        addRow("debt", { name:"Car loan", min:"320", extra:"0" });
+        addRow("savings", { name:"Emergency fund", amount:"400", tag:"Savings" });
+      }
+
+      function wire(){
+        document.querySelectorAll("[data-add]").forEach(function(btn){
+          btn.addEventListener("click", function(){
+            var type = btn.getAttribute("data-add");
+            addRow(type, {});
+            updateUI();
+          });
+        });
+        [
+          elPeriod, elPayFrequency, elCash, elTargetNeeds, elTargetWants, elTargetSavings,
+          elGross, elTaxes, elBenefits, elRetirementPretax, elOtherDeductions
+        ].forEach(function(el){
+          el.addEventListener("input", updateUI);
+        });
+        elCash.addEventListener("focus", function(){ unformatMoneyInput(elCash); });
+        elCash.addEventListener("blur", function(){ formatMoneyInput(elCash); });
+        [elGross, elTaxes, elBenefits, elRetirementPretax, elOtherDeductions].forEach(function(el){
+          el.addEventListener("focus", function(){ unformatMoneyInput(el); });
+          el.addEventListener("blur", function(){ formatMoneyInput(el); });
+        });
+      }
+
+      if (!load()){
+        seedDefaults();
+      }
+      wire();
+      formatMoneyInput(elCash);
+      [elGross, elTaxes, elBenefits, elRetirementPretax, elOtherDeductions].forEach(formatMoneyInput);
+      document.querySelectorAll(".amount").forEach(function(el){
+        formatMoneyInput(el);
+      });
+      updateUI();
+    })();
+  </script>
+</body>
+</html>

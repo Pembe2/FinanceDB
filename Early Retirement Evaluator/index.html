@@ -1,0 +1,1013 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Early Retirement Evaluator</title>
+  <style>
+    :root{
+      --bg:#0c1117;
+      --panel:#121a23;
+      --panel-2:#16212c;
+      --panel-3:#0f151e;
+      --text:#eef2f8;
+      --muted:#9fb1c7;
+      --line:rgba(255,255,255,0.12);
+      --accent:#f7c46d;
+      --accent-2:#7fc2e8;
+      --good:#63d2a6;
+      --warn:#f2ba6b;
+      --bad:#f16b6b;
+    }
+    *{box-sizing:border-box;}
+    body{
+      margin:0;
+      color:var(--text);
+      font-family:"Baskerville","Palatino Linotype","Book Antiqua",serif;
+      background:
+        radial-gradient(900px 520px at 6% -10%, rgba(247,196,109,0.18), transparent 60%),
+        radial-gradient(820px 520px at 96% -6%, rgba(127,194,232,0.18), transparent 55%),
+        linear-gradient(180deg, #0b1016, #0c1117 40%, #0a0f15 100%);
+      min-height:100vh;
+    }
+    a{color:inherit;text-decoration:none;}
+    .page{
+      max-width:1100px;
+      margin:0 auto;
+      padding:18px 16px 90px;
+    }
+    .topnav{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      background:rgba(15,20,28,0.65);
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:10px 12px;
+      backdrop-filter: blur(10px);
+    }
+    .navLabel{
+      font-size:11px;
+      letter-spacing:0.4px;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
+    .navLink{
+      font-weight:700;
+      padding:8px 12px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,0.03);
+    }
+    .navLink.active{
+      border-color:rgba(247,196,109,0.6);
+      background:rgba(247,196,109,0.18);
+      color:#fff6e4;
+    }
+    header{
+      margin-top:14px;
+    }
+    h1{
+      margin:0 0 6px;
+      font-size:28px;
+      letter-spacing:0.3px;
+    }
+    header p{
+      margin:0;
+      color:var(--muted);
+      max-width:75ch;
+      font-size:14px;
+    }
+    .grid{
+      margin-top:18px;
+      display:grid;
+      gap:14px;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      align-items:start;
+    }
+    @media (max-width: 980px){
+      .grid{ grid-template-columns:1fr; }
+    }
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:16px;
+      box-shadow:0 12px 28px rgba(0,0,0,0.28);
+    }
+    .card h2{
+      margin:0 0 8px;
+      font-size:18px;
+    }
+    .card h3{
+      margin:12px 0 6px;
+      font-size:14px;
+      color:#f7f3ea;
+      letter-spacing:0.2px;
+    }
+    .subtle{
+      color:var(--muted);
+      font-size:12px;
+      margin:0;
+    }
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .grid2{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
+    }
+    @media (min-width:640px){
+      .grid2{ grid-template-columns:1fr 1fr; }
+    }
+    label{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+    input, select{
+      width:100%;
+      min-height:44px;
+      padding:10px 10px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,0.04);
+      color:var(--text);
+      font:inherit;
+    }
+    input[type="range"]{
+      accent-color: var(--accent);
+      padding:0;
+    }
+    .divider{
+      height:1px;
+      background:var(--line);
+      margin:12px 0;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,0.03);
+      font-size:12px;
+      color:var(--muted);
+      white-space:nowrap;
+    }
+    .metric{
+      padding:10px;
+      border-radius:14px;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--line);
+    }
+    .metric .k{
+      font-size:11px;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:0.3px;
+    }
+    .metric .v{
+      margin-top:6px;
+      font-size:20px;
+      font-weight:800;
+      letter-spacing:0.2px;
+    }
+    .note{
+      margin-top:6px;
+      font-size:12px;
+      color:var(--muted);
+    }
+    .status{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-weight:700;
+    }
+    .statusDot{
+      width:10px;
+      height:10px;
+      border-radius:50%;
+      background:var(--warn);
+    }
+    .tooltipBtn{
+      border:none;
+      background:rgba(255,255,255,0.06);
+      color:var(--text);
+      width:18px;
+      height:18px;
+      border-radius:50%;
+      font-size:11px;
+      cursor:help;
+      position:relative;
+    }
+    .tooltipBtn::after{
+      content: attr(data-tip);
+      position:absolute;
+      left:50%;
+      bottom:130%;
+      transform:translateX(-50%) translateY(6px);
+      width:220px;
+      background:#10161e;
+      border:1px solid var(--line);
+      color:var(--text);
+      padding:8px 10px;
+      border-radius:10px;
+      font-size:11px;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity 140ms ease, transform 140ms ease;
+      z-index:10;
+    }
+    .tooltipBtn:hover::after,
+    .tooltipBtn:focus::after{
+      opacity:1;
+      transform:translateX(-50%) translateY(0);
+    }
+    .summarySticky{
+      position: sticky;
+      bottom: 0;
+      z-index: 30;
+      margin-top: 16px;
+    }
+    .summaryBar{
+      display:grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap:10px;
+      padding:10px 12px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:rgba(10,14,20,0.86);
+      backdrop-filter: blur(10px);
+    }
+    .summaryItem{min-width:0;}
+    .summaryLabel{
+      font-size:10px;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:0.3px;
+    }
+    .summaryValue{
+      margin-top:4px;
+      font-size:13px;
+      font-weight:800;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    @media (max-width:700px){
+      .summaryBar{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    .kpiGrid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
+    }
+    @media (min-width:820px){
+      .kpiGrid{ grid-template-columns:1fr 1fr; }
+    }
+    .badge{
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      font-size:12px;
+      color:var(--muted);
+      background:rgba(255,255,255,0.03);
+    }
+    .badge.good{ border-color:rgba(99,210,166,0.6); color:#d7fff0; }
+    .badge.warn{ border-color:rgba(242,186,107,0.6); color:#fff1db; }
+    .badge.bad{ border-color:rgba(241,107,107,0.6); color:#ffe4e4; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <nav class="topnav" aria-label="Site navigation">
+      <span class="navLabel">Tools</span>
+      <a class="navLink" href="../index.html">Tool Index</a>
+      <a class="navLink" href="../Mobile/">Mobile</a>
+      <a class="navLink" href="../Complete Retirement Tool/">Complete Tool</a>
+      <a class="navLink active" href="./">Early Retirement Evaluator</a>
+    </nav>
+
+    <header>
+      <h1>Early Retirement Evaluator</h1>
+      <p>
+        Stress-test early retirement by separating accessible savings from retirement accounts,
+        modeling mortgage payoff timing, and estimating bridge funding until eligibility.
+      </p>
+    </header>
+
+    <div class="grid">
+      <section class="card" aria-label="Inputs">
+        <h2>Inputs</h2>
+        <div class="grid2">
+          <div>
+            <label for="currentAge">Current age</label>
+            <input id="currentAge" type="number" min="18" max="100" step="1" />
+          </div>
+          <div>
+            <label for="targetRetireAge">Goal retirement age</label>
+            <input id="targetRetireAge" type="number" min="20" max="100" step="1" />
+          </div>
+          <div>
+            <label for="eligibilityAge">
+              Retirement eligibility age
+              <button
+                class="tooltipBtn"
+                type="button"
+                data-tip="55 Rule of 55, 57 FERS MRA, 59.5 standard IRA/401k, 62 early Social Security, 67 full Social Security.">
+                i
+              </button>
+            </label>
+            <input id="eligibilityAge" type="number" min="40" max="100" step="0.5" />
+          </div>
+          <div>
+            <label for="yearsLeftMortgage">Years left on mortgage</label>
+            <input id="yearsLeftMortgage" type="number" min="0" max="40" step="1" />
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <h3>Assets and Contributions</h3>
+        <div class="grid2">
+          <div>
+            <label for="savingsNow">Savings and taxable investments ($)</label>
+            <input id="savingsNow" type="text" inputmode="numeric" />
+          </div>
+          <div>
+            <label for="retirementNow">Retirement accounts ($)</label>
+            <input id="retirementNow" type="text" inputmode="numeric" />
+          </div>
+          <div>
+            <label for="savingsContrib">Annual savings contribution ($)</label>
+            <input id="savingsContrib" type="text" inputmode="numeric" />
+          </div>
+          <div>
+            <label for="retirementContrib">Annual retirement contribution ($)</label>
+            <input id="retirementContrib" type="text" inputmode="numeric" />
+          </div>
+          <div>
+            <label for="windfall">Expected windfall at retirement ($)</label>
+            <input id="windfall" type="text" inputmode="numeric" />
+            <div class="note">Optional: bonus, inheritance, or home equity cash-out.</div>
+          </div>
+          <div>
+            <label for="otherIncome">Other retirement income (annual, $)</label>
+            <input id="otherIncome" type="text" inputmode="numeric" />
+            <div class="note">Pension, rental income, or Social Security (today's dollars).</div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <h3>Roth Ladder (optional)</h3>
+        <div class="row" style="align-items:center;">
+          <label style="margin:0;">
+            <input id="rothEnabled" type="checkbox" />
+            Enable Roth ladder
+          </label>
+          <span class="pill">5-year seasoning typical</span>
+        </div>
+        <div class="grid2" id="rothFields" style="margin-top:10px; display:none;">
+          <div>
+            <label for="rothAmount">Annual conversion amount ($)</label>
+            <input id="rothAmount" type="text" inputmode="numeric" />
+          </div>
+          <div>
+            <label for="rothTax">Estimated tax rate on conversions (%)</label>
+            <input id="rothTax" type="number" min="0" max="45" step="0.5" />
+          </div>
+          <div>
+            <label for="rothYears">Years until conversion available</label>
+            <input id="rothYears" type="number" min="0" max="10" step="1" />
+          </div>
+          <div class="note">
+            Conversions are modeled as usable after the seasoning period and applied to bridge spending.
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <h3>Housing Costs (monthly)</h3>
+        <div class="grid2">
+          <div>
+            <label for="mortgagePI">Mortgage principal and interest ($)</label>
+            <input id="mortgagePI" type="text" inputmode="numeric" />
+          </div>
+          <div>
+            <label for="propertyTax">Property tax ($)</label>
+            <input id="propertyTax" type="text" inputmode="numeric" />
+          </div>
+          <div>
+            <label for="homeInsurance">Home insurance ($)</label>
+            <input id="homeInsurance" type="text" inputmode="numeric" />
+          </div>
+          <div class="metric">
+            <div class="k">Annual housing total</div>
+            <div class="v" id="housingAnnual">$0</div>
+            <div class="note">
+              Mortgage P&amp;I drops after payoff. Property tax and insurance remain.
+            </div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <h3>Spending</h3>
+        <div class="grid2">
+          <div>
+            <label for="currentSpending">Current spending (annual, $)</label>
+            <input id="currentSpending" type="text" inputmode="numeric" />
+          </div>
+          <div>
+            <label for="healthcareAdd">Healthcare add-on (annual, $)</label>
+            <input id="healthcareAdd" type="text" inputmode="numeric" />
+            <div class="note">Optional estimate for higher retirement healthcare costs.</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;">
+          <label for="retireSpendPct">Estimated spending in retirement (%)</label>
+          <input id="retireSpendPct" type="range" min="50" max="110" step="1" />
+          <div class="row" style="justify-content:space-between; margin-top:6px;">
+            <span class="pill" id="retireSpendPctLabel">75% of current spending</span>
+            <span class="pill" id="retireSpendValue">$0 / yr</span>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <h3>Assumptions</h3>
+        <div class="grid2">
+          <div>
+            <label for="preReturn">Pre-retirement return (%)</label>
+            <input id="preReturn" type="number" min="-10" max="20" step="0.1" />
+          </div>
+          <div>
+            <label for="postReturn">Retirement return (%)</label>
+            <input id="postReturn" type="number" min="-10" max="20" step="0.1" />
+          </div>
+          <div>
+            <label for="inflation">Inflation (%)</label>
+            <input id="inflation" type="number" min="0" max="12" step="0.1" />
+          </div>
+          <div>
+            <label for="swr">Safe withdrawal rate (%)</label>
+            <input id="swr" type="number" min="2" max="6" step="0.1" />
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-label="Outputs">
+        <h2>Early Retirement Snapshot</h2>
+        <p class="subtle">Calculated at your goal retirement age unless otherwise noted.</p>
+
+        <div class="kpiGrid" style="margin-top:12px;">
+          <div class="metric">
+            <div class="k">Years to retirement</div>
+            <div class="v" id="yearsToRetire">0</div>
+            <div class="note" id="mortgagePayoffNote">Mortgage payoff age: --</div>
+          </div>
+          <div class="metric">
+            <div class="k">Bridge years to eligibility</div>
+            <div class="v" id="bridgeYears">0</div>
+            <div class="note" id="bridgeNeedNote">Bridge need: $0</div>
+            <div class="note" id="rothNote">Roth ladder disabled</div>
+          </div>
+          <div class="metric">
+            <div class="k">Savings at retirement</div>
+            <div class="v" id="savingsAtRet">$0</div>
+            <div class="note" id="savingsAfterBridge">After bridge: $0</div>
+          </div>
+          <div class="metric">
+            <div class="k">Portfolio at eligibility</div>
+            <div class="v" id="portfolioAtEligibility">$0</div>
+            <div class="note" id="incomeAtEligibility">$0 / yr income</div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="metric">
+          <div class="status">
+            <span class="statusDot" id="statusDot"></span>
+            <span id="statusLabel">Status: --</span>
+          </div>
+          <p class="note" id="statusNote">
+            Coverage is based on spending after eligibility age.
+          </p>
+          <div class="row" style="margin-top:8px;">
+            <span class="badge" id="coverageBadge">Coverage: --</span>
+            <span class="badge" id="bridgeBadge">Bridge: --</span>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <h3>Retirement Spending Detail</h3>
+        <div class="metric">
+          <div class="k">Spending in retirement (today's dollars)</div>
+          <div class="v" id="spendingBase">$0 / yr</div>
+          <div class="note" id="spendingDetail">Mortgage impact shown below.</div>
+        </div>
+        <div class="row" style="margin-top:10px;">
+          <span class="pill" id="spendWithMortgage">With mortgage: $0</span>
+          <span class="pill" id="spendAfterMortgage">After mortgage: $0</span>
+          <span class="pill" id="spendNominal">At retirement: $0</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <h3>Earliest Feasible Age</h3>
+        <div class="metric">
+          <div class="k">Earliest age that meets bridge + coverage</div>
+          <div class="v" id="earliestAge">--</div>
+          <div class="note" id="earliestNote">
+            Update inputs to see the earliest age under current assumptions.
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="summarySticky" aria-label="Sticky summary">
+      <div class="summaryBar">
+        <div class="summaryItem">
+          <div class="summaryLabel">Earliest age</div>
+          <div class="summaryValue" id="summaryEarliest">--</div>
+        </div>
+        <div class="summaryItem">
+          <div class="summaryLabel">Bridge coverage</div>
+          <div class="summaryValue" id="summaryBridge">--</div>
+        </div>
+        <div class="summaryItem">
+          <div class="summaryLabel">Income coverage</div>
+          <div class="summaryValue" id="summaryCoverage">--</div>
+        </div>
+        <div class="summaryItem">
+          <div class="summaryLabel">Portfolio at eligibility</div>
+          <div class="summaryValue" id="summaryPortfolio">$0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      var fmtUSD0 = new Intl.NumberFormat("en-US", {
+        style:"currency",
+        currency:"USD",
+        maximumFractionDigits:0
+      });
+      var KEY = "earlyRetireEvaluator.v1";
+
+      function $(id){ return document.getElementById(id); }
+      function parseMoney(v){
+        if (v === null || v === undefined) return 0;
+        var n = Number(String(v).replace(/[^0-9.-]/g, ""));
+        return isFinite(n) ? n : 0;
+      }
+      function formatMoneyInput(el){
+        if (!el) return;
+        var v = parseMoney(el.value);
+        el.value = v ? fmtUSD0.format(Math.round(v)) : "";
+      }
+      function unformatMoneyInput(el){
+        if (!el) return;
+        el.value = String(parseMoney(el.value) || "");
+      }
+      function toRatePct(v){
+        var n = Number(v);
+        return isFinite(n) ? n / 100 : 0;
+      }
+      function futureValue(pv, r, n, c){
+        pv = Math.max(0, Number(pv || 0));
+        c = Math.max(0, Number(c || 0));
+        n = Math.max(0, Math.round(Number(n || 0)));
+        r = Number(r || 0);
+        if (n === 0) return pv;
+        if (Math.abs(r) < 0.000001) return pv + c * n;
+        var pow = Math.pow(1 + r, n);
+        return pv * pow + c * (pow - 1) / r;
+      }
+      function bridgeNeedForYears(bridgeYears, mortgageYearsInRet, spendWithMortgage, spendAfterMortgage){
+        var need = 0;
+        for (var i=0;i<bridgeYears;i++){
+          var useMortgage = i < mortgageYearsInRet;
+          need += useMortgage ? spendWithMortgage : spendAfterMortgage;
+        }
+        return need;
+      }
+      function spendingAtEligibility(currentAge, eligibilityAge, yearsLeftMortgage, spendWithMortgage, spendAfterMortgage){
+        var mortgagePaidByEligibility = (yearsLeftMortgage <= (eligibilityAge - currentAge));
+        return mortgagePaidByEligibility ? spendAfterMortgage : spendWithMortgage;
+      }
+
+      var elCurrentAge = $("currentAge");
+      var elTargetAge = $("targetRetireAge");
+      var elEligibilityAge = $("eligibilityAge");
+      var elYearsLeftMortgage = $("yearsLeftMortgage");
+      var elSavingsNow = $("savingsNow");
+      var elRetirementNow = $("retirementNow");
+      var elSavingsContrib = $("savingsContrib");
+      var elRetirementContrib = $("retirementContrib");
+      var elWindfall = $("windfall");
+      var elOtherIncome = $("otherIncome");
+      var elRothEnabled = $("rothEnabled");
+      var elRothAmount = $("rothAmount");
+      var elRothTax = $("rothTax");
+      var elRothYears = $("rothYears");
+      var elMortgagePI = $("mortgagePI");
+      var elPropertyTax = $("propertyTax");
+      var elHomeInsurance = $("homeInsurance");
+      var elCurrentSpending = $("currentSpending");
+      var elHealthcareAdd = $("healthcareAdd");
+      var elRetireSpendPct = $("retireSpendPct");
+      var elPreReturn = $("preReturn");
+      var elPostReturn = $("postReturn");
+      var elInflation = $("inflation");
+      var elSWR = $("swr");
+
+      function setDefaults(){
+        elCurrentAge.value = 40;
+        elTargetAge.value = 55;
+        elEligibilityAge.value = 59.5;
+        elYearsLeftMortgage.value = 12;
+        elSavingsNow.value = "85000";
+        elRetirementNow.value = "240000";
+        elSavingsContrib.value = "12000";
+        elRetirementContrib.value = "18000";
+        elWindfall.value = "0";
+        elOtherIncome.value = "0";
+        elRothEnabled.checked = false;
+        elRothAmount.value = "12000";
+        elRothTax.value = 22;
+        elRothYears.value = 5;
+        elMortgagePI.value = "1800";
+        elPropertyTax.value = "380";
+        elHomeInsurance.value = "120";
+        elCurrentSpending.value = "72000";
+        elHealthcareAdd.value = "6000";
+        elRetireSpendPct.value = 75;
+        elPreReturn.value = 6.5;
+        elPostReturn.value = 4.0;
+        elInflation.value = 2.5;
+        elSWR.value = 4.0;
+      }
+
+      function save(){
+        var data = {
+          currentAge: elCurrentAge.value,
+          targetAge: elTargetAge.value,
+          eligibilityAge: elEligibilityAge.value,
+          yearsLeftMortgage: elYearsLeftMortgage.value,
+          savingsNow: elSavingsNow.value,
+          retirementNow: elRetirementNow.value,
+          savingsContrib: elSavingsContrib.value,
+          retirementContrib: elRetirementContrib.value,
+          windfall: elWindfall.value,
+          otherIncome: elOtherIncome.value,
+          rothEnabled: elRothEnabled.checked,
+          rothAmount: elRothAmount.value,
+          rothTax: elRothTax.value,
+          rothYears: elRothYears.value,
+          mortgagePI: elMortgagePI.value,
+          propertyTax: elPropertyTax.value,
+          homeInsurance: elHomeInsurance.value,
+          currentSpending: elCurrentSpending.value,
+          healthcareAdd: elHealthcareAdd.value,
+          retireSpendPct: elRetireSpendPct.value,
+          preReturn: elPreReturn.value,
+          postReturn: elPostReturn.value,
+          inflation: elInflation.value,
+          swr: elSWR.value
+        };
+        try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(e){}
+      }
+
+      function load(){
+        try{
+          var raw = localStorage.getItem(KEY);
+          if (!raw) return false;
+          var data = JSON.parse(raw);
+          if (!data) return false;
+          elCurrentAge.value = data.currentAge || "";
+          elTargetAge.value = data.targetAge || "";
+          elEligibilityAge.value = data.eligibilityAge || "";
+          elYearsLeftMortgage.value = data.yearsLeftMortgage || "";
+          elSavingsNow.value = data.savingsNow || "";
+          elRetirementNow.value = data.retirementNow || "";
+          elSavingsContrib.value = data.savingsContrib || "";
+          elRetirementContrib.value = data.retirementContrib || "";
+          elWindfall.value = data.windfall || "";
+          elOtherIncome.value = data.otherIncome || "";
+          elRothEnabled.checked = !!data.rothEnabled;
+          elRothAmount.value = data.rothAmount || "";
+          elRothTax.value = data.rothTax || "";
+          elRothYears.value = data.rothYears || "";
+          elMortgagePI.value = data.mortgagePI || "";
+          elPropertyTax.value = data.propertyTax || "";
+          elHomeInsurance.value = data.homeInsurance || "";
+          elCurrentSpending.value = data.currentSpending || "";
+          elHealthcareAdd.value = data.healthcareAdd || "";
+          elRetireSpendPct.value = data.retireSpendPct || "";
+          elPreReturn.value = data.preReturn || "";
+          elPostReturn.value = data.postReturn || "";
+          elInflation.value = data.inflation || "";
+          elSWR.value = data.swr || "";
+          return true;
+        }catch(e){
+          return false;
+        }
+      }
+
+      function evaluateAtAge(retAge, inputs){
+        var yearsToRetire = Math.max(0, retAge - inputs.currentAge);
+        var bridgeYears = Math.max(0, inputs.eligibilityAge - retAge);
+        var mortgageYearsInRet = Math.max(0, inputs.yearsLeftMortgage - yearsToRetire);
+
+        var savingsAtRet = futureValue(
+          inputs.savingsNow,
+          inputs.preReturn,
+          yearsToRetire,
+          inputs.savingsContrib
+        ) + inputs.windfall;
+        var retireAtRet = futureValue(
+          inputs.retirementNow,
+          inputs.preReturn,
+          yearsToRetire,
+          inputs.retirementContrib
+        );
+
+        var ladderNet = 0;
+        if (inputs.rothEnabled){
+          var availableYears = Math.max(0, bridgeYears - inputs.rothYears);
+          var ladderGross = Math.min(retireAtRet, inputs.rothAmount * availableYears);
+          ladderNet = Math.max(0, ladderGross * (1 - inputs.rothTax));
+        }
+
+        var bridgeNeed = bridgeNeedForYears(
+          bridgeYears,
+          mortgageYearsInRet,
+          inputs.spendWithMortgage,
+          inputs.spendAfterMortgage
+        );
+        var bridgeNeedAdj = Math.max(0, bridgeNeed - ladderNet);
+        var savingsAfterBridge = savingsAtRet - bridgeNeedAdj;
+        var retireAtEligibility = retireAtRet * Math.pow(1 + inputs.postReturn, bridgeYears);
+        var portfolioAtEligibility = retireAtEligibility + Math.max(0, savingsAfterBridge);
+        var incomeFromPortfolio = portfolioAtEligibility * inputs.swr;
+        var spendingPostEligibility = spendingAtEligibility(
+          inputs.currentAge,
+          inputs.eligibilityAge,
+          inputs.yearsLeftMortgage,
+          inputs.spendWithMortgage,
+          inputs.spendAfterMortgage
+        );
+        var totalIncome = incomeFromPortfolio + inputs.otherIncome;
+        var coveragePct = spendingPostEligibility > 0
+          ? (totalIncome / spendingPostEligibility) * 100
+          : 0;
+
+        return {
+          yearsToRetire: yearsToRetire,
+          bridgeYears: bridgeYears,
+          bridgeNeed: bridgeNeedAdj,
+          ladderNet: ladderNet,
+          savingsAtRet: savingsAtRet,
+          savingsAfterBridge: savingsAfterBridge,
+          portfolioAtEligibility: portfolioAtEligibility,
+          totalIncome: totalIncome,
+          spendingPostEligibility: spendingPostEligibility,
+          coveragePct: coveragePct
+        };
+      }
+      function updateUI(){
+        var currentAge = Math.max(0, Number(elCurrentAge.value || 0));
+        var targetAge = Math.max(currentAge, Number(elTargetAge.value || currentAge));
+        var eligibilityAge = Math.max(currentAge, Number(elEligibilityAge.value || targetAge));
+        var yearsLeftMortgage = Math.max(0, Number(elYearsLeftMortgage.value || 0));
+        var yearsToRetire = Math.max(0, targetAge - currentAge);
+
+        var savingsNow = Math.max(0, parseMoney(elSavingsNow.value));
+        var retirementNow = Math.max(0, parseMoney(elRetirementNow.value));
+        var savingsContrib = Math.max(0, parseMoney(elSavingsContrib.value));
+        var retirementContrib = Math.max(0, parseMoney(elRetirementContrib.value));
+        var windfall = Math.max(0, parseMoney(elWindfall.value));
+        var otherIncome = Math.max(0, parseMoney(elOtherIncome.value));
+        var rothEnabled = elRothEnabled && elRothEnabled.checked;
+        var rothAmount = Math.max(0, parseMoney(elRothAmount.value));
+        var rothTax = Math.max(0, toRatePct(elRothTax.value));
+        var rothYears = Math.max(0, Number(elRothYears.value || 0));
+
+        var mortgagePI = Math.max(0, parseMoney(elMortgagePI.value));
+        var propertyTax = Math.max(0, parseMoney(elPropertyTax.value));
+        var homeInsurance = Math.max(0, parseMoney(elHomeInsurance.value));
+        var housingAnnual = (mortgagePI + propertyTax + homeInsurance) * 12;
+
+        var currentSpending = Math.max(0, parseMoney(elCurrentSpending.value));
+        var healthcareAdd = Math.max(0, parseMoney(elHealthcareAdd.value));
+        var retireSpendPct = Math.max(0, Number(elRetireSpendPct.value || 0));
+        var preReturn = toRatePct(elPreReturn.value);
+        var postReturn = toRatePct(elPostReturn.value);
+        var inflation = toRatePct(elInflation.value);
+        var swr = toRatePct(elSWR.value);
+
+        var spendBase = (currentSpending * (retireSpendPct / 100)) + healthcareAdd;
+        var spendNominalAtRet = spendBase * Math.pow(1 + inflation, yearsToRetire);
+        var mortgagePIAnnual = mortgagePI * 12;
+        var spendAfterMortgage = Math.max(0, spendBase - mortgagePIAnnual);
+        var spendWithMortgage = spendBase;
+
+        var inputs = {
+          currentAge: currentAge,
+          eligibilityAge: eligibilityAge,
+          yearsLeftMortgage: yearsLeftMortgage,
+          savingsNow: savingsNow,
+          retirementNow: retirementNow,
+          savingsContrib: savingsContrib,
+          retirementContrib: retirementContrib,
+          windfall: windfall,
+          otherIncome: otherIncome,
+          preReturn: preReturn,
+          postReturn: postReturn,
+          swr: swr,
+          rothEnabled: rothEnabled,
+          rothAmount: rothAmount,
+          rothTax: rothTax,
+          rothYears: rothYears,
+          spendWithMortgage: spendWithMortgage,
+          spendAfterMortgage: spendAfterMortgage
+        };
+
+        var targetEval = evaluateAtAge(targetAge, inputs);
+        var mortgagePayoffAge = currentAge + yearsLeftMortgage;
+        var coveragePct = targetEval.coveragePct;
+        var bridgeCoveragePct = targetEval.bridgeNeed > 0
+          ? (targetEval.savingsAtRet / targetEval.bridgeNeed) * 100
+          : 100;
+        var bridgeStatus = targetEval.bridgeNeed > 0 ? bridgeCoveragePct : 100;
+
+        var earliestAge = null;
+        var earliestAfterGoal = null;
+        var searchCap = Math.max(80, Math.round(eligibilityAge));
+        for (var age = Math.round(currentAge); age <= Math.round(targetAge); age++){
+          var evalAge = evaluateAtAge(age, inputs);
+          var okBridge = evalAge.bridgeNeed <= evalAge.savingsAtRet + 0.01;
+          var okCoverage = evalAge.coveragePct >= 100 || evalAge.spendingPostEligibility === 0;
+          if (okBridge && okCoverage){
+            earliestAge = age;
+            break;
+          }
+        }
+        for (var age2 = Math.round(targetAge); age2 <= searchCap; age2++){
+          var evalAge2 = evaluateAtAge(age2, inputs);
+          var okBridge2 = evalAge2.bridgeNeed <= evalAge2.savingsAtRet + 0.01;
+          var okCoverage2 = evalAge2.coveragePct >= 100 || evalAge2.spendingPostEligibility === 0;
+          if (okBridge2 && okCoverage2){
+            earliestAfterGoal = age2;
+            break;
+          }
+        }
+
+        $("housingAnnual").textContent = fmtUSD0.format(Math.round(housingAnnual));
+        $("retireSpendPctLabel").textContent = retireSpendPct.toFixed(0) + "% of current spending";
+        $("retireSpendValue").textContent = fmtUSD0.format(Math.round(spendBase)) + " / yr";
+        $("yearsToRetire").textContent = yearsToRetire.toFixed(0);
+        $("mortgagePayoffNote").textContent = "Mortgage payoff age: "
+          + (yearsLeftMortgage > 0 ? mortgagePayoffAge.toFixed(0) : "Paid");
+        $("bridgeYears").textContent = targetEval.bridgeYears.toFixed(0);
+        $("bridgeNeedNote").textContent = (rothEnabled ? "Bridge need (after ladder): " : "Bridge need: ")
+          + fmtUSD0.format(Math.round(targetEval.bridgeNeed));
+        if ($("rothNote")){
+          if (rothEnabled){
+            $("rothNote").textContent = "Roth ladder funds: "
+              + fmtUSD0.format(Math.round(targetEval.ladderNet));
+          } else {
+            $("rothNote").textContent = "Roth ladder disabled";
+          }
+        }
+        $("savingsAtRet").textContent = fmtUSD0.format(Math.round(targetEval.savingsAtRet));
+        $("savingsAfterBridge").textContent = "After bridge: "
+          + fmtUSD0.format(Math.round(Math.max(0, targetEval.savingsAfterBridge)));
+        $("portfolioAtEligibility").textContent = fmtUSD0.format(Math.round(targetEval.portfolioAtEligibility));
+        $("incomeAtEligibility").textContent = fmtUSD0.format(Math.round(targetEval.totalIncome))
+          + " / yr income";
+
+        $("spendingBase").textContent = fmtUSD0.format(Math.round(spendBase)) + " / yr";
+        $("spendingDetail").textContent = "Includes healthcare add-on and retirement spending percent.";
+        $("spendWithMortgage").textContent = "With mortgage: "
+          + fmtUSD0.format(Math.round(spendWithMortgage));
+        $("spendAfterMortgage").textContent = "After mortgage: "
+          + fmtUSD0.format(Math.round(spendAfterMortgage));
+        $("spendNominal").textContent = "At retirement: "
+          + fmtUSD0.format(Math.round(spendNominalAtRet));
+
+        var statusLabel = $("statusLabel");
+        var statusDot = $("statusDot");
+        var statusNote = $("statusNote");
+        var coverageBadge = $("coverageBadge");
+        var bridgeBadge = $("bridgeBadge");
+
+        var statusText = "Status: Needs review";
+        var dotColor = "var(--warn)";
+        var statusClass = "badge warn";
+        if (coveragePct >= 105 && bridgeStatus >= 100){
+          statusText = "Status: On track";
+          dotColor = "var(--good)";
+          statusClass = "badge good";
+        } else if (coveragePct < 95 || bridgeStatus < 100){
+          statusText = "Status: Shortfall";
+          dotColor = "var(--bad)";
+          statusClass = "badge bad";
+        }
+
+        statusLabel.textContent = statusText;
+        statusDot.style.background = dotColor;
+        statusNote.textContent = "Coverage compares income at eligibility vs spending after eligibility.";
+        coverageBadge.className = statusClass;
+        coverageBadge.textContent = "Coverage: "
+          + (coveragePct ? coveragePct.toFixed(0) + "%" : "--");
+        bridgeBadge.className = statusClass;
+        bridgeBadge.textContent = "Bridge: "
+          + (bridgeStatus ? bridgeStatus.toFixed(0) + "%" : "--");
+
+        if (earliestAge !== null){
+          $("earliestAge").textContent = earliestAge;
+          $("earliestNote").textContent = "Earliest age uses current contributions and assumptions.";
+        } else if (earliestAfterGoal !== null){
+          $("earliestAge").textContent = "Not before goal";
+          $("earliestNote").textContent = "Earliest possible age: " + earliestAfterGoal + ".";
+        } else {
+          $("earliestAge").textContent = "Not before goal";
+          $("earliestNote").textContent = "No feasible age found within the search range.";
+        }
+
+        if (earliestAge !== null){
+          $("summaryEarliest").textContent = String(earliestAge);
+        } else if (earliestAfterGoal !== null){
+          $("summaryEarliest").textContent = "Not before goal (age " + earliestAfterGoal + ")";
+        } else {
+          $("summaryEarliest").textContent = "Not before goal";
+        }
+        $("summaryBridge").textContent = bridgeStatus ? bridgeStatus.toFixed(0) + "%" : "--";
+        $("summaryCoverage").textContent = coveragePct ? coveragePct.toFixed(0) + "%" : "--";
+        $("summaryPortfolio").textContent = fmtUSD0.format(Math.round(targetEval.portfolioAtEligibility));
+
+        save();
+      }
+
+      function wire(){
+        var moneyInputs = [
+          elSavingsNow, elRetirementNow, elSavingsContrib, elRetirementContrib, elWindfall, elOtherIncome,
+          elRothAmount, elMortgagePI, elPropertyTax, elHomeInsurance, elCurrentSpending, elHealthcareAdd
+        ];
+        moneyInputs.forEach(function(el){
+          if (!el) return;
+          el.addEventListener("focus", function(){ unformatMoneyInput(el); });
+          el.addEventListener("blur", function(){ formatMoneyInput(el); });
+        });
+
+        var inputs = [
+          elCurrentAge, elTargetAge, elEligibilityAge, elYearsLeftMortgage, elSavingsNow, elRetirementNow,
+          elSavingsContrib, elRetirementContrib, elWindfall, elOtherIncome,
+          elRothEnabled, elRothAmount, elRothTax, elRothYears,
+          elMortgagePI, elPropertyTax, elHomeInsurance, elCurrentSpending, elHealthcareAdd,
+          elRetireSpendPct, elPreReturn, elPostReturn, elInflation, elSWR
+        ];
+        inputs.forEach(function(el){
+          el.addEventListener("input", updateUI);
+        });
+        if (elRothEnabled){
+          elRothEnabled.addEventListener("change", function(){
+            var fields = $("rothFields");
+            if (fields) fields.style.display = elRothEnabled.checked ? "grid" : "none";
+            updateUI();
+          });
+        }
+      }
+
+      if (!load()){
+        setDefaults();
+      }
+      wire();
+      [
+        elSavingsNow, elRetirementNow, elSavingsContrib, elRetirementContrib, elWindfall, elOtherIncome,
+        elRothAmount, elMortgagePI, elPropertyTax, elHomeInsurance, elCurrentSpending, elHealthcareAdd
+      ].forEach(formatMoneyInput);
+      if ($("rothFields")){
+        $("rothFields").style.display = (elRothEnabled && elRothEnabled.checked) ? "grid" : "none";
+      }
+      updateUI();
+    })();
+  </script>
+</body>
+</html>
