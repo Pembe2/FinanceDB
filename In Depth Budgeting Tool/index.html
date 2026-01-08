@@ -241,7 +241,7 @@
     @media (max-width: 560px){
       .kpiGrid{ grid-template-columns:1fr; }
       .rowItem{
-        grid-template-columns: 1fr 1fr auto auto;
+        grid-template-columns: 0.4fr 0.6fr auto auto;
         grid-template-areas:
           "amount name tag remove";
         gap:6px;
@@ -258,10 +258,8 @@
       }
       .rowItem.income .badge{ grid-area: badge; justify-self:start; }
       .rowItem.debt{
-        grid-template-columns: 1fr 1fr auto;
-        grid-template-areas:
-          "min extra remove"
-          "name name name";
+        grid-template-columns: 1fr 1fr 1fr auto;
+        grid-template-areas: "min extra name remove";
       }
       .rowItem.debt .name{ grid-area: name; }
       .rowItem.debt .amount.min{ grid-area: min; }
@@ -271,8 +269,10 @@
         min-height:32px;
         padding:0;
         font-size:12px;
-        font-weight:700;
+        font-weight:400;
         text-align:center;
+        text-align-last:center;
+        line-height:32px;
         justify-self:end;
         appearance:none;
         -webkit-appearance:none;
