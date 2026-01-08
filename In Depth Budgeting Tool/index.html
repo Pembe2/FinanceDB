@@ -332,6 +332,59 @@
     .allocGrid{ display:grid; gap:10px; }
     .allocRow{ display:grid; gap:6px; }
     .allocRow .label{ display:flex; justify-content:space-between; font-size:12px; color:var(--muted); }
+    .snapshotControls{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      align-items:center;
+    }
+    .snapshotControls select{
+      min-height:36px;
+      padding:6px 8px;
+      border-radius:10px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,0.05);
+      color:var(--text);
+    }
+    .stickySummary{
+      position:fixed;
+      left:12px;
+      right:12px;
+      bottom:12px;
+      background:rgba(12,18,26,0.92);
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:10px 12px;
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:10px;
+      backdrop-filter: blur(10px);
+      box-shadow:var(--shadow);
+      z-index:50;
+    }
+    .stickySummary .item{
+      display:grid;
+      gap:4px;
+    }
+    .stickySummary .label{
+      font-size:11px;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:0.3px;
+    }
+    .stickySummary .value{
+      font-size:16px;
+      font-weight:800;
+    }
+    @media (max-width: 560px){
+      .stickySummary{
+        left:10px;
+        right:10px;
+        bottom:10px;
+        padding:8px 10px;
+      }
+      .stickySummary .value{ font-size:14px; }
+    }
   </style>
 </head>
 <body>
@@ -477,6 +530,15 @@
       <section class="card" aria-label="Budget summary">
         <h2>Budget snapshot</h2>
         <p class="subtle" id="summaryPeriod">Monthly overview</p>
+        <div class="sectionHeader" style="margin-top:10px;">
+          <h3>Snapshots</h3>
+          <div class="snapshotControls">
+            <button class="btn secondary" type="button" id="takeSnapshot">Take snapshot</button>
+            <select id="snapshotSelect" aria-label="Snapshots"></select>
+            <button class="btn secondary" type="button" id="loadSnapshot">Load</button>
+            <button class="btn secondary" type="button" id="deleteSnapshot">Delete</button>
+          </div>
+        </div>
 
         <div class="kpiGrid" style="margin-top:12px;">
           <div class="kpi">
@@ -557,10 +619,25 @@
       </section>
     </div>
   </div>
+  <div class="stickySummary" aria-label="Sticky summary">
+    <div class="item">
+      <div class="label">Take-home</div>
+      <div class="value" id="stickyIncome">$0</div>
+    </div>
+    <div class="item">
+      <div class="label">Spending</div>
+      <div class="value" id="stickySpending">$0</div>
+    </div>
+    <div class="item">
+      <div class="label">Savings</div>
+      <div class="value" id="stickySavings">$0</div>
+    </div>
+  </div>
 
   <script>
     (function(){
       var KEY = "budgetTool.v1";
+      var SNAP_KEY = "budgetTool.snapshots.v1";
       var fmtUSD0 = new Intl.NumberFormat("en-US", { style:"currency", currency:"USD", maximumFractionDigits:0 });
 
       function $(id){ return document.getElementById(id); }
@@ -590,6 +667,13 @@
       var elBenefits = $("benefits");
       var elRetirementPretax = $("retirementPretax");
       var elOtherDeductions = $("otherDeductions");
+      var elSnapshotSelect = $("snapshotSelect");
+      var elTakeSnapshot = $("takeSnapshot");
+      var elLoadSnapshot = $("loadSnapshot");
+      var elDeleteSnapshot = $("deleteSnapshot");
+      var elStickyIncome = $("stickyIncome");
+      var elStickySpending = $("stickySpending");
+      var elStickySavings = $("stickySavings");
 
       var lists = {
         income: $("incomeList"),
@@ -634,6 +718,12 @@
           sel.appendChild(opt);
         });
         return sel;
+      }
+
+      function clearLists(){
+        Object.keys(lists).forEach(function(type){
+          lists[type].innerHTML = "";
+        });
       }
 
       function buildRow(type, data){
@@ -815,6 +905,7 @@
         var savings = sumRows("savings");
 
         var outflow = fixed + variable + debt + savings;
+        var spending = fixed + variable + debt;
         var net = income - outflow;
         var runway = 0;
         if (outflow > 0){
@@ -840,6 +931,9 @@
         $("runwayNote").textContent = outflow > 0
           ? "Based on cash reserves and total outflow."
           : "Enter expenses to calculate runway.";
+        if (elStickyIncome) elStickyIncome.textContent = fmtUSD0.format(Math.round(income));
+        if (elStickySpending) elStickySpending.textContent = fmtUSD0.format(Math.round(spending));
+        if (elStickySavings) elStickySavings.textContent = fmtUSD0.format(Math.round(savings));
 
         var netNote = $("netNote");
         if (net > 0){
@@ -876,7 +970,7 @@
         save();
       }
 
-      function save(){
+      function buildData(){
         var data = {
           period: elPeriod.value,
           payFrequency: elPayFrequency.value,
@@ -898,6 +992,40 @@
             data.rows.push(readRowData(row));
           });
         });
+        return data;
+      }
+
+      function applyData(data){
+        if (!data) return;
+        elPeriod.value = data.period || "monthly";
+        elPayFrequency.value = data.payFrequency || "biweekly";
+        elCash.value = data.cashReserves || "";
+        elGross.value = data.grossIncome || "";
+        elTaxes.value = data.taxes || "";
+        elBenefits.value = data.benefits || "";
+        elRetirementPretax.value = data.retirementPretax || "";
+        elOtherDeductions.value = data.otherDeductions || "";
+        if (data.targets){
+          elTargetNeeds.value = data.targets.needs || 50;
+          elTargetWants.value = data.targets.wants || 30;
+          elTargetSavings.value = data.targets.savings || 20;
+        }
+        clearLists();
+        if (Array.isArray(data.rows)){
+          data.rows.forEach(function(row){
+            addRow(row.type, row);
+          });
+        }
+        formatMoneyInput(elCash);
+        [elGross, elTaxes, elBenefits, elRetirementPretax, elOtherDeductions].forEach(formatMoneyInput);
+        document.querySelectorAll(".amount").forEach(function(el){
+          formatMoneyInput(el);
+        });
+        updateUI();
+      }
+
+      function save(){
+        var data = buildData();
         try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(e){}
       }
 
@@ -907,24 +1035,7 @@
           if (!raw) return false;
           var data = JSON.parse(raw);
           if (!data) return false;
-          elPeriod.value = data.period || "monthly";
-          elPayFrequency.value = data.payFrequency || "biweekly";
-          elCash.value = data.cashReserves || "";
-          elGross.value = data.grossIncome || "";
-          elTaxes.value = data.taxes || "";
-          elBenefits.value = data.benefits || "";
-          elRetirementPretax.value = data.retirementPretax || "";
-          elOtherDeductions.value = data.otherDeductions || "";
-          if (data.targets){
-            elTargetNeeds.value = data.targets.needs || 50;
-            elTargetWants.value = data.targets.wants || 30;
-            elTargetSavings.value = data.targets.savings || 20;
-          }
-          if (Array.isArray(data.rows)){
-            data.rows.forEach(function(row){
-              addRow(row.type, row);
-            });
-          }
+          applyData(data);
           return true;
         }catch(e){
           return false;
@@ -982,6 +1093,21 @@
             updateUI();
           });
         });
+        if (elTakeSnapshot){
+          elTakeSnapshot.addEventListener("click", function(){
+            takeSnapshot();
+          });
+        }
+        if (elLoadSnapshot){
+          elLoadSnapshot.addEventListener("click", function(){
+            loadSelectedSnapshot();
+          });
+        }
+        if (elDeleteSnapshot){
+          elDeleteSnapshot.addEventListener("click", function(){
+            deleteSelectedSnapshot();
+          });
+        }
         if (compactQuery.addEventListener){
           compactQuery.addEventListener("change", applyTagLabelMode);
         } else if (compactQuery.addListener){
@@ -1005,6 +1131,7 @@
         seedDefaults();
       }
       wire();
+      renderSnapshots();
       applyTagLabelMode();
       formatMoneyInput(elCash);
       [elGross, elTaxes, elBenefits, elRetirementPretax, elOtherDeductions].forEach(formatMoneyInput);
@@ -1012,6 +1139,88 @@
         formatMoneyInput(el);
       });
       updateUI();
+
+      function snapshotDateLabel(){
+        return new Date().toLocaleDateString("en-US", { year:"numeric", month:"2-digit", day:"2-digit" });
+      }
+
+      function getSnapshots(){
+        try{
+          var raw = localStorage.getItem(SNAP_KEY);
+          if (!raw) return [];
+          var data = JSON.parse(raw);
+          return Array.isArray(data) ? data : [];
+        }catch(e){
+          return [];
+        }
+      }
+
+      function setSnapshots(snapshots){
+        try{ localStorage.setItem(SNAP_KEY, JSON.stringify(snapshots)); }catch(e){}
+      }
+
+      function renderSnapshots(){
+        if (!elSnapshotSelect) return;
+        var snaps = getSnapshots();
+        elSnapshotSelect.innerHTML = "";
+        if (!snaps.length){
+          var opt = document.createElement("option");
+          opt.value = "";
+          opt.textContent = "No snapshots";
+          elSnapshotSelect.appendChild(opt);
+          elSnapshotSelect.disabled = true;
+          if (elLoadSnapshot) elLoadSnapshot.disabled = true;
+          if (elDeleteSnapshot) elDeleteSnapshot.disabled = true;
+          return;
+        }
+        snaps.forEach(function(snap, idx){
+          var option = document.createElement("option");
+          option.value = String(idx);
+          option.textContent = snap.name;
+          elSnapshotSelect.appendChild(option);
+        });
+        elSnapshotSelect.disabled = false;
+        if (elLoadSnapshot) elLoadSnapshot.disabled = false;
+        if (elDeleteSnapshot) elDeleteSnapshot.disabled = false;
+      }
+
+      function takeSnapshot(){
+        var snaps = getSnapshots();
+        var label = snapshotDateLabel();
+        var existingIndex = -1;
+        for (var i = 0; i < snaps.length; i++){
+          if (snaps[i].name === label){
+            existingIndex = i;
+            break;
+          }
+        }
+        if (existingIndex !== -1){
+          var proceed = window.confirm("A snapshot for " + label + " already exists. Taking a new one will replace it.");
+          if (!proceed) return;
+          snaps.splice(existingIndex, 1);
+        }
+        snaps.unshift({ name: label, data: buildData() });
+        setSnapshots(snaps);
+        renderSnapshots();
+      }
+
+      function loadSelectedSnapshot(){
+        if (!elSnapshotSelect || elSnapshotSelect.disabled) return;
+        var idx = Number(elSnapshotSelect.value);
+        var snaps = getSnapshots();
+        if (!isFinite(idx) || !snaps[idx]) return;
+        applyData(snaps[idx].data);
+      }
+
+      function deleteSelectedSnapshot(){
+        if (!elSnapshotSelect || elSnapshotSelect.disabled) return;
+        var idx = Number(elSnapshotSelect.value);
+        var snaps = getSnapshots();
+        if (!isFinite(idx) || !snaps[idx]) return;
+        snaps.splice(idx, 1);
+        setSnapshots(snaps);
+        renderSnapshots();
+      }
     })();
   </script>
 </body>
