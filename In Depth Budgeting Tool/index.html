@@ -220,7 +220,32 @@
     }
     @media (max-width: 560px){
       .kpiGrid{ grid-template-columns:1fr; }
-      .rowItem, .rowItem.debt, .rowItem.income{ grid-template-columns:1fr; }
+      .rowItem{
+        grid-template-columns: 1fr 1fr auto;
+        grid-template-areas:
+          "amount name remove"
+          "tag tag tag";
+      }
+      .rowItem .amount{ grid-area: amount; }
+      .rowItem .name{ grid-area: name; }
+      .rowItem .tagSelect{ grid-area: tag; }
+      .rowItem .iconBtn{ grid-area: remove; justify-self:end; }
+      .rowItem.income{
+        grid-template-columns: 1fr 1fr auto;
+        grid-template-areas:
+          "amount name remove"
+          "badge badge badge";
+      }
+      .rowItem.income .badge{ grid-area: badge; justify-self:start; }
+      .rowItem.debt{
+        grid-template-columns: 1fr 1fr auto;
+        grid-template-areas:
+          "min extra remove"
+          "name name name";
+      }
+      .rowItem.debt .name{ grid-area: name; }
+      .rowItem.debt .amount.min{ grid-area: min; }
+      .rowItem.debt .amount.extra{ grid-area: extra; }
     }
     .kpi{
       padding:12px;
@@ -574,14 +599,14 @@
           var minPay = document.createElement("input");
           minPay.type = "text";
           minPay.inputMode = "numeric";
-          minPay.className = "amount";
+          minPay.className = "amount min";
           minPay.placeholder = "Min";
           minPay.value = data && data.min ? data.min : "";
 
           var extraPay = document.createElement("input");
           extraPay.type = "text";
           extraPay.inputMode = "numeric";
-          extraPay.className = "amount";
+          extraPay.className = "amount extra";
           extraPay.placeholder = "Extra";
           extraPay.value = data && data.extra ? data.extra : "";
 
@@ -835,12 +860,45 @@
 
       function seedDefaults(){
         addRow("income", { name:"Primary income", amount:"4800" });
+        addRow("income", { name:"Side income", amount:"350" });
+
         addRow("fixed", { name:"Rent or mortgage", amount:"1600", tag:"Needs" });
-        addRow("fixed", { name:"Utilities", amount:"240", tag:"Needs" });
+        addRow("fixed", { name:"Property tax", amount:"280", tag:"Needs" });
+        addRow("fixed", { name:"Home insurance", amount:"120", tag:"Needs" });
+        addRow("fixed", { name:"Electric", amount:"140", tag:"Needs" });
+        addRow("fixed", { name:"Gas / heat", amount:"90", tag:"Needs" });
+        addRow("fixed", { name:"Water / sewer", amount:"70", tag:"Needs" });
+        addRow("fixed", { name:"Trash", amount:"35", tag:"Needs" });
+        addRow("fixed", { name:"Internet", amount:"70", tag:"Needs" });
+        addRow("fixed", { name:"Mobile phone", amount:"85", tag:"Needs" });
+        addRow("fixed", { name:"Auto insurance", amount:"120", tag:"Needs" });
+        addRow("fixed", { name:"Streaming services", amount:"45", tag:"Wants" });
+
         addRow("variable", { name:"Groceries", amount:"520", tag:"Needs" });
+        addRow("variable", { name:"Household supplies", amount:"80", tag:"Needs" });
+        addRow("variable", { name:"Fuel / transit", amount:"180", tag:"Needs" });
+        addRow("variable", { name:"Medical / copays", amount:"90", tag:"Needs" });
+        addRow("variable", { name:"Pharmacy", amount:"35", tag:"Needs" });
+        addRow("variable", { name:"Childcare", amount:"400", tag:"Needs" });
+        addRow("variable", { name:"Pet care", amount:"60", tag:"Needs" });
         addRow("variable", { name:"Dining out", amount:"220", tag:"Wants" });
-        addRow("debt", { name:"Car loan", min:"320", extra:"0" });
+        addRow("variable", { name:"Entertainment", amount:"120", tag:"Wants" });
+        addRow("variable", { name:"Clothing", amount:"80", tag:"Wants" });
+        addRow("variable", { name:"Personal care", amount:"75", tag:"Wants" });
+        addRow("variable", { name:"Gifts / giving", amount:"60", tag:"Giving" });
+        addRow("variable", { name:"Travel", amount:"150", tag:"Wants" });
+
+        addRow("debt", { name:"Credit card", min:"110", extra:"40" });
+        addRow("debt", { name:"Student loan", min:"260", extra:"0" });
+        addRow("debt", { name:"Auto loan", min:"320", extra:"0" });
+
         addRow("savings", { name:"Emergency fund", amount:"400", tag:"Savings" });
+        addRow("savings", { name:"IRA / retirement", amount:"300", tag:"Savings" });
+        addRow("savings", { name:"Home maintenance", amount:"120", tag:"Savings" });
+        addRow("savings", { name:"Car maintenance", amount:"90", tag:"Savings" });
+        addRow("savings", { name:"Vacation fund", amount:"150", tag:"Savings" });
+        addRow("savings", { name:"Education fund", amount:"100", tag:"Savings" });
+        addRow("savings", { name:"Tech replacement", amount:"60", tag:"Savings" });
       }
 
       function wire(){
