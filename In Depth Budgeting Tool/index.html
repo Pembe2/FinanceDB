@@ -186,6 +186,26 @@
       grid-template-columns: minmax(140px, 1.4fr) minmax(120px, 0.8fr) auto;
     }
     .rowItem label{margin:0;}
+    .incomeRows{
+      display:grid;
+      gap:8px;
+    }
+    .incomeRow{
+      display:grid;
+      gap:8px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .incomeField{
+      display:grid;
+      gap:8px;
+      align-items:center;
+      grid-template-columns: minmax(120px, 1fr) minmax(110px, 0.8fr);
+    }
+    .incomeLabel{
+      font-size:12px;
+      color:var(--muted);
+      letter-spacing:0.2px;
+    }
     .tagSelect{
       min-height:36px;
       padding:6px 8px;
@@ -225,6 +245,7 @@
         grid-template-areas:
           "amount name remove"
           "tag tag tag";
+        gap:6px;
       }
       .rowItem .amount{ grid-area: amount; }
       .rowItem .name{ grid-area: name; }
@@ -246,6 +267,17 @@
       .rowItem.debt .name{ grid-area: name; }
       .rowItem.debt .amount.min{ grid-area: min; }
       .rowItem.debt .amount.extra{ grid-area: extra; }
+      .rowItem .tagSelect{
+        width:auto;
+        justify-self:start;
+        min-height:30px;
+        padding:4px 8px;
+        font-size:12px;
+      }
+      .incomeRow{ grid-template-columns: 1fr; }
+      .incomeField{
+        grid-template-columns: 1fr 1fr;
+      }
     }
     .kpi{
       padding:12px;
@@ -355,19 +387,33 @@
         <h2>Gross income and deductions (per paycheck)</h2>
         </div>
         <div class="list">
-          <div class="rowItem income">
-            <input id="grossIncome" type="text" inputmode="numeric" placeholder="Gross per paycheck" />
-            <input id="taxes" type="text" inputmode="numeric" placeholder="Taxes per paycheck" />
-            <span class="badge">Gross</span>
-          </div>
-          <div class="rowItem income">
-            <input id="benefits" type="text" inputmode="numeric" placeholder="Benefits / insurance per paycheck" />
-            <input id="retirementPretax" type="text" inputmode="numeric" placeholder="Retirement per paycheck" />
-            <span class="badge">Pre-tax</span>
-          </div>
-          <div class="rowItem income">
-            <input id="otherDeductions" type="text" inputmode="numeric" placeholder="Other deductions per paycheck" />
-            <span class="badge">Deductions</span>
+          <div class="incomeRows">
+            <div class="incomeRow">
+              <div class="incomeField">
+                <input id="grossIncome" type="text" inputmode="numeric" placeholder="0" />
+                <span class="incomeLabel">Gross income</span>
+              </div>
+              <div class="incomeField">
+                <input id="taxes" type="text" inputmode="numeric" placeholder="0" />
+                <span class="incomeLabel">Taxes</span>
+              </div>
+            </div>
+            <div class="incomeRow">
+              <div class="incomeField">
+                <input id="benefits" type="text" inputmode="numeric" placeholder="0" />
+                <span class="incomeLabel">Benefits / insurance</span>
+              </div>
+              <div class="incomeField">
+                <input id="retirementPretax" type="text" inputmode="numeric" placeholder="0" />
+                <span class="incomeLabel">Retirement (pre-tax)</span>
+              </div>
+            </div>
+            <div class="incomeRow">
+              <div class="incomeField">
+                <input id="otherDeductions" type="text" inputmode="numeric" placeholder="0" />
+                <span class="incomeLabel">Other deductions</span>
+              </div>
+            </div>
           </div>
         </div>
         <p class="note">Enter per-paycheck amounts. The tool converts them into monthly or annual totals.</p>
