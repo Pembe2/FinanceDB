@@ -363,11 +363,12 @@
       z-index:50;
     }
     .stickySummary .timescale{
-      font-size:9px;
+      font-size:10px;
       text-transform:uppercase;
       letter-spacing:0.3px;
       color:var(--muted);
       grid-column:1 / -1;
+      text-align:center;
     }
     .stickySummary .label{
       font-size:10px;
@@ -632,7 +633,7 @@
     </div>
   </div>
   <div class="stickySummary" aria-label="Sticky summary">
-    <div class="timescale" id="stickyTimescale">Monthly</div>
+    <div class="timescale" id="stickyTimescale">Monthly Budget</div>
     <div class="label">Take-home</div>
     <div class="label">Spending</div>
     <div class="label">Savings</div>
@@ -933,7 +934,7 @@
 
         var timescale = elPeriod.value === "annual" ? "Annual" : "Monthly";
         $("summaryPeriod").textContent = timescale + " overview";
-        if ($("stickyTimescale")) $("stickyTimescale").textContent = timescale;
+        if ($("stickyTimescale")) $("stickyTimescale").textContent = timescale + " Budget";
         $("kpiGross").textContent = fmtUSD0.format(Math.round(gross));
         $("kpiTakeHome").textContent = fmtUSD0.format(Math.round(income));
         $("kpiRetirement").textContent = fmtUSD0.format(Math.round(retirementPretax));
