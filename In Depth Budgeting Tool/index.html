@@ -241,10 +241,9 @@
     @media (max-width: 560px){
       .kpiGrid{ grid-template-columns:1fr; }
       .rowItem{
-        grid-template-columns: 1fr 1fr auto;
+        grid-template-columns: 1fr 1fr auto auto;
         grid-template-areas:
-          "amount name remove"
-          "tag tag tag";
+          "amount name tag remove";
         gap:6px;
       }
       .rowItem .amount{ grid-area: amount; }
@@ -268,11 +267,16 @@
       .rowItem.debt .amount.min{ grid-area: min; }
       .rowItem.debt .amount.extra{ grid-area: extra; }
       .rowItem .tagSelect{
-        width:auto;
-        justify-self:start;
-        min-height:30px;
-        padding:4px 8px;
+        width:32px;
+        min-height:32px;
+        padding:0;
         font-size:12px;
+        font-weight:700;
+        text-align:center;
+        justify-self:end;
+        appearance:none;
+        -webkit-appearance:none;
+        -moz-appearance:none;
       }
       .incomeRow{ grid-template-columns: 1fr; }
       .incomeField{
@@ -595,16 +599,38 @@
         savings: $("savingsList")
       };
 
-      var tagOptions = ["Needs", "Wants", "Savings", "Debt", "Giving", "Other"];
+      var tagOptions = [
+        { value: "Needs", short: "N" },
+        { value: "Wants", short: "W" },
+        { value: "Savings", short: "S" },
+        { value: "Debt", short: "D" },
+        { value: "Giving", short: "G" },
+        { value: "Other", short: "O" }
+      ];
+
+      var compactQuery = window.matchMedia ? window.matchMedia("(max-width: 560px)") : { matches: false, addEventListener: function(){}, addListener: function(){} };
+
+      function applyTagLabelMode(){
+        var useShort = compactQuery.matches;
+        document.querySelectorAll(".tagSelect option").forEach(function(opt){
+          var shortText = opt.getAttribute("data-short");
+          var fullText = opt.getAttribute("data-full");
+          if (shortText && fullText){
+            opt.textContent = useShort ? shortText : fullText;
+          }
+        });
+      }
 
       function makeTagSelect(value){
         var sel = document.createElement("select");
         sel.className = "tagSelect";
         tagOptions.forEach(function(tag){
           var opt = document.createElement("option");
-          opt.value = tag;
-          opt.textContent = tag;
-          if (tag === value) opt.selected = true;
+          opt.value = tag.value;
+          opt.setAttribute("data-short", tag.short);
+          opt.setAttribute("data-full", tag.value);
+          opt.textContent = compactQuery.matches ? tag.short : tag.value;
+          if (tag.value === value) opt.selected = true;
           sel.appendChild(opt);
         });
         return sel;
@@ -691,6 +717,7 @@
         var list = lists[type];
         if (!list) return;
         list.appendChild(buildRow(type, data || {}));
+        applyTagLabelMode();
       }
 
       function collectRows(type){
@@ -955,6 +982,11 @@
             updateUI();
           });
         });
+        if (compactQuery.addEventListener){
+          compactQuery.addEventListener("change", applyTagLabelMode);
+        } else if (compactQuery.addListener){
+          compactQuery.addListener(applyTagLabelMode);
+        }
         [
           elPeriod, elPayFrequency, elCash, elTargetNeeds, elTargetWants, elTargetSavings,
           elGross, elTaxes, elBenefits, elRetirementPretax, elOtherDeductions
@@ -973,6 +1005,7 @@
         seedDefaults();
       }
       wire();
+      applyTagLabelMode();
       formatMoneyInput(elCash);
       [elGross, elTaxes, elBenefits, elRetirementPretax, elOtherDeductions].forEach(formatMoneyInput);
       document.querySelectorAll(".amount").forEach(function(el){
