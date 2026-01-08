@@ -356,7 +356,7 @@
       border-radius:16px;
       padding:10px 12px;
       display:grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap:10px;
       backdrop-filter: blur(10px);
       box-shadow:var(--shadow);
@@ -365,6 +365,12 @@
     .stickySummary .item{
       display:grid;
       gap:4px;
+    }
+    .stickySummary .timescale{
+      font-size:10px;
+      text-transform:uppercase;
+      letter-spacing:0.3px;
+      color:var(--muted);
     }
     .stickySummary .label{
       font-size:11px;
@@ -388,6 +394,7 @@
         border-bottom:none;
         background:rgba(10,15,22,0.96);
         box-shadow:0 -10px 24px rgba(0,0,0,0.35);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
       .stickySummary .value{ font-size:14px; }
     }
@@ -627,16 +634,24 @@
   </div>
   <div class="stickySummary" aria-label="Sticky summary">
     <div class="item">
+      <div class="timescale stickyTimescale">Monthly</div>
       <div class="label">Take-home</div>
       <div class="value" id="stickyIncome">$0</div>
     </div>
     <div class="item">
+      <div class="timescale stickyTimescale">Monthly</div>
       <div class="label">Spending</div>
       <div class="value" id="stickySpending">$0</div>
     </div>
     <div class="item">
+      <div class="timescale stickyTimescale">Monthly</div>
       <div class="label">Savings</div>
       <div class="value" id="stickySavings">$0</div>
+    </div>
+    <div class="item">
+      <div class="timescale stickyTimescale">Monthly</div>
+      <div class="label">Surplus / Deficit</div>
+      <div class="value" id="stickyNet">$0</div>
     </div>
   </div>
 
@@ -680,6 +695,7 @@
       var elStickyIncome = $("stickyIncome");
       var elStickySpending = $("stickySpending");
       var elStickySavings = $("stickySavings");
+      var elStickyNet = $("stickyNet");
 
       var lists = {
         income: $("incomeList"),
@@ -927,7 +943,11 @@
         var wantsPct = income > 0 ? (wants / income) * 100 : 0;
         var savingsPct = income > 0 ? (savingsTag / income) * 100 : 0;
 
-        $("summaryPeriod").textContent = elPeriod.value === "annual" ? "Annual overview" : "Monthly overview";
+        var timescale = elPeriod.value === "annual" ? "Annual" : "Monthly";
+        $("summaryPeriod").textContent = timescale + " overview";
+        document.querySelectorAll(".stickyTimescale").forEach(function(el){
+          el.textContent = timescale;
+        });
         $("kpiGross").textContent = fmtUSD0.format(Math.round(gross));
         $("kpiTakeHome").textContent = fmtUSD0.format(Math.round(income));
         $("kpiRetirement").textContent = fmtUSD0.format(Math.round(retirementPretax));
@@ -940,6 +960,7 @@
         if (elStickyIncome) elStickyIncome.textContent = fmtUSD0.format(Math.round(income));
         if (elStickySpending) elStickySpending.textContent = fmtUSD0.format(Math.round(spending));
         if (elStickySavings) elStickySavings.textContent = fmtUSD0.format(Math.round(savings));
+        if (elStickyNet) elStickyNet.textContent = fmtUSD0.format(Math.round(net));
 
         var netNote = $("netNote");
         if (net > 0){
