@@ -357,30 +357,29 @@
       padding:6px 10px;
       display:grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap:6px;
+      gap:4px 6px;
       backdrop-filter: blur(10px);
       box-shadow:var(--shadow);
       z-index:50;
-    }
-    .stickySummary .item{
-      display:grid;
-      gap:2px;
     }
     .stickySummary .timescale{
       font-size:9px;
       text-transform:uppercase;
       letter-spacing:0.3px;
       color:var(--muted);
+      grid-column:1 / -1;
     }
     .stickySummary .label{
       font-size:10px;
       color:var(--muted);
       text-transform:uppercase;
       letter-spacing:0.3px;
+      text-align:center;
     }
     .stickySummary .value{
       font-size:13px;
       font-weight:700;
+      text-align:center;
     }
     @media (max-width: 560px){
       .stickySummary{
@@ -633,26 +632,15 @@
     </div>
   </div>
   <div class="stickySummary" aria-label="Sticky summary">
-    <div class="item">
-      <div class="timescale stickyTimescale">Monthly</div>
-      <div class="label">Take-home</div>
-      <div class="value" id="stickyIncome">$0</div>
-    </div>
-    <div class="item">
-      <div class="timescale stickyTimescale">Monthly</div>
-      <div class="label">Spending</div>
-      <div class="value" id="stickySpending">$0</div>
-    </div>
-    <div class="item">
-      <div class="timescale stickyTimescale">Monthly</div>
-      <div class="label">Savings</div>
-      <div class="value" id="stickySavings">$0</div>
-    </div>
-    <div class="item">
-      <div class="timescale stickyTimescale">Monthly</div>
-      <div class="label">Surplus / Deficit</div>
-      <div class="value" id="stickyNet">$0</div>
-    </div>
+    <div class="timescale" id="stickyTimescale">Monthly</div>
+    <div class="label">Take-home</div>
+    <div class="label">Spending</div>
+    <div class="label">Savings</div>
+    <div class="label">Surplus / Deficit</div>
+    <div class="value" id="stickyIncome">$0</div>
+    <div class="value" id="stickySpending">$0</div>
+    <div class="value" id="stickySavings">$0</div>
+    <div class="value" id="stickyNet">$0</div>
   </div>
 
   <script>
@@ -945,9 +933,7 @@
 
         var timescale = elPeriod.value === "annual" ? "Annual" : "Monthly";
         $("summaryPeriod").textContent = timescale + " overview";
-        document.querySelectorAll(".stickyTimescale").forEach(function(el){
-          el.textContent = timescale;
-        });
+        if ($("stickyTimescale")) $("stickyTimescale").textContent = timescale;
         $("kpiGross").textContent = fmtUSD0.format(Math.round(gross));
         $("kpiTakeHome").textContent = fmtUSD0.format(Math.round(income));
         $("kpiRetirement").textContent = fmtUSD0.format(Math.round(retirementPretax));
