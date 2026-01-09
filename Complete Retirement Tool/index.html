@@ -1067,6 +1067,47 @@
 
           <div class="hr"></div>
 
+          <div class="row space">
+            <div>
+              <div style="font-weight:800; font-size:14px;">Monte Carlo Simulation</div>
+              <div class="small muted">Randomized return paths to estimate plan durability.</div>
+            </div>
+            <button class="btn" id="runMonteCarloBtn" type="button">Run Monte Carlo</button>
+          </div>
+
+          <div class="grid2" style="margin-top:10px;">
+            <div class="metricBox" title="Controls for the Monte Carlo simulation.">
+              <div class="metricTitle">Assumptions</div>
+
+              <div style="height:8px;"></div>
+              <label for="mcTrials">Trials</label><br/>
+              <input id="mcTrials" type="number" min="100" max="20000" step="100" />
+
+              <div style="height:10px;"></div>
+              <label for="mcVolPre">Pre-ret volatility (% std dev)</label><br/>
+              <input id="mcVolPre" type="number" min="0" max="40" step="0.5" />
+
+              <div style="height:10px;"></div>
+              <label for="mcVolRet">Retirement volatility (% std dev)</label><br/>
+              <input id="mcVolRet" type="number" min="0" max="40" step="0.5" />
+
+              <div class="hintBox" style="margin-top:10px;">
+                Uses the selected scenario return as the mean and your distribution method for withdrawals.
+              </div>
+            </div>
+
+            <div class="metricBox" title="Monte Carlo results based on the last run.">
+              <div class="metricTitle">Results (last run)</div>
+              <div class="metricValue" id="mcSuccessRate">--</div>
+              <div class="small muted">Probability portfolio does not deplete by age of death.</div>
+              <div style="height:8px;"></div>
+              <div class="small muted" id="mcDetailLine">Median: -- | 10th pct: -- | 90th pct: --</div>
+              <div class="small muted" id="mcStatusNote" style="margin-top:6px;">Not run yet.</div>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+
           <!-- Disclosures / Assumptions panel (ROI #6) -->
           <div class="row space">
             <div>
@@ -1098,7 +1139,7 @@
               <div class="hintBox">
                 <div style="font-weight:800; margin-bottom:6px;">Limitations</div>
                 <ul style="margin:0; padding-left:18px;">
-                  <li>No Monte Carlo / sequence-of-returns modeling (deterministic scenarios only).</li>
+                  <li>Monte Carlo uses simple normal return assumptions; it is not a forecast.</li>
                   <li>No tax modeling beyond optional spending estimator tax line item.</li>
                   <li>No portfolio fees, glidepaths, or asset allocation effects.</li>
                 </ul>
@@ -2592,6 +2633,7 @@
       var withdrawalNames = ["Required Minimum Distribution (RMD)", "4% Withdrawal Rule", "Maximum Distribution", "Custom Distribution"];
 
       var last = { result:null, currentFunds:0, otherIncomeAnnual:0, inflation:0, yearsToRetire:0 };
+      var mcState = { hasRun:false };
 
       function getScenarioIndex(){ return Math.max(0, Math.min(2, Number(byId("scenarioSlider").value || 0))); }
       function getWithdrawalIndex(){ return Math.max(0, Math.min(3, Number(byId("withdrawalSlider").value || 0))); }
@@ -2687,6 +2729,125 @@
                   "Inflation: " + Number(s.inflation||2.5).toFixed(1) + "% • " +
                   "Contribution: " + formatDollars(Number(s.annualContribution||0)) + "/yr";
         byId("assumptionSummary").textContent = txt;
+      }
+
+      var randn = (function(){
+        var spare = null;
+        return function(){
+          if (spare !== null){
+            var v = spare;
+            spare = null;
+            return v;
+          }
+          var u = 0, v = 0, s = 0;
+          while (s === 0 || s >= 1){
+            u = Math.random() * 2 - 1;
+            v = Math.random() * 2 - 1;
+            s = u * u + v * v;
+          }
+          var mul = Math.sqrt(-2 * Math.log(s) / s);
+          spare = v * mul;
+          return u * mul;
+        };
+      })();
+
+      function setMonteCarloStatus(text){
+        var el = byId("mcStatusNote");
+        if (!el) return;
+        el.textContent = text || "";
+      }
+
+      function markMonteCarloStale(){
+        if (!mcState.hasRun){
+          setMonteCarloStatus("Not run yet.");
+          return;
+        }
+        setMonteCarloStatus("Inputs changed. Run again to refresh results.");
+      }
+
+      function resetMonteCarloOutputs(){
+        mcState.hasRun = false;
+        byId("mcSuccessRate").textContent = "--";
+        byId("mcDetailLine").textContent = "Median: -- | 10th pct: -- | 90th pct: --";
+        setMonteCarloStatus("Not run yet.");
+      }
+
+      function percentileFromSorted(arr, pct){
+        if (!arr || !arr.length) return 0;
+        var idx = Math.floor((pct / 100) * (arr.length - 1));
+        idx = Math.max(0, Math.min(arr.length - 1, idx));
+        return arr[idx];
+      }
+
+      function runMonteCarlo(){
+        if (!last.result) return;
+
+        var trials = Math.round(clamp(num("mcTrials"), 100, 20000));
+        byId("mcTrials").value = String(trials);
+
+        var volPre = clamp(num("mcVolPre"), 0, 40) / 100;
+        var volRet = clamp(num("mcVolRet"), 0, 40) / 100;
+
+        var ages = sanitizeAges(num("currentAge"), num("retirementAge"), num("deathAge"));
+        var yearsToRetire = Math.max(0, ages.retirementAge - ages.currentAge);
+        var yearsInRet = Math.max(0, ages.deathAge - ages.retirementAge);
+
+        var sIdx = getScenarioIndex();
+        var wIdx = getWithdrawalIndex();
+
+        var preMean = last.result.nominalProj[sIdx].growth_rate;
+        var retMean = num("retirementGrowth") / 100;
+
+        var distNom = distributionFor(last.result.nominalProj[sIdx], wIdx);
+        if (!isFinite(distNom) || distNom < 0) distNom = 0;
+
+        var infl = num("inflationProj") / 100;
+        if (!isFinite(infl) || infl < 0) infl = 0;
+
+        var currentFunds = Number(last.currentFunds || 0);
+        var contrib = Math.max(0, Number(num("annualContribution") || 0));
+        var otherIncomeAnnual = Math.max(0, Number(last.otherIncomeAnnual || 0));
+
+        var success = 0;
+        var endBalances = new Array(trials);
+
+        for (var t = 0; t < trials; t++){
+          var bal = currentFunds;
+
+          for (var i = 0; i < yearsToRetire; i++){
+            var r = preMean + (volPre * randn());
+            bal = bal * (1 + r) + contrib;
+            if (!isFinite(bal)) { bal = 0; break; }
+            if (bal < 0) bal = 0;
+          }
+
+          var withdraw = distNom;
+          var ok = true;
+          for (var j = 0; j < yearsInRet; j++){
+            var rr = retMean + (volRet * randn());
+            bal = bal * (1 + rr) + (otherIncomeAnnual - withdraw);
+            if (!isFinite(bal)) { bal = 0; ok = false; break; }
+            if (bal < 0){ ok = false; bal = 0; break; }
+            withdraw = withdraw * (1 + infl);
+          }
+
+          if (ok) success++;
+          endBalances[t] = bal;
+        }
+
+        endBalances.sort(function(a,b){ return a - b; });
+        var median = percentileFromSorted(endBalances, 50);
+        var p10 = percentileFromSorted(endBalances, 10);
+        var p90 = percentileFromSorted(endBalances, 90);
+
+        var successRate = (success / Math.max(1, trials)) * 100;
+
+        byId("mcSuccessRate").textContent = successRate.toFixed(1) + "%";
+        byId("mcDetailLine").textContent =
+          "Median: " + formatDollars(median) + " | 10th pct: " + formatDollars(p10) + " | 90th pct: " + formatDollars(p90);
+
+        mcState.hasRun = true;
+        setMonteCarloStatus("Updated using " + trials + " trials.");
       }
 
       // Scenario compare (ROI #2/#7)
@@ -2822,6 +2983,9 @@
           inflation: num("inflationProj"),
           growthRate: num("growthRate"),
           retirementGrowth: num("retirementGrowth"),
+          mcTrials: num("mcTrials"),
+          mcVolPre: num("mcVolPre"),
+          mcVolRet: num("mcVolRet"),
           uiScenarioIndex: getScenarioIndex(),
           uiWithdrawalIndex: getWithdrawalIndex(),
           customWithdraw: getCustomWithdrawAnnual(),
@@ -2880,6 +3044,7 @@
 
         setAccountsTotalPill();
         updateProjectionOutputUI();
+        if (mcState.hasRun) markMonteCarloStale();
       }
 
       function setDefaultsIfEmpty(){
@@ -2888,6 +3053,7 @@
           enablePension:false, pension:0,
           enableSS:false, workIncome:0, yearsWorked:0, useSSOverride:false, ssOverride:0,
           growthRate:8, annualContribution:0, retirementGrowth:3, inflation:2.5,
+          mcTrials: 1000, mcVolPre: 12, mcVolRet: 10,
           uiScenarioIndex: 1,
           uiWithdrawalIndex: 0,
           customWithdraw: 60000,
@@ -2908,6 +3074,9 @@
         byId("annualContribution").value = (v.annualContribution!==undefined) ? v.annualContribution : defaults.annualContribution;
         byId("retirementGrowth").value = (v.retirementGrowth!==undefined) ? v.retirementGrowth : defaults.retirementGrowth;
         byId("inflationProj").value = (v.inflation!==undefined) ? v.inflation : defaults.inflation;
+        byId("mcTrials").value = (v.mcTrials!==undefined) ? v.mcTrials : defaults.mcTrials;
+        byId("mcVolPre").value = (v.mcVolPre!==undefined) ? v.mcVolPre : defaults.mcVolPre;
+        byId("mcVolRet").value = (v.mcVolRet!==undefined) ? v.mcVolRet : defaults.mcVolRet;
 
         byId("enableSS").checked = (v.enableSS!==undefined) ? !!v.enableSS : defaults.enableSS;
         byId("workIncome").value = (v.workIncome!==undefined) ? v.workIncome : defaults.workIncome;
@@ -2924,6 +3093,7 @@
         loadAccounts();
         renderAccountsTable();
         setAccountsTotalPill();
+        resetMonteCarloOutputs();
 
         updateToggleUI();
         updateSocialSecurityPill();
@@ -3152,6 +3322,10 @@
         var ids=["currentAge","retirementAge","deathAge","pension","growthRate","annualContribution","retirementGrowth","inflationProj","workIncome","yearsWorked","ssOverride","customWithdraw"];
         for(var i=0;i<ids.length;i++) byId(ids[i]).addEventListener("input", renderProjection);
 
+        var mcIds=["mcTrials","mcVolPre","mcVolRet"];
+        for(var j=0;j<mcIds.length;j++) byId(mcIds[j]).addEventListener("input", markMonteCarloStale);
+        byId("runMonteCarloBtn").addEventListener("click", runMonteCarlo);
+
         byId("enablePension").addEventListener("change", renderProjection);
         byId("enableSS").addEventListener("change", renderProjection);
         byId("useSSOverride").addEventListener("change", renderProjection);
@@ -3162,10 +3336,14 @@
 
         byId("deleteSelectedBtn").addEventListener("click", deleteSelectedAccounts);
 
-        byId("scenarioSlider").addEventListener("input", updateProjectionOutputUI);
+        byId("scenarioSlider").addEventListener("input", function(){
+          updateProjectionOutputUI();
+          markMonteCarloStale();
+        });
         byId("withdrawalSlider").addEventListener("input", function(){
           updateCustomWithdrawUI();
           updateProjectionOutputUI();
+          markMonteCarloStale();
         });
 
         byId("viewDrawdownBtn").addEventListener("click", function(){
@@ -3182,6 +3360,7 @@
           byId("withdrawalSlider").value = String(wIdx);
           updateCustomWithdrawUI();
           updateProjectionOutputUI();
+          markMonteCarloStale();
           if(byId("chartWrap").style.display!=="none") renderDrawdownChart();
         });
 
