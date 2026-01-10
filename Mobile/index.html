@@ -154,6 +154,11 @@
       text-transform: uppercase;
       letter-spacing: .3px;
     }
+    .summaryLabelRow{
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
     .summaryValue{
       margin-top: 4px;
       font-weight: 800;
@@ -161,6 +166,42 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+    .tooltipBtn{
+      border:none;
+      background:rgba(255,255,255,0.08);
+      color:var(--text);
+      width:18px;
+      height:18px;
+      border-radius:50%;
+      font-size:11px;
+      cursor:help;
+      position:relative;
+      padding:0;
+    }
+    .tooltipBtn::after{
+      content: attr(data-tip);
+      position:absolute;
+      right:0;
+      bottom:140%;
+      transform:translateY(6px);
+      width: min(260px, calc(100vw - 32px));
+      background:#10161e;
+      border:1px solid var(--line);
+      color:var(--text);
+      padding:8px 10px;
+      border-radius:10px;
+      font-size:11px;
+      line-height:1.35;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity 140ms ease, transform 140ms ease;
+      z-index:10;
+    }
+    .tooltipBtn:hover::after,
+    .tooltipBtn:focus::after{
+      opacity:1;
+      transform:translateY(0);
     }
     @media (max-width: 420px){
       .summaryBar{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -241,6 +282,52 @@
       font-size:12px;
       color: var(--muted);
       margin-bottom: 6px;
+    }
+    .toggleSwitch{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:12px;
+      color: var(--muted);
+      margin:0;
+    }
+    .toggleSwitch input[type="checkbox"]{
+      width:38px;
+      height:20px;
+      min-height:20px;
+      padding:0;
+      appearance:none;
+      -webkit-appearance:none;
+      border:1px solid var(--line);
+      border-radius:999px;
+      background:rgba(255,255,255,0.06);
+      display:inline-flex;
+      align-items:center;
+      cursor:pointer;
+      position:relative;
+      transition:background 140ms ease, border-color 140ms ease;
+    }
+    .toggleSwitch input[type="checkbox"]::after{
+      content:"";
+      width:14px;
+      height:14px;
+      border-radius:50%;
+      background:var(--text);
+      position:absolute;
+      left:2px;
+      transition:left 140ms ease, background 140ms ease;
+    }
+    .toggleSwitch input[type="checkbox"]:checked{
+      background:rgba(122,162,255,0.35);
+      border-color:rgba(122,162,255,0.55);
+    }
+    .toggleSwitch input[type="checkbox"]:checked::after{
+      left:22px;
+      background:var(--accent);
+    }
+    .toggleSwitch input[type="checkbox"]:focus-visible{
+      outline:2px solid rgba(122,162,255,0.55);
+      outline-offset:2px;
     }
 
     input, select, button{
@@ -349,21 +436,23 @@
       line-height: 1.35;
     }
 
-    details{
+    .toggleSection{
       border:1px solid var(--line);
       border-radius: 14px;
       background: rgba(255,255,255,.02);
       padding: 10px 10px;
     }
-    details summary{
-      cursor:pointer;
+    .toggleHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .toggleTitle{
       font-weight: 800;
       font-size: 13px;
-      list-style:none;
-      user-select:none;
     }
-    details summary::-webkit-details-marker{ display:none; }
-    details .content{
+    .toggleSection .content{
       margin-top: 10px;
     }
 
@@ -560,9 +649,15 @@
           </div>
         </div>
 
-        <details>
-          <summary>Advanced Assumptions (Expand to edit)</summary>
-          <div class="content">
+        <div class="toggleSection">
+          <div class="toggleHeader">
+            <div class="toggleTitle">Advanced Assumptions</div>
+            <label class="toggleSwitch">
+              <input id="advancedToggle" type="checkbox" />
+              Show
+            </label>
+          </div>
+          <div class="content" id="advancedContent" style="display:none;">
             <div class="grid2">
               <div>
                 <label for="inflation">Inflation (% used for today's dollars)</label>
@@ -603,7 +698,7 @@
                 <div class="note">Optional: use the estimate toggle below for a ballpark value.</div>
 
                 <div class="row" style="margin-top:8px; gap:8px;">
-                  <label style="display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted);">
+                  <label class="toggleSwitch">
                     <input id="ssEstimateToggle" type="checkbox" />
                     Estimate SS (ballpark)
                   </label>
@@ -622,7 +717,7 @@
               </div>
             </div>
           </div>
-        </details>
+        </div>
 
         <div class="hr"></div>
 
@@ -656,9 +751,15 @@
         </div>
         <div style="height:12px;"></div>
 
-        <details id="spendingDetails">
-          <summary>Expand for detailed spending categories (monthly)</summary>
-          <div class="content">
+        <div class="toggleSection" id="spendingDetails">
+          <div class="toggleHeader">
+            <div class="toggleTitle">Detailed spending categories (monthly)</div>
+            <label class="toggleSwitch">
+              <input id="spendDetailsToggle" type="checkbox" />
+              Show
+            </label>
+          </div>
+          <div class="content" id="spendDetailsContent" style="display:none;">
             <div class="grid2">
               <div>
                 <label for="householdIncome">Household income (annual, $)</label>
@@ -724,7 +825,7 @@
 
             <div class="note">Adjust categories for your situation. Totals feed the spending estimate above.</div>
           </div>
-        </details>
+        </div>
 
         <div class="hr"></div>
 
@@ -837,7 +938,10 @@
           <div class="summaryValue" id="summaryTotal">$0 / yr</div>
         </div>
         <div class="summaryItem">
-          <div class="summaryLabel">Portfolio @ death</div>
+          <div class="summaryLabel summaryLabelRow">
+            Portfolio @ death
+            <button class="tooltipBtn" type="button" data-tip="Combination of savings portfolio and remaining retirement portfolio. Changes to spending affect this value.">i</button>
+          </div>
           <div class="summaryValue" id="summaryAtDeath">$0</div>
         </div>
         <div class="summaryItem">
@@ -879,6 +983,10 @@
       const elSSEstimateIncome = $("ssEstimateIncome");
       const elSSEstimateYears = $("ssEstimateYears");
       const elSSEstimateFields = $("ssEstimateFields");
+      const elAdvancedToggle = $("advancedToggle");
+      const elAdvancedContent = $("advancedContent");
+      const elSpendDetailsToggle = $("spendDetailsToggle");
+      const elSpendDetailsContent = $("spendDetailsContent");
 
       const elSpend      = $("spendingAnnual");
       const elHouseholdIncome = $("householdIncome");
@@ -1695,6 +1803,21 @@
         if (elPresetBase) elPresetBase.addEventListener("click", () => applyStressPreset("base"));
         if (elPresetHighInfl) elPresetHighInfl.addEventListener("click", () => applyStressPreset("highInfl"));
         if (elPresetEarlyBear) elPresetEarlyBear.addEventListener("click", () => applyStressPreset("earlyBear"));
+
+        if (elAdvancedToggle && elAdvancedContent){
+          const syncAdvanced = () => {
+            elAdvancedContent.style.display = elAdvancedToggle.checked ? "block" : "none";
+          };
+          elAdvancedToggle.addEventListener("change", syncAdvanced);
+          syncAdvanced();
+        }
+        if (elSpendDetailsToggle && elSpendDetailsContent){
+          const syncSpending = () => {
+            elSpendDetailsContent.style.display = elSpendDetailsToggle.checked ? "block" : "none";
+          };
+          elSpendDetailsToggle.addEventListener("change", syncSpending);
+          syncSpending();
+        }
 
         $("resetBtn").addEventListener("click", () => {
           const ok = window.confirm("Reset all saved inputs for this simplified calculator?");

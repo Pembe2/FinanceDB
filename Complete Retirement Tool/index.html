@@ -266,7 +266,44 @@
     .muted{color:var(--muted)}
     .right{text-align:right}
     .toggle{display:flex; gap:8px; align-items:center; font-size:12px; color:var(--muted);}
-    .toggle input{width:16px;height:16px}
+    .toggle input[type="checkbox"]{
+      width:38px;
+      height:20px;
+      min-height:20px;
+      padding:0;
+      appearance:none;
+      -webkit-appearance:none;
+      border:1px solid var(--line);
+      border-radius:999px;
+      background:rgba(255,255,255,0.06);
+      display:inline-flex;
+      align-items:center;
+      cursor:pointer;
+      position:relative;
+      transition:background 140ms ease, border-color 140ms ease;
+    }
+    .toggle input[type="checkbox"]::after{
+      content:"";
+      width:14px;
+      height:14px;
+      border-radius:50%;
+      background:var(--text);
+      position:absolute;
+      left:2px;
+      transition:left 140ms ease, background 140ms ease;
+    }
+    .toggle input[type="checkbox"]:checked{
+      background:rgba(122,162,255,0.35);
+      border-color:rgba(122,162,255,0.55);
+    }
+    .toggle input[type="checkbox"]:checked::after{
+      left:22px;
+      background:var(--accent);
+    }
+    .toggle input[type="checkbox"]:focus-visible{
+      outline:2px solid rgba(122,162,255,0.55);
+      outline-offset:2px;
+    }
 
     .kpi{display:grid;grid-template-columns: 1fr 1fr;gap:10px;}
     .kpi .box{
