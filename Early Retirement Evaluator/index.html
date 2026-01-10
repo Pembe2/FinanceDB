@@ -246,11 +246,24 @@
       opacity:1;
       transform:translateX(-50%) translateY(0);
     }
+    .assumptionsGrid{
+      grid-template-columns:1fr 1fr;
+    }
     @media (max-width: 520px){
       .rothRow{ align-items:flex-start; }
       .rothPill{
         width:100%;
         justify-content:flex-start;
+      }
+      .tooltipBtn::after{
+        width: min(260px, calc(100vw - 32px));
+        left:auto;
+        right:0;
+        transform:translateY(6px);
+      }
+      .tooltipBtn:hover::after,
+      .tooltipBtn:focus::after{
+        transform:translateY(0);
       }
     }
     .summarySticky{
@@ -484,7 +497,7 @@
         <div class="divider"></div>
 
         <h3>Assumptions</h3>
-        <div class="grid2">
+        <div class="grid2 assumptionsGrid">
           <div>
             <label for="preReturn">Pre-retirement return (%)</label>
             <input id="preReturn" type="number" min="-10" max="20" step="0.1" />
@@ -957,6 +970,8 @@
         var statusText = "Status: Needs review";
         var dotColor = "var(--warn)";
         var statusClass = "badge warn";
+        var coverageClass = "badge warn";
+        var bridgeClass = "badge warn";
         if (coveragePct >= 105 && bridgeStatus >= 100){
           statusText = "Status: On track";
           dotColor = "var(--good)";
@@ -966,14 +981,26 @@
           dotColor = "var(--bad)";
           statusClass = "badge bad";
         }
+        if (coveragePct >= 105){
+          coverageClass = "badge good";
+        } else if (coveragePct >= 95){
+          coverageClass = "badge warn";
+        } else if (coveragePct){
+          coverageClass = "badge bad";
+        }
+        if (bridgeStatus >= 100){
+          bridgeClass = "badge good";
+        } else if (bridgeStatus){
+          bridgeClass = "badge bad";
+        }
 
         statusLabel.textContent = statusText;
         statusDot.style.background = dotColor;
         statusNote.textContent = "Coverage compares income at eligibility vs spending after eligibility.";
-        coverageBadge.className = statusClass;
+        coverageBadge.className = coverageClass;
         coverageBadge.textContent = "Coverage: "
           + (coveragePct ? coveragePct.toFixed(0) + "%" : "--");
-        bridgeBadge.className = statusClass;
+        bridgeBadge.className = bridgeClass;
         bridgeBadge.textContent = "Bridge: "
           + (bridgeStatus ? bridgeStatus.toFixed(0) + "%" : "--");
 
