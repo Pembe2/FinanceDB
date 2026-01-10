@@ -128,9 +128,9 @@
       flex:1 1 220px;
     }
     .rothToggle input[type="checkbox"]{
-      width:16px;
-      height:16px;
-      min-height:16px;
+      width:24px;
+      height:24px;
+      min-height:24px;
       padding:0;
     }
     .rothPill{
@@ -439,7 +439,6 @@
             <input id="rothEnabled" type="checkbox" />
             <span>Enable Roth ladder</span>
           </label>
-          <span class="pill rothPill">5-year seasoning typical</span>
         </div>
         <div class="grid2" id="rothFields" style="margin-top:10px; display:none;">
           <div>
@@ -451,7 +450,10 @@
             <input id="rothTax" type="number" min="0" max="45" step="0.5" />
           </div>
           <div>
-            <label for="rothYears">Years until conversion available</label>
+            <label for="rothYears">
+              Years until conversion available
+              <button class="tooltipBtn" type="button" data-tip="5-year seasoning is typical.">i</button>
+            </label>
             <input id="rothYears" type="number" min="0" max="10" step="1" />
           </div>
           <div class="note">
