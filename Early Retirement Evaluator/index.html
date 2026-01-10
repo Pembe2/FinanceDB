@@ -267,7 +267,7 @@
       left:50%;
       bottom:130%;
       transform:translateX(-50%) translateY(6px);
-      width:220px;
+      width: min(260px, calc(100vw - 32px));
       background:#10161e;
       border:1px solid var(--line);
       color:var(--text);
@@ -301,14 +301,13 @@
         justify-content:flex-start;
       }
       .tooltipBtn::after{
-        width: min(260px, calc(100vw - 32px));
-        left:auto;
-        right:0;
-        transform:translateY(6px);
+        left:50%;
+        right:auto;
+        transform:translateX(-50%) translateY(6px);
       }
       .tooltipBtn:hover::after,
       .tooltipBtn:focus::after{
-        transform:translateY(0);
+        transform:translateX(-50%) translateY(0);
       }
     }
     .summarySticky{
@@ -1113,6 +1112,10 @@
             updateUI();
           });
         }
+        document.addEventListener("click", function(e){
+          if (e.target && e.target.classList && e.target.classList.contains("tooltipBtn")) return;
+          document.querySelectorAll(".tooltipBtn").forEach(function(btn){ btn.blur(); });
+        });
       }
 
       if (!load()){
