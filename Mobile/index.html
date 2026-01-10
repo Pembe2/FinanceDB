@@ -1424,7 +1424,7 @@
         updateSpendingTotals();
       }
 
-      function drawLineChart(canvas, labels, values, lineColor){
+      function drawLineChart(canvas, labels, values, lineColor, keyPoints){
         if (!canvas || !values || values.length < 2) return;
         var ctx = canvas.getContext("2d");
         var dpr = window.devicePixelRatio || 1;
@@ -1435,7 +1435,7 @@
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, width, height);
 
-        var pad = 28;
+        var pad = 40;
         var innerW = Math.max(10, width - pad * 2);
         var innerH = Math.max(10, height - pad * 2);
 
@@ -1463,6 +1463,35 @@
           if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         }
         ctx.stroke();
+
+        if (keyPoints && keyPoints.length){
+          ctx.font = "11px \"Trebuchet MS\",\"Segoe UI\",sans-serif";
+          for (var k=0;k<keyPoints.length;k++){
+            var kp = keyPoints[k];
+            if (!kp || kp.index === undefined) continue;
+            var idx = Math.max(0, Math.min(values.length - 1, kp.index));
+            var xk = pad + (innerW * (values.length === 1 ? 0 : idx/(values.length-1)));
+            var tk = (values[idx] - min) / (max - min);
+            var yk = pad + innerH * (1 - tk);
+            var label = fmtUSD0.format(Math.round(values[idx]));
+            var textW = ctx.measureText(label).width;
+            var dx = -textW / 2;
+            var dy = -20;
+            var boxX = xk + dx - 4;
+            var boxY = yk + dy - 10;
+            var boxW = textW + 8;
+            var boxH = 16;
+            ctx.fillStyle = "rgba(12,18,28,0.85)";
+            ctx.fillRect(boxX, boxY, boxW, boxH);
+            ctx.strokeStyle = "rgba(255,255,255,0.12)";
+            ctx.strokeRect(boxX, boxY, boxW, boxH);
+            ctx.fillStyle = "rgba(234,240,255,0.92)";
+            ctx.beginPath();
+            ctx.arc(xk, yk, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillText(label, boxX + 4, boxY + 11);
+          }
+        }
       }
       function buildPortfolioPath(currentAge, retirementAge, deathAge, startBal, contrib, rPre, rRet, withdrawal){
         var ages = [];
@@ -1473,13 +1502,21 @@
         var rr = Number(rRet||0);
         var w = Math.max(0, Number(withdrawal||0));
         for (var age = currentAge; age <= deathAge; age++){
+          ages.push(age);
+          balances.push(bal);
+          if (age === deathAge) break;
           if (age < retirementAge){
             bal = bal * (1 + rp) + c;
           } else {
             bal = bal * (1 + rr) - w;
           }
-          ages.push(age);
-          balances.push(bal);
+        }
+        if (currentAge <= deathAge){
+          var nextBal = (deathAge < retirementAge)
+            ? (bal * (1 + rp) + c)
+            : (bal * (1 + rr) - w);
+          ages.push(deathAge + 1);
+          balances.push(nextBal);
         }
         return { labels: ages, values: balances };
       }
@@ -1491,9 +1528,15 @@
         var surplus = Math.max(0, Number(surplusAnnual||0));
         var rr = Number(rRet||0);
         for (var age = retirementAge; age <= deathAge; age++){
-          val = val * (1 + rr) + surplus;
           ages.push(age);
           values.push(val);
+          if (age === deathAge) break;
+          val = val * (1 + rr) + surplus;
+        }
+        if (retirementAge <= deathAge){
+          var nextVal = val * (1 + rr) + surplus;
+          ages.push(deathAge + 1);
+          values.push(nextVal);
         }
         return { labels: ages, values: values };
       }
@@ -1710,12 +1753,22 @@
 
         // Charts
         var portfolioPath = buildPortfolioPath(currentAge, retireAge, deathAge, portfolio, contrib, preRet, retRet, dist);
-        drawLineChart(elPortfolioChart, portfolioPath.labels, portfolioPath.values, "rgba(122,162,255,0.85)");
+        var retireIdx = Math.max(0, Math.min(portfolioPath.values.length - 1, retireAge - currentAge));
+        var deathIdx = Math.max(0, portfolioPath.values.length - 1);
+        drawLineChart(elPortfolioChart, portfolioPath.labels, portfolioPath.values, "rgba(122,162,255,0.85)", [
+          { index: 0, label: "Initial" },
+          { index: retireIdx, label: "Retirement" },
+          { index: deathIdx, label: "Death" }
+        ]);
 
         var spendNominal = spendingToday * Math.pow(1 + infl, yearsToRetire);
         var surplusNominal = Math.max(0, totalNominal - spendNominal);
         var surplusPath = buildSurplusPath(retireAge, deathAge, surplusNominal, retRet);
-        drawLineChart(elSurplusChart, surplusPath.labels, surplusPath.values, "rgba(88,209,167,0.85)");
+        var surplusDeathIdx = Math.max(0, surplusPath.values.length - 1);
+        drawLineChart(elSurplusChart, surplusPath.labels, surplusPath.values, "rgba(88,209,167,0.85)", [
+          { index: 0, label: "Retirement" },
+          { index: surplusDeathIdx, label: "Death" }
+        ]);
 
         // Warnings
         if (!isFinite(fv) || !isFinite(totalNominal)) warnings.push("Some outputs were non-finite; check inputs (returns, ages).");
