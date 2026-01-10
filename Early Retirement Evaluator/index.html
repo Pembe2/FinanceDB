@@ -812,11 +812,21 @@
           inputs.retirementContrib
         );
 
+        var ladderGrossTotal = 0;
         var ladderNet = 0;
+        var retireAtEligibility = retireAtRet * Math.pow(1 + inputs.postReturn, bridgeYears);
         if (inputs.rothEnabled){
-          var availableYears = Math.max(0, bridgeYears - inputs.rothYears);
-          var ladderGross = Math.min(retireAtRet, inputs.rothAmount * availableYears);
-          ladderNet = Math.max(0, ladderGross * (1 - inputs.rothTax));
+          var balance = retireAtRet;
+          for (var y = 0; y < bridgeYears; y++){
+            balance = balance * (1 + inputs.postReturn);
+            if (y >= inputs.rothYears){
+              var convert = Math.min(balance, inputs.rothAmount);
+              balance -= convert;
+              ladderGrossTotal += convert;
+            }
+          }
+          ladderNet = Math.max(0, ladderGrossTotal * (1 - inputs.rothTax));
+          retireAtEligibility = balance;
         }
 
         var bridgeNeed = bridgeNeedForYears(
@@ -827,7 +837,6 @@
         );
         var bridgeNeedAdj = Math.max(0, bridgeNeed - ladderNet);
         var savingsAfterBridge = savingsAtRet - bridgeNeedAdj;
-        var retireAtEligibility = retireAtRet * Math.pow(1 + inputs.postReturn, bridgeYears);
         var portfolioAtEligibility = retireAtEligibility + Math.max(0, savingsAfterBridge);
         var incomeFromPortfolio = portfolioAtEligibility * inputs.swr;
         var spendingPostEligibility = spendingAtEligibility(
@@ -1090,4 +1099,3 @@
   </script>
 </body>
 </html>
-
