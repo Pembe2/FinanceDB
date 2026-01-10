@@ -117,6 +117,19 @@
       gap:10px;
       flex-wrap:wrap;
     }
+    .rothRow{
+      align-items:center;
+    }
+    .rothToggle{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin:0;
+      flex:1 1 220px;
+    }
+    .rothPill{
+      flex:0 0 auto;
+    }
     .grid2{
       display:grid;
       grid-template-columns:1fr;
@@ -233,6 +246,13 @@
       opacity:1;
       transform:translateX(-50%) translateY(0);
     }
+    @media (max-width: 520px){
+      .rothRow{ align-items:flex-start; }
+      .rothPill{
+        width:100%;
+        justify-content:flex-start;
+      }
+    }
     .summarySticky{
       position: sticky;
       bottom: 0;
@@ -248,6 +268,7 @@
       border:1px solid var(--line);
       background:rgba(10,14,20,0.86);
       backdrop-filter: blur(10px);
+      font-family: "Trebuchet MS","Segoe UI","Tahoma",sans-serif;
     }
     .summaryItem{min-width:0;}
     .summaryLabel{
@@ -266,6 +287,14 @@
     }
     @media (max-width:700px){
       .summaryBar{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width:520px){
+      .summaryBar{
+        gap:8px;
+        padding:8px 10px;
+      }
+      .summaryLabel{ font-size:9px; }
+      .summaryValue{ font-size:12px; }
     }
     .kpiGrid{
       display:grid;
@@ -293,7 +322,7 @@
     <nav class="topnav" aria-label="Site navigation">
   <span class="navLabel">Tools</span>
   <a class="navLink" href="../index.html">Tool Index</a>
-  <a class="navLink" href="../Mobile/">Mobile</a>
+  <a class="navLink" href="../Mobile/">Mobile Retirement Tool</a>
   <a class="navLink" href="../Complete Retirement Tool/">Complete Retirement Tool</a>
   <a class="navLink active" href="./">Early Retirement Evaluator</a>
   <a class="navLink" href="../In Depth Budgeting Tool/">In Depth Budgeting Tool</a>
@@ -371,13 +400,20 @@
 
         <div class="divider"></div>
 
-        <h3>Roth Ladder (optional)</h3>
-        <div class="row" style="align-items:center;">
-          <label style="margin:0;">
+        <h3>Roth Ladder (optional)
+          <button
+            class="tooltipBtn"
+            type="button"
+            data-tip="Roth bridging (Roth conversion ladder) lets you move money from traditional retirement accounts into a Roth, then spend those conversions after the seasoning period to cover early-retirement years before age 59.5. Annual conversion amount is how much you plan to convert each year. Estimated tax rate is the effective tax rate you expect to pay on those conversions. Years until conversion available is the waiting period before you can spend converted funds (typically 5).">
+            i
+          </button>
+        </h3>
+        <div class="row rothRow">
+          <label class="rothToggle">
             <input id="rothEnabled" type="checkbox" />
-            Enable Roth ladder
+            <span>Enable Roth ladder</span>
           </label>
-          <span class="pill">5-year seasoning typical</span>
+          <span class="pill rothPill">5-year seasoning typical</span>
         </div>
         <div class="grid2" id="rothFields" style="margin-top:10px; display:none;">
           <div>
