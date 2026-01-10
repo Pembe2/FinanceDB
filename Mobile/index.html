@@ -1680,7 +1680,9 @@
         // Update outputs
         elStatusPill.className = pillClass;
         elStatusPill.textContent = status;
-        if (elSummaryStatus) elSummaryStatus.textContent = statusShort;
+        if (elSummaryStatus){
+          elSummaryStatus.textContent = statusShort + (coveragePct ? " (" + coveragePct.toFixed(0) + "%)" : "");
+        }
 
         elOutFV.textContent = fmtUSD0.format(fv);
         elOutFVToday.textContent = "Today’s $: " + fmtUSD0.format(fvToday);
