@@ -1833,6 +1833,10 @@
 
         window.addEventListener("scroll", updateSummaryVisibility, { passive: true });
         window.addEventListener("resize", updateSummaryVisibility);
+        document.addEventListener("click", (e) => {
+          if (e.target && e.target.classList && e.target.classList.contains("tooltipBtn")) return;
+          document.querySelectorAll(".tooltipBtn").forEach((btn) => btn.blur());
+        });
       }
 
       // Boot
