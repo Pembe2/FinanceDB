@@ -209,6 +209,7 @@
     .accountRow .name{ font-weight:700; }
     .accountRow .meta{ color:var(--muted); }
     .accountRow .value{ text-align:right; }
+    .accountRow .type{ text-align:left; }
     .accountRow button{
       padding:6px 10px;
       border-radius:999px;
@@ -397,7 +398,6 @@
 
         <div class="row" style="margin-top:12px;">
           <button id="addAccountBtn" type="button">Add account</button>
-          <button id="cancelEditBtn" type="button" class="secondary" style="display:none;">Cancel edit</button>
           <span class="error" id="accountError" style="display:none;">Please add a name, value, and owner.</span>
         </div>
 
@@ -477,6 +477,46 @@
       <div class="chipList" id="peopleList"></div>
       <div class="row" style="margin-top:12px; justify-content:flex-end;">
         <button id="closePeopleBtn" type="button" class="secondary">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="editAccountModal" aria-hidden="true" role="dialog" aria-labelledby="editAccountTitle">
+    <div class="modalCard">
+      <h3 id="editAccountTitle">Edit account</h3>
+      <p class="subtle">Update the details and save to apply changes.</p>
+      <div class="grid2" style="margin-top:10px;">
+        <div>
+          <label for="editAccountName">Account name</label>
+          <input id="editAccountName" type="text" />
+        </div>
+        <div>
+          <label for="editAccountType">Account type</label>
+          <select id="editAccountType">
+            <option value="savings">Savings</option>
+            <option value="investment">Investment</option>
+            <option value="retirement">Retirement</option>
+            <option value="debt">Debt</option>
+            <option value="asset">Asset</option>
+          </select>
+        </div>
+        <div>
+          <label for="editAccountValue">Balance or value</label>
+          <input id="editAccountValue" type="text" inputmode="numeric" />
+        </div>
+        <div id="editDebtYearsWrap" style="display:none;">
+          <label for="editDebtYears">Years remaining (debt only)</label>
+          <input id="editDebtYears" type="number" min="0" max="60" step="1" />
+        </div>
+      </div>
+      <div style="margin-top:10px;">
+        <label>Owners</label>
+        <div class="ownerGrid" id="editOwnerGrid"></div>
+      </div>
+      <p class="error" id="editAccountError" style="display:none;">Please add a name, value, and owner.</p>
+      <div class="row" style="margin-top:12px; justify-content:flex-end;">
+        <button id="closeEditAccountBtn" type="button" class="secondary">Cancel</button>
+        <button id="saveEditAccountBtn" type="button">Save changes</button>
       </div>
     </div>
   </div>
@@ -583,14 +623,15 @@
         });
       }
 
-      function renderOwnerGrid(){
-        var grid = $("ownerGrid");
+      function renderOwnerGrid(targetId, showHelp){
+        var grid = $(targetId);
+        if (!grid) return;
         grid.innerHTML = "";
         if (!people.length){
-          $("ownersHelp").style.display = "block";
+          if (showHelp && $("ownersHelp")) $("ownersHelp").style.display = "block";
           return;
         }
-        $("ownersHelp").style.display = "none";
+        if (showHelp && $("ownersHelp")) $("ownersHelp").style.display = "none";
         people.forEach(function(person){
           var label = document.createElement("label");
           label.className = "ownerOption";
@@ -760,7 +801,8 @@
       function renderAll(){
         $("peopleCount").textContent = people.length + (people.length === 1 ? " person" : " people");
         renderPeopleList();
-        renderOwnerGrid();
+        renderOwnerGrid("ownerGrid", true);
+        renderOwnerGrid("editOwnerGrid", false);
         renderAccounts();
         computeTotals();
         renderSnapshots();
@@ -782,8 +824,10 @@
         renderAll();
       }
 
-      function collectOwners(){
-        return Array.prototype.slice.call(document.querySelectorAll(".ownerOption input:checked"))
+      function collectOwnersFrom(gridId){
+        var grid = $(gridId);
+        if (!grid) return [];
+        return Array.prototype.slice.call(grid.querySelectorAll("input:checked"))
           .map(function(el){ return el.value; });
       }
 
@@ -791,7 +835,7 @@
         var name = normalizeName($("accountName").value);
         var type = $("accountType").value;
         var value = Math.max(0, parseMoney($("accountValue").value));
-        var owners = collectOwners();
+        var owners = collectOwnersFrom("ownerGrid");
         var debtYears = null;
         if (type === "debt"){
           debtYears = Math.max(0, Number($("debtYears").value || 0));
@@ -801,30 +845,15 @@
           return;
         }
         $("accountError").style.display = "none";
-        if (editingAccountId){
-          accounts = accounts.map(function(acct){
-            if (acct.id !== editingAccountId) return acct;
-            return {
-              id: acct.id,
-              name: name,
-              type: type,
-              value: value,
-              owners: owners,
-              debtYears: debtYears
-            };
-          });
-          setEditState(null);
-        } else {
-          accounts.push({
-            id: "acct_" + Date.now() + "_" + Math.random().toString(36).slice(2,7),
-            name: name,
-            type: type,
-            value: value,
-            owners: owners,
-            debtYears: debtYears
-          });
-          resetAccountForm();
-        }
+        accounts.push({
+          id: "acct_" + Date.now() + "_" + Math.random().toString(36).slice(2,7),
+          name: name,
+          type: type,
+          value: value,
+          owners: owners,
+          debtYears: debtYears
+        });
+        resetAccountForm();
         saveState();
         renderAll();
       }
@@ -833,37 +862,81 @@
         $("accountName").value = "";
         $("accountValue").value = "";
         $("debtYears").value = "";
-        Array.prototype.slice.call(document.querySelectorAll(".ownerOption input")).forEach(function(el){
-          el.checked = false;
-        });
+        var ownerGrid = $("ownerGrid");
+        if (ownerGrid){
+          Array.prototype.slice.call(ownerGrid.querySelectorAll("input")).forEach(function(el){
+            el.checked = false;
+          });
+        }
         $("accountType").value = "savings";
         toggleDebt();
       }
 
-      function setEditState(accountId){
-        editingAccountId = accountId;
-        var addBtn = $("addAccountBtn");
-        var cancelBtn = $("cancelEditBtn");
-        if (editingAccountId){
-          addBtn.textContent = "Save changes";
-          if (cancelBtn) cancelBtn.style.display = "inline-flex";
+      function setEditModal(open){
+        var modal = $("editAccountModal");
+        if (!modal) return;
+        if (open){
+          modal.classList.add("show");
+          modal.setAttribute("aria-hidden", "false");
+          document.body.style.overflow = "hidden";
+          $("editAccountName").focus();
         } else {
-          addBtn.textContent = "Add account";
-          if (cancelBtn) cancelBtn.style.display = "none";
-          resetAccountForm();
+          modal.classList.remove("show");
+          modal.setAttribute("aria-hidden", "true");
+          document.body.style.overflow = "";
         }
       }
 
-      function startEditAccount(acct){
-        $("accountName").value = acct.name;
-        $("accountType").value = acct.type;
-        $("accountValue").value = String(acct.value);
-        $("debtYears").value = acct.debtYears !== null ? String(acct.debtYears) : "";
-        toggleDebt();
-        Array.prototype.slice.call(document.querySelectorAll(".ownerOption input")).forEach(function(el){
-          el.checked = acct.owners.indexOf(el.value) !== -1;
+      function setEditOwners(owners){
+        var inputs = Array.prototype.slice.call(
+          $("editOwnerGrid").querySelectorAll("input[type=\"checkbox\"]")
+        );
+        inputs.forEach(function(el){
+          el.checked = owners.indexOf(el.value) !== -1;
         });
-        setEditState(acct.id);
+      }
+
+      function startEditAccount(acct){
+        editingAccountId = acct.id;
+        $("editAccountName").value = acct.name;
+        $("editAccountType").value = acct.type;
+        $("editAccountValue").value = String(acct.value);
+        $("editDebtYears").value = acct.debtYears !== null ? String(acct.debtYears) : "";
+        toggleEditDebt();
+        setEditOwners(acct.owners);
+        $("editAccountError").style.display = "none";
+        setEditModal(true);
+      }
+
+      function saveEditAccount(){
+        var name = normalizeName($("editAccountName").value);
+        var type = $("editAccountType").value;
+        var value = Math.max(0, parseMoney($("editAccountValue").value));
+        var owners = collectOwnersFrom("editOwnerGrid");
+        var debtYears = null;
+        if (type === "debt"){
+          debtYears = Math.max(0, Number($("editDebtYears").value || 0));
+        }
+        if (!editingAccountId || !name || !value || !owners.length){
+          $("editAccountError").style.display = "block";
+          return;
+        }
+        $("editAccountError").style.display = "none";
+        accounts = accounts.map(function(acct){
+          if (acct.id !== editingAccountId) return acct;
+          return {
+            id: acct.id,
+            name: name,
+            type: type,
+            value: value,
+            owners: owners,
+            debtYears: debtYears
+          };
+        });
+        editingAccountId = null;
+        saveState();
+        renderAll();
+        setEditModal(false);
       }
 
       function takeSnapshot(){
@@ -964,6 +1037,11 @@
         $("debtYearsWrap").style.display = type === "debt" ? "block" : "none";
       }
 
+      function toggleEditDebt(){
+        var type = $("editAccountType").value;
+        $("editDebtYearsWrap").style.display = type === "debt" ? "block" : "none";
+      }
+
       function wire(){
         $("addPersonBtn").addEventListener("click", addPerson);
         $("personName").addEventListener("keydown", function(e){
@@ -972,12 +1050,16 @@
         $("closePeopleBtn").addEventListener("click", function(){ setModal(false); });
         $("editPeopleBtn").addEventListener("click", function(){ setModal(true); });
         $("addAccountBtn").addEventListener("click", addAccount);
-        $("cancelEditBtn").addEventListener("click", function(){
-          setEditState(null);
-        });
         $("accountType").addEventListener("change", toggleDebt);
         $("accountValue").addEventListener("blur", function(){ formatMoneyInput($("accountValue")); });
         $("takeSnapshotBtn").addEventListener("click", takeSnapshot);
+        $("editAccountType").addEventListener("change", toggleEditDebt);
+        $("editAccountValue").addEventListener("blur", function(){ formatMoneyInput($("editAccountValue")); });
+        $("saveEditAccountBtn").addEventListener("click", saveEditAccount);
+        $("closeEditAccountBtn").addEventListener("click", function(){
+          editingAccountId = null;
+          setEditModal(false);
+        });
         $("exportDataBtn").addEventListener("click", exportData);
         $("importData").addEventListener("change", function(e){
           importData(e.target.files && e.target.files[0]);
