@@ -536,7 +536,7 @@
         <div class="divider"></div>
 
         <div class="sectionHeader">
-          <h2>Savings and sinking funds</h2>
+          <h2>Savings</h2>
           <div class="btnRow">
             <button class="btn secondary" type="button" data-add="savings">Add savings</button>
           </div>
@@ -865,6 +865,26 @@
         return total;
       }
 
+      function sortExpenseList(type){
+        var list = lists[type];
+        if (!list) return;
+        var rows = collectRows(type).map(function(row, index){
+          var amountInput = row.querySelector(".amount");
+          return {
+            row: row,
+            index: index,
+            amount: parseMoney(amountInput ? amountInput.value : 0)
+          };
+        });
+        rows.sort(function(a, b){
+          var diff = b.amount - a.amount;
+          return diff !== 0 ? diff : a.index - b.index;
+        });
+        rows.forEach(function(item){
+          list.appendChild(item.row);
+        });
+      }
+
       function collectTagTotals(){
         var factor = elPeriod.value === "annual" ? 1 / 12 : 1;
         var totals = { Needs:0, Wants:0, Savings:0, Debt:0, Giving:0, Other:0 };
@@ -903,6 +923,10 @@
       }
 
       function updateUI(){
+        sortExpenseList("fixed");
+        sortExpenseList("variable");
+        sortExpenseList("debt");
+        sortExpenseList("savings");
         var factor = elPeriod.value === "annual" ? 1 / 12 : 1;
         var perYear = paychecksPerYear();
         var paycheckFactor = elPeriod.value === "annual" ? perYear : (perYear / 12);
