@@ -196,7 +196,7 @@
     }
     .accountRow{
       display:grid;
-      grid-template-columns:1.2fr 1fr 0.7fr 0.7fr 0.6fr auto;
+      grid-template-columns:1.2fr 1fr max-content 0.7fr 0.6fr auto;
       gap:8px;
       align-items:center;
       padding:8px;
@@ -217,7 +217,7 @@
     }
     @media (max-width: 820px){
       .accountRow{
-        grid-template-columns:minmax(0, 1fr) 96px auto;
+        grid-template-columns:minmax(0, 1fr) max-content auto;
         grid-template-areas:
           "name value action"
           "owners type debt";
@@ -403,7 +403,17 @@
 
         <div class="divider"></div>
 
-        <h3 style="margin:0 0 6px; font-size:14px;">Accounts list</h3>
+        <div class="row" style="justify-content:space-between; align-items:flex-end;">
+          <h3 style="margin:0; font-size:14px;">Accounts list</h3>
+          <div style="min-width:180px;">
+            <label for="sortAccounts" style="margin-bottom:4px;">Sort by</label>
+            <select id="sortAccounts">
+              <option value="name">Account name (A–Z)</option>
+              <option value="type" selected>Account type</option>
+              <option value="value">Account value</option>
+            </select>
+          </div>
+        </div>
         <div class="accountList" id="accountList"></div>
       </section>
 
@@ -531,6 +541,7 @@
       var editingAccountId = null;
 
       var fmtUSD0 = new Intl.NumberFormat("en-US", { style:"currency", currency:"USD", maximumFractionDigits:0 });
+      var sortMode = "type";
 
       function $(id){ return document.getElementById(id); }
 
@@ -651,7 +662,16 @@
           list.innerHTML = "<span class=\"pill\">No accounts added yet</span>";
           return;
         }
-        accounts.forEach(function(acct){
+        var sorted = accounts.slice().sort(function(a, b){
+          if (sortMode === "value"){
+            return b.value - a.value;
+          }
+          if (sortMode === "type"){
+            return String(a.type).localeCompare(String(b.type));
+          }
+          return String(a.name).localeCompare(String(b.name));
+        });
+        sorted.forEach(function(acct){
           var row = document.createElement("div");
           row.className = "accountRow";
           var ownerText = acct.owners.length ? acct.owners.join(", ") : "Unassigned";
@@ -1052,6 +1072,10 @@
         $("addAccountBtn").addEventListener("click", addAccount);
         $("accountType").addEventListener("change", toggleDebt);
         $("accountValue").addEventListener("blur", function(){ formatMoneyInput($("accountValue")); });
+        $("sortAccounts").addEventListener("change", function(e){
+          sortMode = e.target.value;
+          renderAccounts();
+        });
         $("takeSnapshotBtn").addEventListener("click", takeSnapshot);
         $("editAccountType").addEventListener("change", toggleEditDebt);
         $("editAccountValue").addEventListener("blur", function(){ formatMoneyInput($("editAccountValue")); });
