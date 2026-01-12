@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Retirement Calculator (Simplified)</title>
+  <link rel="stylesheet" href="../shared/theme.css" />
 
   <style>
     :root{
@@ -34,7 +35,7 @@
 
         body{
         margin:0;
-        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+        font-family:"Baskerville","Palatino Linotype","Book Antiqua",serif;
         color:var(--text);
         background: var(--bg); /* solid fallback */
         line-height:1.35;
@@ -102,29 +103,30 @@
       flex-wrap:wrap;
       gap:10px;
       align-items:center;
-      background: var(--panel);
+      background:rgba(15,20,28,0.65);
       border:1px solid var(--line);
-      border-radius:14px;
+      border-radius:16px;
       padding:10px 12px;
+      backdrop-filter: blur(10px);
     }
     .navLabel{
       font-size:11px;
       color:var(--muted);
-      letter-spacing:.2px;
+      letter-spacing:0.4px;
       text-transform:uppercase;
     }
     .navLink{
       color:var(--text);
       text-decoration:none;
-      background: var(--panel2);
+      background:rgba(255,255,255,0.03);
       border:1px solid var(--line);
-      border-radius:10px;
-      padding:7px 10px;
+      border-radius:999px;
+      padding:8px 12px;
       font-weight:700;
     }
     .navLink[aria-current="page"]{
-      background: rgba(122,162,255,.22);
-      border-color: rgba(122,162,255,.55);
+      background:rgba(122,162,255,0.22);
+      border-color:rgba(122,162,255,0.55);
     }
 
     .summarySticky{
