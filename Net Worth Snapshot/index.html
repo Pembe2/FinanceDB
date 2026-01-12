@@ -217,7 +217,7 @@
     }
     @media (max-width: 820px){
       .accountRow{
-        grid-template-columns:1fr auto auto;
+        grid-template-columns:minmax(0, 1fr) 96px auto;
         grid-template-areas:
           "name value action"
           "owners type debt";
@@ -227,8 +227,8 @@
       }
       .accountRow .name{ grid-area:name; }
       .accountRow .value{ grid-area:value; text-align:right; }
-      .accountRow .owners{ grid-area:owners; }
-      .accountRow .type{ grid-area:type; }
+      .accountRow .owners{ grid-area:owners; min-width:0; }
+      .accountRow .type{ grid-area:type; justify-self:start; }
       .accountRow .debt{ grid-area:debt; text-align:right; }
       .accountRow button{ grid-area:action; justify-self:end; }
     }
