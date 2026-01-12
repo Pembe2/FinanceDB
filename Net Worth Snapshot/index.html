@@ -397,6 +397,7 @@
 
         <div class="row" style="margin-top:12px;">
           <button id="addAccountBtn" type="button">Add account</button>
+          <button id="cancelEditBtn" type="button" class="secondary" style="display:none;">Cancel edit</button>
           <span class="error" id="accountError" style="display:none;">Please add a name, value, and owner.</span>
         </div>
 
@@ -487,6 +488,7 @@
       var people = [];
       var accounts = [];
       var snapshots = [];
+      var editingAccountId = null;
 
       var fmtUSD0 = new Intl.NumberFormat("en-US", { style:"currency", currency:"USD", maximumFractionDigits:0 });
 
@@ -626,12 +628,16 @@
           var remove = document.createElement("button");
           remove.type = "button";
           remove.textContent = "Delete";
-          remove.addEventListener("click", function(){
+          remove.addEventListener("click", function(e){
+            e.stopPropagation();
             accounts = accounts.filter(function(a){ return a.id !== acct.id; });
             saveState();
             renderAll();
           });
           row.appendChild(remove);
+          row.addEventListener("click", function(){
+            startEditAccount(acct);
+          });
           list.appendChild(row);
         });
       }
@@ -795,22 +801,69 @@
           return;
         }
         $("accountError").style.display = "none";
-        accounts.push({
-          id: "acct_" + Date.now() + "_" + Math.random().toString(36).slice(2,7),
-          name: name,
-          type: type,
-          value: value,
-          owners: owners,
-          debtYears: debtYears
-        });
+        if (editingAccountId){
+          accounts = accounts.map(function(acct){
+            if (acct.id !== editingAccountId) return acct;
+            return {
+              id: acct.id,
+              name: name,
+              type: type,
+              value: value,
+              owners: owners,
+              debtYears: debtYears
+            };
+          });
+          setEditState(null);
+        } else {
+          accounts.push({
+            id: "acct_" + Date.now() + "_" + Math.random().toString(36).slice(2,7),
+            name: name,
+            type: type,
+            value: value,
+            owners: owners,
+            debtYears: debtYears
+          });
+          resetAccountForm();
+        }
+        saveState();
+        renderAll();
+      }
+
+      function resetAccountForm(){
         $("accountName").value = "";
         $("accountValue").value = "";
         $("debtYears").value = "";
         Array.prototype.slice.call(document.querySelectorAll(".ownerOption input")).forEach(function(el){
           el.checked = false;
         });
-        saveState();
-        renderAll();
+        $("accountType").value = "savings";
+        toggleDebt();
+      }
+
+      function setEditState(accountId){
+        editingAccountId = accountId;
+        var addBtn = $("addAccountBtn");
+        var cancelBtn = $("cancelEditBtn");
+        if (editingAccountId){
+          addBtn.textContent = "Save changes";
+          if (cancelBtn) cancelBtn.style.display = "inline-flex";
+        } else {
+          addBtn.textContent = "Add account";
+          if (cancelBtn) cancelBtn.style.display = "none";
+          resetAccountForm();
+        }
+      }
+
+      function startEditAccount(acct){
+        $("accountName").value = acct.name;
+        $("accountType").value = acct.type;
+        $("accountValue").value = String(acct.value);
+        $("debtYears").value = acct.debtYears !== null ? String(acct.debtYears) : "";
+        toggleDebt();
+        Array.prototype.slice.call(document.querySelectorAll(".ownerOption input")).forEach(function(el){
+          el.checked = acct.owners.indexOf(el.value) !== -1;
+        });
+        setEditState(acct.id);
       }
 
       function takeSnapshot(){
@@ -919,6 +972,9 @@
         $("closePeopleBtn").addEventListener("click", function(){ setModal(false); });
         $("editPeopleBtn").addEventListener("click", function(){ setModal(true); });
         $("addAccountBtn").addEventListener("click", addAccount);
+        $("cancelEditBtn").addEventListener("click", function(){
+          setEditState(null);
+        });
         $("accountType").addEventListener("change", toggleDebt);
         $("accountValue").addEventListener("blur", function(){ formatMoneyInput($("accountValue")); });
         $("takeSnapshotBtn").addEventListener("click", takeSnapshot);
