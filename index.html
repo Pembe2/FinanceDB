@@ -4,6 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Financial Dashboard - Tool Index</title>
+  <link rel="stylesheet" href="./shared/theme.css" />
+  <script>
+    try{
+      var theme = localStorage.getItem("financeTheme");
+      if (theme) document.documentElement.setAttribute("data-theme", theme);
+    }catch(e){}
+  </script>
   <style>
     :root{
       --bg:#0e1116;
@@ -15,6 +22,21 @@
       --border:rgba(255,255,255,0.08);
       --accent:#7fa7ff;
       --accent-2:#8ad3a9;
+      --bg-grad-1:radial-gradient(900px 500px at 12% -10%, rgba(138,211,169,0.14), transparent 60%);
+      --bg-grad-2:radial-gradient(1000px 700px at 95% 10%, rgba(127,167,255,0.14), transparent 55%);
+    }
+    html[data-theme="light"]{
+      --bg:#f4f7fb;
+      --sidebar:#eef2f7;
+      --panel:rgba(0,0,0,0.04);
+      --card:#ffffff;
+      --text:#1b2430;
+      --muted:#5a6b86;
+      --border:rgba(15,23,42,0.12);
+      --accent:#2f5fff;
+      --accent-2:#2bb98a;
+      --bg-grad-1:radial-gradient(900px 500px at 12% -10%, rgba(43,185,138,0.14), transparent 60%);
+      --bg-grad-2:radial-gradient(1000px 700px at 95% 10%, rgba(47,95,255,0.14), transparent 55%);
     }
     *{box-sizing:border-box;}
     body{
@@ -27,8 +49,8 @@
     .main{
       padding:24px 24px 32px;
       background:
-        radial-gradient(900px 500px at 12% -10%, rgba(138,211,169,0.14), transparent 60%),
-        radial-gradient(1000px 700px at 95% 10%, rgba(127,167,255,0.14), transparent 55%),
+        var(--bg-grad-1),
+        var(--bg-grad-2),
         var(--bg);
       min-height:100vh;
     }
@@ -78,6 +100,10 @@
 </head>
 <body>
   <main class="main">
+    <div class="themeToggleBar">
+      <span class="themeToggleLabel">Theme</span>
+      <button class="themeToggleBtn" type="button" data-theme-toggle>Light mode</button>
+    </div>
     <section class="content" aria-label="Tools">
       <article class="card">
         <h2>Budgeting Tool</h2>
@@ -124,6 +150,7 @@
       </article>
     </section>
   </main>
+  <script src="./shared/theme.js"></script>
 </body>
 </html>
 

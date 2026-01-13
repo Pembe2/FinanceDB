@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Retirement Toolkit</title>
   <link rel="stylesheet" href="../shared/theme.css" />
+  <script src="../shared/theme.js"></script>
+  <script>
+    try{
+      var theme = localStorage.getItem("financeTheme");
+      if (theme) document.documentElement.setAttribute("data-theme", theme);
+    }catch(e){}
+  </script>
 
   <!-- Chart.js (Projection tab drawdown chart) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -29,9 +36,7 @@
     body{
       margin:0;
       font-family:"Baskerville","Palatino Linotype","Book Antiqua",serif;
-      background: radial-gradient(1200px 700px at 20% -10%, rgba(122,162,255,.22), transparent 55%),
-                  radial-gradient(1000px 650px at 95% 10%, rgba(88,209,167,.16), transparent 50%),
-                  var(--bg);
+      background:var(--bg-grad-1), var(--bg-grad-2), var(--bg);
       color:var(--text);
       line-height:1.35;
     }
@@ -502,6 +507,12 @@
 </head>
 
 <body>
+  <div class="navPanel">
+    <div class="themeToggleBar">
+      <span class="themeToggleLabel">Theme</span>
+      <button class="themeToggleBtn" type="button" data-theme-toggle>Light mode</button>
+    </div>
+  </div>
   <nav class="navPanel" aria-label="Site navigation">
   <div class="navCard">
     <span class="navLabel">Tools</span>

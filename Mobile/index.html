@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Retirement Calculator (Simplified)</title>
   <link rel="stylesheet" href="../shared/theme.css" />
+  <script>
+    try{
+      var theme = localStorage.getItem("financeTheme");
+      if (theme) document.documentElement.setAttribute("data-theme", theme);
+    }catch(e){}
+  </script>
 
   <style>
     :root{
@@ -48,16 +54,8 @@
     z-index: -1;
 
     background:
-        radial-gradient(
-        1200px 700px at 20% -10%,
-        rgba(122,162,255,.22),
-        transparent 55%
-        ),
-        radial-gradient(
-        900px 600px at 95% 10%,
-        rgba(88,209,167,.16),
-        transparent 50%
-        ),
+        var(--bg-grad-1),
+        var(--bg-grad-2),
         var(--bg);
 
     background-repeat: no-repeat;
@@ -595,6 +593,10 @@
 
 <body>
   <div class="wrap">
+    <div class="themeToggleBar">
+      <span class="themeToggleLabel">Theme</span>
+      <button class="themeToggleBtn" type="button" data-theme-toggle>Light mode</button>
+    </div>
     <nav class="navPanel" aria-label="Site navigation">
   <div class="navCard">
     <span class="navLabel">Tools</span>
@@ -962,6 +964,7 @@
     <div>Local-only storage • No data is transmitted • Educational use only</div>
   </div>
 
+  <script src="../shared/theme.js"></script>
   <script>
     (function(){
       const KEY = "rtk_simplified_v1";

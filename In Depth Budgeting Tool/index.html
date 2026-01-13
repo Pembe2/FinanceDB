@@ -6,6 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Budgeting Tool</title>
   <link rel="stylesheet" href="../shared/theme.css" />
+  <script>
+    try{
+      var theme = localStorage.getItem("financeTheme");
+      if (theme) document.documentElement.setAttribute("data-theme", theme);
+    }catch(e){}
+  </script>
   <style>
     :root{
       --bg:#0b1220;
@@ -27,10 +33,7 @@
       margin:0;
       color:var(--text);
       font-family:"Baskerville","Palatino Linotype","Book Antiqua",serif;
-      background:
-        radial-gradient(1200px 700px at 20% -10%, rgba(122,162,255,0.22), transparent 55%),
-        radial-gradient(900px 600px at 95% 10%, rgba(88,209,167,0.16), transparent 50%),
-        var(--bg);
+      background:var(--bg-grad-1), var(--bg-grad-2), var(--bg);
       min-height:100vh;
     }
     a{color:inherit;text-decoration:none;}
@@ -405,6 +408,10 @@
 </head>
 <body>
   <div class="page">
+    <div class="themeToggleBar">
+      <span class="themeToggleLabel">Theme</span>
+      <button class="themeToggleBtn" type="button" data-theme-toggle>Light mode</button>
+    </div>
     <nav class="topnav" aria-label="Site navigation">
   <span class="navLabel">Tools</span>
   <a class="navLink" href="../index.html">Tool Index</a>
@@ -648,6 +655,7 @@
     <div class="value" id="stickyNet">$0</div>
   </div>
 
+  <script src="../shared/theme.js"></script>
   <script>
     (function(){
       var KEY = "budgetTool.v1";
