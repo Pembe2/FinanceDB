@@ -78,6 +78,22 @@ a{color:inherit;text-decoration:none;}
   border-color:rgba(122,162,255,0.55);
   background:rgba(122,162,255,0.22);
 }
+@media (max-width: 560px){
+  .topnav,
+  .navCard{
+    gap:8px;
+    padding:8px 10px;
+  }
+  .navLabel{
+    font-size:10px;
+    letter-spacing:0.3px;
+  }
+  .navLink{
+    padding:5px 8px;
+    font-size:12px;
+    border-radius:12px;
+  }
+}
 input, select, button, textarea{
   font:inherit;
 }

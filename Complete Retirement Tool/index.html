@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Retirement Toolkit</title>
   <link rel="stylesheet" href="../shared/theme.css" />
-  <script src="../shared/theme.js"></script>
   <script>
     try{
       var theme = localStorage.getItem("financeTheme");
@@ -162,6 +161,12 @@
       max-width: 520px;
       accent-color: rgba(122,162,255,.85);
     }
+    table input[type="checkbox"]{
+      width:16px;
+      height:16px;
+      margin:0;
+      accent-color: rgba(122,162,255,.75);
+    }
 
     select{
       color:#eaf0ff;
@@ -174,6 +179,14 @@
     }
     select option{
       color:#0b1220;
+      background:#ffffff;
+    }
+    html[data-theme="light"] select{
+      color:var(--text);
+      background:rgba(15,23,42,0.06);
+    }
+    html[data-theme="light"] select option{
+      color:#1b2430;
       background:#ffffff;
     }
 
@@ -236,6 +249,26 @@
       border-color: rgba(255,107,107,.35);
       background: rgba(255,107,107,.10);
       color: rgba(255,200,200,.92);
+    }
+    html[data-theme="light"] .pill{
+      color:var(--text);
+      background:rgba(15,23,42,0.06);
+      border-color:rgba(15,23,42,0.12);
+    }
+    html[data-theme="light"] .pill.warn{
+      background:rgba(213,164,58,0.18);
+      border-color:rgba(213,164,58,0.45);
+      color:#5a4200;
+    }
+    html[data-theme="light"] .pill.ok{
+      background:rgba(43,185,138,0.18);
+      border-color:rgba(43,185,138,0.45);
+      color:#0f4a36;
+    }
+    html[data-theme="light"] .pill.bad{
+      background:rgba(217,81,81,0.18);
+      border-color:rgba(217,81,81,0.45);
+      color:#5b1a1a;
     }
 
     .grid2{display:grid;grid-template-columns: 1fr 1fr;gap:10px;}
@@ -426,6 +459,11 @@
       display:grid;
       grid-template-columns: 1fr 1fr;
       gap:10px;
+    }
+    .metricStack{
+      display:grid;
+      gap:10px;
+      align-content:start;
     }
     @media (max-width: 980px){ .metricGrid{ grid-template-columns: 1fr; } }
     .metricBox{
@@ -1078,41 +1116,32 @@
             <div class="metricBox" title="Compares total retirement income to the spending estimate for coverage and surplus/shortfall.">
               <div class="metricTitle">Spending Coverage (vs Spending Estimator)</div>
 
-              <div style="height:8px;"></div>
+              <div style="height:10px;"></div>
+              <div class="small muted">Estimated spending (annual, today’s $)</div>
+              <div class="metricValue" id="spendAnnual">$—</div>
+
+              <div style="height:10px;"></div>
+              <div class="small muted">Total retirement income (annual, today’s $)</div>
+              <div class="metricValue" id="incomeAnnualToday">$—</div>
+
+              <div style="height:10px;"></div>
               <div class="pill" id="spendCoverageStatus">—</div>
-
-              <div class="note" style="margin-top:8px;">
-                For more information, expand this section.
-                <button class="btn secondary" id="toggleCoverageDetails" type="button" style="margin-left:8px; padding:6px 10px;">
-                  Expand
-                </button>
-              </div>
-
-              <div class="collapse is-collapsed" id="coverageDetails">
-                <div class="hr" style="margin:10px 0;"></div>
-
-                <div class="small muted">Estimated spending (annual)</div>
-                <div class="metricValue" id="spendAnnual">$—</div>
-
-                <div style="height:8px;"></div>
-
-                <div class="small muted">Total retirement income (annual, today’s $)</div>
-                <div class="metricValue" id="incomeAnnualToday">$—</div>
-
-                <div class="hr" style="margin:10px 0;"></div>
-
-                <div class="small muted">Surplus / Shortfall (annual, today’s $)</div>
-                <div class="metricValue" id="surplusShortfall">$—</div>
-
-                <div style="height:6px;"></div>
-                <div class="small muted" id="coveragePct">—</div>
-              </div>
+              <div class="metricValue" id="surplusShortfall" style="display:none;">$—</div>
+              <div class="small muted" id="coveragePct" style="display:none;">—</div>
             </div>
 
-            <div class="metricBox" title="Ending balance at death, including reinvested surplus income at the retirement growth rate.">
-              <div class="metricTitle">Remaining Portfolio at Death (if applicable)</div>
-              <div class="metricValue" id="outRemaining">$—</div>
-              <div class="small muted">Shown for RMD, 4%, and Custom (simplified).</div>
+            <div class="metricStack">
+              <div class="metricBox" title="Ending portfolio balance using the retirement growth rate and selected distribution.">
+                <div class="metricTitle">Portfolio at Death (Portfolio Only)</div>
+                <div class="metricValue" id="outRemaining">$—</div>
+                <div class="small muted">Uses portfolio-only growth and distributions.</div>
+              </div>
+
+              <div class="metricBox" title="Grows surplus income (total income minus spending) at the retirement growth rate.">
+                <div class="metricTitle">Surplus Invested Value at Death</div>
+                <div class="metricValue" id="outSurplus">$—</div>
+                <div class="small muted">Based on estimated spending and total income.</div>
+              </div>
             </div>
           </div>
 
@@ -2162,7 +2191,7 @@
         var elDelta  = byId("surplusShortfall");
         var elPct    = byId("coveragePct");
 
-        if (!elStatus || !elSpend || !elIncome || !elDelta || !elPct) return;
+        if (!elStatus || !elSpend || !elIncome) return;
 
         var income = Number(totalIncomeTodayAnnual || 0);
         if (!isFinite(income) || income < 0) income = 0;
@@ -2184,12 +2213,16 @@
         var delta = income - spendAnnual;
         var covered = (income >= spendAnnual);
 
-        elDelta.textContent = formatDollars(Math.abs(delta)) + (covered ? " surplus" : " shortfall");
+        if (elDelta){
+          elDelta.textContent = formatDollars(Math.abs(delta)) + (covered ? " surplus" : " shortfall");
+        }
 
         var pct = (spendAnnual > 0) ? (income / spendAnnual) * 100 : 0;
-        elPct.textContent = (spendAnnual > 0)
-          ? ("Coverage: " + pct.toFixed(0) + "% of estimated spending")
-          : "Coverage: —";
+        if (elPct){
+          elPct.textContent = (spendAnnual > 0)
+            ? ("Coverage: " + pct.toFixed(0) + "% of estimated spending")
+            : "Coverage: —";
+        }
 
         if (covered){
           elStatus.textContent = "Covered. Income exceeds spending by: " + formatDollars(delta) + " / yr";
@@ -2581,7 +2614,7 @@
       }
 
       function computePortfolioPath(currentFunds, annualContrib, preRetGrowth, retirementGrowth,
-                                    annualWithdrawalNeed, otherIncomeAnnual,
+                                    annualWithdrawalNeed,
                                     currentAge, retirementAge, deathAge){
 
         var balances = [];
@@ -2600,20 +2633,49 @@
         var need = Number(annualWithdrawalNeed || 0);
         if (!isFinite(need) || need < 0) need = 0;
 
-        var other = Number(otherIncomeAnnual || 0);
-        if (!isFinite(other) || other < 0) other = 0;
-
-        var netCashflow = other - need; // surplus income is invested during retirement
-
         for (var age = currentAge; age <= deathAge; age++){
           if (age < retirementAge){
             balance = balance * (1 + rPre) + contrib;
           } else {
-            balance = balance * (1 + rRet) + netCashflow;
+            balance = balance * (1 + rRet) - need;
           }
           balances.push(balance);
         }
         return balances;
+      }
+
+      function computeRemainingAtDeath(fvAtRet, retirementGrowth, yearsInRetirement, annualWithdrawalNeed){
+        var fv = Math.max(0, Number(fvAtRet || 0));
+        var r = Number(retirementGrowth || 0);
+        var n = Math.max(0, Math.round(Number(yearsInRetirement || 0)));
+        var w = Math.max(0, Number(annualWithdrawalNeed || 0));
+        if (!isFinite(r)) r = 0;
+
+        if (n <= 0) return 0;
+
+        var periods = n + 1;
+        var bal = fv;
+        for (var i=0;i<periods;i++){
+          bal = bal * (1 + r) - w;
+          if (!isFinite(bal)) return 0;
+        }
+        return Math.max(0, bal);
+      }
+
+      function computeSurplusAtDeath(surplusAnnual, retirementGrowth, yearsInRetirement){
+        var surplus = Math.max(0, Number(surplusAnnual || 0));
+        var r = Number(retirementGrowth || 0);
+        var n = Math.max(0, Math.round(Number(yearsInRetirement || 0)));
+        if (!isFinite(r)) r = 0;
+        if (n <= 0 || surplus <= 0) return 0;
+
+        var periods = n + 1;
+        var value = 0;
+        for (var i=0;i<periods;i++){
+          value = value * (1 + r) + surplus;
+          if (!isFinite(value)) return 0;
+        }
+        return Math.max(0, value);
       }
 
       var drawdownState={ years:[], map:{}, remainingMap:{} };
@@ -2655,6 +2717,10 @@
         var ctx=byId("drawdownCanvas").getContext("2d");
         if(chartInstance){ chartInstance.destroy(); chartInstance=null; }
 
+        var isLight = document.documentElement.getAttribute("data-theme") === "light";
+        var axisText = isLight ? "rgba(27,36,48,0.85)" : "rgba(234,240,255,.85)";
+        var axisSubText = isLight ? "rgba(27,36,48,0.7)" : "rgba(234,240,255,.75)";
+        var gridColor = isLight ? "rgba(15,23,42,0.12)" : "rgba(255,255,255,.08)";
         chartInstance=new Chart(ctx,{
           type:"line",
           data:{
@@ -2663,17 +2729,17 @@
           },
           options:{
             responsive:true,
-            plugins:{ legend:{ display:true, labels:{ color:"rgba(234,240,255,.85)" } } },
+            plugins:{ legend:{ display:true, labels:{ color: axisText } } },
             scales:{
               y:{
-                title:{ display:true, text:"USD (Millions)", color:"rgba(234,240,255,.75)" },
-                ticks:{ color:"rgba(234,240,255,.75)", callback:function(v){ return (Number(v)/1000000).toFixed(1); } },
-                grid:{ color:"rgba(255,255,255,.08)" }
+                title:{ display:true, text:"USD (Millions)", color: axisSubText },
+                ticks:{ color: axisSubText, callback:function(v){ return (Number(v)/1000000).toFixed(1); } },
+                grid:{ color: gridColor }
               },
               x:{
-                title:{ display:true, text:"Age", color:"rgba(234,240,255,.75)" },
-                ticks:{ color:"rgba(234,240,255,.75)" },
-                grid:{ color:"rgba(255,255,255,.08)" }
+                title:{ display:true, text:"Age", color: axisSubText },
+                ticks:{ color: axisSubText },
+                grid:{ color: gridColor }
               }
             }
           }
@@ -2965,8 +3031,20 @@
         updateExecutiveSummary(covInfo, totalToday);
         updateAssumptionSummary();
 
-        var rem = remainingForScenarioAndMethod(sIdx, wIdx);
-        byId("outRemaining").textContent = (rem === null) ? "—" : formatDollars(rem);
+        var ages = sanitizeAges(num("currentAge"), num("retirementAge"), num("deathAge"));
+        var yearsInRet = Math.max(0, ages.deathAge - ages.retirementAge);
+        var retGrowth = num("retirementGrowth") / 100;
+
+        var rem = computeRemainingAtDeath(nominal.fv, retGrowth, yearsInRet, distNom);
+        byId("outRemaining").textContent = (yearsInRet > 0) ? formatDollars(rem) : "$—";
+
+        var surplusValue = 0;
+        if (covInfo && covInfo.spendAnnual !== null){
+          var spendNominal = covInfo.spendAnnual * Math.pow(1 + (last.inflation || 0), last.yearsToRetire || 0);
+          var surplusNominal = Math.max(0, totalNom - spendNominal);
+          surplusValue = computeSurplusAtDeath(surplusNominal, retGrowth, yearsInRet);
+        }
+        byId("outSurplus").textContent = (yearsInRet > 0) ? formatDollars(surplusValue) : "$—";
 
         // Keep drawdown selector aligned
         var drawdownIndex = (sIdx * 4) + wIdx;
@@ -3063,19 +3141,31 @@
             var distMax = result.nominalProj[si].max_disb;
             var customW = getCustomWithdrawAnnual();
 
-            dd.push(computePortfolioPath(currentFundsForPath, contrib, rPre, rRet, distRMD, otherIncomeAnnual, ages.currentAge, ages.retirementAge, ages.deathAge));
-            dd.push(computePortfolioPath(currentFundsForPath, contrib, rPre, rRet, dist4,   otherIncomeAnnual, ages.currentAge, ages.retirementAge, ages.deathAge));
-            dd.push(computePortfolioPath(currentFundsForPath, contrib, rPre, rRet, distMax, otherIncomeAnnual, ages.currentAge, ages.retirementAge, ages.deathAge));
-            dd.push(computePortfolioPath(currentFundsForPath, contrib, rPre, rRet, customW, otherIncomeAnnual, ages.currentAge, ages.retirementAge, ages.deathAge));
+            dd.push(computePortfolioPath(currentFundsForPath, contrib, rPre, rRet, distRMD, ages.currentAge, ages.retirementAge, ages.deathAge));
+            dd.push(computePortfolioPath(currentFundsForPath, contrib, rPre, rRet, dist4,   ages.currentAge, ages.retirementAge, ages.deathAge));
+            dd.push(computePortfolioPath(currentFundsForPath, contrib, rPre, rRet, distMax, ages.currentAge, ages.retirementAge, ages.deathAge));
+            dd.push(computePortfolioPath(currentFundsForPath, contrib, rPre, rRet, customW, ages.currentAge, ages.retirementAge, ages.deathAge));
           }
         }
 
         function lastVal(arr){ return (arr && arr.length) ? arr[arr.length - 1] : null; }
 
+        var yearsInRet = Math.max(0, ages.deathAge - ages.retirementAge);
         drawdownState.remainingMap = {
-          0:lastVal(dd[0]),  1:lastVal(dd[1]),  2:lastVal(dd[2]),  3:lastVal(dd[3]),
-          4:lastVal(dd[4]),  5:lastVal(dd[5]),  6:lastVal(dd[6]),  7:lastVal(dd[7]),
-          8:lastVal(dd[8]),  9:lastVal(dd[9]), 10:lastVal(dd[10]), 11:lastVal(dd[11])
+          0:computeRemainingAtDeath(result.nominalProj[0].fv, rRet, yearsInRet, result.nominalProj[0].min_disb),
+          1:computeRemainingAtDeath(result.nominalProj[0].fv, rRet, yearsInRet, result.nominalProj[0].mid_disb),
+          2:computeRemainingAtDeath(result.nominalProj[0].fv, rRet, yearsInRet, result.nominalProj[0].max_disb),
+          3:computeRemainingAtDeath(result.nominalProj[0].fv, rRet, yearsInRet, customW),
+
+          4:computeRemainingAtDeath(result.nominalProj[1].fv, rRet, yearsInRet, result.nominalProj[1].min_disb),
+          5:computeRemainingAtDeath(result.nominalProj[1].fv, rRet, yearsInRet, result.nominalProj[1].mid_disb),
+          6:computeRemainingAtDeath(result.nominalProj[1].fv, rRet, yearsInRet, result.nominalProj[1].max_disb),
+          7:computeRemainingAtDeath(result.nominalProj[1].fv, rRet, yearsInRet, customW),
+
+          8:computeRemainingAtDeath(result.nominalProj[2].fv, rRet, yearsInRet, result.nominalProj[2].min_disb),
+          9:computeRemainingAtDeath(result.nominalProj[2].fv, rRet, yearsInRet, result.nominalProj[2].mid_disb),
+          10:computeRemainingAtDeath(result.nominalProj[2].fv, rRet, yearsInRet, result.nominalProj[2].max_disb),
+          11:computeRemainingAtDeath(result.nominalProj[2].fv, rRet, yearsInRet, customW)
         };
 
         drawdownState.map = {
@@ -3541,6 +3631,7 @@
       };
     })();
   </script>
+  <script src="../shared/theme.js"></script>
 </body>
 </html>
 

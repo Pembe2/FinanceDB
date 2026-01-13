@@ -139,11 +139,14 @@
       display:grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 8px;
-      background:var(--panel);
+      background:rgba(11,18,32,.9);
       border: 1px solid var(--line);
       border-radius: 14px;
       padding: 8px 10px;
       backdrop-filter: blur(10px);
+    }
+    html[data-theme="light"] .summaryBar{
+      background:rgba(240,244,250,0.92);
     }
     .summaryItem{
       min-width: 0;
@@ -276,6 +279,26 @@
     .pill.ok{ background: var(--okBg); border-color: var(--okBorder); color: rgba(191,255,232,.92); }
     .pill.warn{ background: var(--warnBg); border-color: var(--warnBorder); color: rgba(255,230,175,.92); }
     .pill.bad{ background: var(--badBg); border-color: var(--badBorder); color: rgba(255,200,200,.92); }
+    html[data-theme="light"] .pill{
+      background:rgba(15,23,42,0.06);
+      border-color:rgba(15,23,42,0.12);
+      color:#334155;
+    }
+    html[data-theme="light"] .pill.ok{
+      background:rgba(43,185,138,0.18);
+      border-color:rgba(43,185,138,0.45);
+      color:#0f4a36;
+    }
+    html[data-theme="light"] .pill.warn{
+      background:rgba(213,164,58,0.18);
+      border-color:rgba(213,164,58,0.45);
+      color:#5a4200;
+    }
+    html[data-theme="light"] .pill.bad{
+      background:rgba(217,81,81,0.18);
+      border-color:rgba(217,81,81,0.45);
+      color:#5b1a1a;
+    }
 
     label{
       display:block;
@@ -1451,7 +1474,14 @@
         if (min > 0) min = 0;
         if (max === min){ max = min + 1; }
 
-        ctx.strokeStyle = "rgba(255,255,255,0.15)";
+        var isLight = document.documentElement.getAttribute("data-theme") === "light";
+        var gridColor = isLight ? "rgba(15,23,42,0.15)" : "rgba(255,255,255,0.15)";
+        var labelBox = isLight ? "rgba(241,245,249,0.95)" : "rgba(12,18,28,0.85)";
+        var labelStroke = isLight ? "rgba(15,23,42,0.18)" : "rgba(255,255,255,0.12)";
+        var labelText = isLight ? "rgba(27,36,48,0.92)" : "rgba(234,240,255,0.92)";
+        var pointColor = isLight ? "rgba(47,95,255,0.85)" : "rgba(234,240,255,0.92)";
+
+        ctx.strokeStyle = gridColor;
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(pad, pad);
@@ -1487,14 +1517,15 @@
             var boxY = yk + dy - 10;
             var boxW = textW + 8;
             var boxH = 16;
-            ctx.fillStyle = "rgba(12,18,28,0.85)";
+            ctx.fillStyle = labelBox;
             ctx.fillRect(boxX, boxY, boxW, boxH);
-            ctx.strokeStyle = "rgba(255,255,255,0.12)";
+            ctx.strokeStyle = labelStroke;
             ctx.strokeRect(boxX, boxY, boxW, boxH);
-            ctx.fillStyle = "rgba(234,240,255,0.92)";
+            ctx.fillStyle = pointColor;
             ctx.beginPath();
             ctx.arc(xk, yk, 3, 0, Math.PI * 2);
             ctx.fill();
+            ctx.fillStyle = labelText;
             ctx.fillText(label, boxX + 4, boxY + 11);
           }
         }

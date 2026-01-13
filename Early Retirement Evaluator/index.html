@@ -327,9 +327,12 @@
       padding:10px 12px;
       border-radius:16px;
       border:1px solid var(--line);
-      background:var(--panel);
+      background:rgba(15,20,28,0.85);
       backdrop-filter: blur(10px);
       font-family: "Trebuchet MS","Segoe UI","Tahoma",sans-serif;
+    }
+    html[data-theme="light"] .summaryBar{
+      background:rgba(240,244,250,0.92);
     }
     .summaryItem{min-width:0;}
     .summaryLabel{
@@ -376,6 +379,26 @@
     .badge.good{ border-color:rgba(99,210,166,0.6); color:#d7fff0; }
     .badge.warn{ border-color:rgba(242,186,107,0.6); color:#fff1db; }
     .badge.bad{ border-color:rgba(241,107,107,0.6); color:#ffe4e4; }
+    html[data-theme="light"] .badge{
+      background:rgba(15,23,42,0.06);
+      border-color:rgba(15,23,42,0.12);
+      color:#334155;
+    }
+    html[data-theme="light"] .badge.good{
+      background:rgba(43,185,138,0.18);
+      border-color:rgba(43,185,138,0.45);
+      color:#0f4a36;
+    }
+    html[data-theme="light"] .badge.warn{
+      background:rgba(213,164,58,0.18);
+      border-color:rgba(213,164,58,0.45);
+      color:#5a4200;
+    }
+    html[data-theme="light"] .badge.bad{
+      background:rgba(217,81,81,0.18);
+      border-color:rgba(217,81,81,0.45);
+      color:#5b1a1a;
+    }
   </style>
 </head>
 <body>
